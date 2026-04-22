@@ -21,7 +21,7 @@ else()
     target_compile_options(AnimatedNoise PRIVATE -Wall -Wextra -pedantic)
 endif()
 
-if (MACOS)
+if (APPLE)
     set_target_properties(AnimatedNoise PROPERTIES
             XCODE_GENERATE_SCHEME ON
             XCODE_SCHEME_ENABLE_GPU_FRAME_CAPTURE_MODE "Metal"
