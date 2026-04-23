@@ -15,7 +15,7 @@
 //Variables
 //==============================================================================
 WGPUInstanceDescriptor descriptor = {};
-WGPUInstance instance = nullptr;
+WGPUInstance mInstance = nullptr;
 WGPURequestAdapterOptions adapterOpts = {};
 WGPUAdapterProperties initProperties = {};
 std::vector<WGPUFeatureName> features;
@@ -53,33 +53,79 @@ void getAdapter(const WGPUAdapter adapter, WGPUAdapterProperties &properties)
     std::cout << "Adapter backend: " << properties.backendType << std::endl;
 }
 
+void release(WGPUAdapter adapter, WGPUInstance instance, WGPUDevice device)
+{
+    //=================================================================
+    //Destroy webgpu Adapter in editor's destructor
+    //=================================================================
+    std::cout << "Releasing adapter" << std::endl;
+    wgpuAdapterRelease(adapter);
+    //=================================================================
+    //Destroy webgpu instance in editor's destructor
+    //=================================================================
+    std::cout << "Releasing instance" << std::endl;
+    wgpuInstanceRelease(instance);
+    wgpuDeviceRelease(device);
+
+}
+
 int main(int, char**)
 {
     //=================================================================
     //Create webgpu instance - pluginEditor constructor
     //=================================================================
     descriptor.nextInChain = nullptr;
-    instance = wgpuCreateInstance(&descriptor);
+    mInstance = wgpuCreateInstance(&descriptor);
 
     //=================================================================
     //Check webgpu instance
     //=================================================================
-    if (!instance)
+    if (!mInstance)
     {
         std::cerr << "Failed to create WGPU instance." << std::endl;
         return 1;
     }
 
-    std::cout << "Created WGPU instance." << instance << std::endl;
+    std::cout << "Created WGPU instance." << mInstance << std::endl;
 
     //=================================================================
     //Get the adapter
     //=================================================================
     std::cout << "Requesting adapter..." << std::endl;
     adapterOpts.nextInChain = nullptr;
-    const WGPUAdapter mAdapter = requestAdapterSync(instance, &adapterOpts);
+    const WGPUAdapter mAdapter = requestAdapterSync(mInstance, &adapterOpts);
 
     getAdapter(mAdapter, initProperties);
+    WGPUDeviceDescriptor deviceDesc = {};
+    WGPUDevice mDevice = requestDeviceSync(mAdapter, &deviceDesc);
+    wgpuAdapterRelease(mAdapter); //You can release the adapter at this point
+
+    std::cout << "Got device: " << mDevice << std::endl;
+
+    //Now Get the Device which we will use in place of the Adapter
+    std::cout << "Requesting device..." << std::endl;
+
+    deviceDesc.nextInChain = nullptr;
+    deviceDesc.label = "My Device"; // anything works here, that's your call
+    deviceDesc.requiredFeatureCount = 0; // we do not require any specific feature
+    deviceDesc.requiredLimits = nullptr; // we do not require any specific limit
+    deviceDesc.defaultQueue.nextInChain = nullptr;
+    deviceDesc.defaultQueue.label = "The default queue";
+    deviceDesc.deviceLostCallback = nullptr;
+    inspectDevice(mDevice);
+
+    deviceDesc.deviceLostCallback = [](WGPUDeviceLostReason reason, char const* message, void* /* pUserData */) {
+        std::cout << "Device lost: reason " << reason;
+        if (message) std::cout << " (" << message << ")";
+        std::cout << std::endl;
+    };
+
+    auto onDeviceError = [](WGPUErrorType type, char const* message, void* /* pUserData */) {
+        std::cout << "Uncaptured device error: type " << type;
+        if (message) std::cout << " (" << message << ")";
+        std::cout << std::endl;
+    };
+    wgpuDeviceSetUncapturedErrorCallback(mDevice, onDeviceError, nullptr /* pUserData */);
 
     //Get Limits
     WGPUSupportedLimits supportedLimits = {};
@@ -125,18 +171,8 @@ int main(int, char**)
     std::cout << " - backendType: 0x" << properties.backendType << std::endl;
     std::cout << std::dec; // Restore decimal numbers
 
-
-    //=================================================================
-    //Destroy webgpu Adapter in editor's destructor
-    //=================================================================
-    std::cout << "Releasing adapter" << std::endl;
-    wgpuAdapterRelease(mAdapter);
-    //=================================================================
-    //Destroy webgpu instance in editor's destructor
-    //=================================================================
-    std::cout << "Releasing instance" << std::endl;
-    wgpuInstanceRelease(instance);
-
+    //Release Resources
+    release(mAdapter, mInstance, mDevice);
 
     return 0;
 }
