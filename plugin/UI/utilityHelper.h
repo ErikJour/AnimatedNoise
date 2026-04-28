@@ -14,12 +14,12 @@ inline WGPUAdapter requestAdapterSync(WGPUInstance instance, WGPURequestAdapterO
 
     wgpuInstanceRequestAdapter(instance, options,
         [](WGPURequestAdapterStatus status, WGPUAdapter adapter, WGPUStringView message, void* pUserData) {
-            UserData& userData = *reinterpret_cast<UserData*>(pUserData);
+            UserData& userDataRef = *reinterpret_cast<UserData*>(pUserData);
             if (status == WGPURequestAdapterStatus_Success)
-                userData.adapter = adapter;
+                userDataRef.adapter = adapter;
             else
                 std::cout << "Could not get WebGPU adapter: " << message.data << std::endl;
-            userData.requestEnded = true;
+            userDataRef.requestEnded = true;
         },
         &userData
     );
@@ -42,12 +42,12 @@ inline WGPUDevice requestDeviceSync(WGPUInstance instance, WGPUAdapter adapter, 
 
     wgpuAdapterRequestDevice(adapter, descriptor,
         [](WGPURequestDeviceStatus status, WGPUDevice device, WGPUStringView message, void* pUserData) {
-            UserData& userData = *reinterpret_cast<UserData*>(pUserData);
+            UserData& userDataRef = *reinterpret_cast<UserData*>(pUserData);
             if (status == WGPURequestDeviceStatus_Success)
-                userData.device = device;
+                userDataRef.device = device;
             else
                 std::cout << "Could not get WebGPU device: " << message.data << std::endl;
-            userData.requestEnded = true;
+            userDataRef.requestEnded = true;
         },
         &userData
     );

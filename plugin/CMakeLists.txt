@@ -74,6 +74,7 @@ target_include_directories(AnimatedNoise
         PRIVATE
         include
         source
+        UI
 )
 
 #==================================
