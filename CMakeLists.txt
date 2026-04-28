@@ -1,35 +1,22 @@
+#==================================
+#Animated Root-level CMake
+#==================================
 cmake_minimum_required(VERSION 4.0.0)
 
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif()
+
+
 project(
-        LearnWebGPU
+        AnimatedNoise
         VERSION 0.1.0
         LANGUAGES CXX C
 )
 
-add_executable(AnimatedNoise main.cpp)
 
-set_target_properties(AnimatedNoise PROPERTIES
-        CXX_STANDARD 20
-        CXX_STANDARD_REQUIRED ON
-        CXX_EXTENSIONS OFF
-        COMPILE_WARNING_AS_ERROR ON
-)
-
-if (MSVC)
-    target_compile_options(AnimatedNoise PRIVATE /w4)
-else()
-    target_compile_options(AnimatedNoise PRIVATE -Wall -Wextra -pedantic)
-endif()
-
-if (APPLE)
-    set_target_properties(AnimatedNoise PROPERTIES
-            XCODE_GENERATE_SCHEME ON
-            XCODE_SCHEME_ENABLE_GPU_FRAME_CAPTURE_MODE "Metal"
-    )
-endif()
-
+add_subdirectory(libs/JUCE)
 add_subdirectory(webgpu)
+add_subdirectory(plugin)
 
-target_link_libraries(AnimatedNoise PRIVATE webgpu)
 
-target_copy_webgpu_binaries(AnimatedNoise)
