@@ -11,14 +11,15 @@
 #include <vector>
 #include "utilityHelper.h"
 
+#define WGPU_STR(s) WGPUStringView{s, sizeof(s) - 1}
+
 //==============================================================================
 //Variables
 //==============================================================================
 WGPUInstanceDescriptor descriptor = {};
 WGPUInstance mInstance = nullptr;
 WGPURequestAdapterOptions adapterOpts = {};
-WGPUAdapterProperties initProperties = {};
-std::vector<WGPUFeatureName> features;
+WGPUAdapterInfo initProperties = {};
 
 //==============================================================================
 //Adapter function
@@ -27,29 +28,25 @@ void setFeatures(const WGPUAdapter adapter)
 {
     // Call the function a first time with a null return address, just to get
     // the entry count.
-    size_t featureCount = wgpuAdapterEnumerateFeatures(adapter, nullptr);
-
-    // Allocate memory (could be a new, or a malloc() if this were a C program)
-    features.resize(featureCount);
+    WGPUSupportedFeatures supported = {};
+    wgpuAdapterGetFeatures(adapter, &supported);
 
     // Call the function a second time, with a non-null return address
-    wgpuAdapterEnumerateFeatures(adapter, features.data());
-
     std::cout << "Adapter features:" << std::endl;
     std::cout << std::hex; // Write integers as hexadecimal to ease comparison with webgpu.h literals
-    for (auto f : features) {
-        std::cout << " - 0x" << f << std::endl;
+    for (size_t i = 0; i < supported.featureCount; ++i) {
+        std::cout << " - 0x" << supported.features[i] << std::endl;
     }
     std::cout << std::dec; // Restore decimal numbers
 }
 
-void getAdapter(const WGPUAdapter adapter, WGPUAdapterProperties &properties)
+void getAdapter(const WGPUAdapter adapter, WGPUAdapterInfo &properties)
 {
     std::cout << "Got adapter: " << adapter << std::endl;
-
-    //Get name and properties
-    wgpuAdapterGetProperties(adapter, &properties);
-    std::cout << "Adapter name: " << properties.name << std::endl;
+    wgpuAdapterGetInfo(adapter, &initProperties);
+    std::cout << "Adapter name: ";
+    std::cout.write(properties.device.data, properties.device.length);
+    std::cout << std::endl;
     std::cout << "Adapter backend: " << properties.backendType << std::endl;
 }
 
@@ -109,23 +106,31 @@ int main(int, char**)
     //=================================================================
     //Properties
     //=================================================================
-    WGPUAdapterProperties properties = {};
+    WGPUAdapterInfo properties = {};
     properties.nextInChain = nullptr;
-    wgpuAdapterGetProperties(mAdapter, &properties);
+    wgpuAdapterGetInfo(mAdapter, &properties);
     std::cout << "Adapter properties:" << std::endl;
     std::cout << " - vendorID: " << properties.vendorID << std::endl;
-    if (properties.vendorName) {
-        std::cout << " - vendorName: " << properties.vendorName << std::endl;
+    if (properties.vendor.length > 0) {
+        std::cout << " - vendorName: ";
+        std::cout.write(properties.vendor.data, properties.vendor.length);
+        std::cout << std::endl;
     }
-    if (properties.architecture) {
-        std::cout << " - architecture: " << properties.architecture << std::endl;
+    if (properties.architecture.length > 0) {
+        std::cout << " - architecture: ";
+        std::cout.write(properties.architecture.data, properties.architecture.length);
+        std::cout << std::endl;
     }
     std::cout << " - deviceID: " << properties.deviceID << std::endl;
-    if (properties.name) {
-        std::cout << " - name: " << properties.name << std::endl;
+    if (properties.device.length > 0) {
+        std::cout << " - name: ";
+        std::cout.write(properties.device.data, properties.device.length);
+        std::cout << std::endl;
     }
-    if (properties.driverDescription) {
-        std::cout << " - driverDescription: " << properties.driverDescription << std::endl;
+    if (properties.description.length > 0) {
+        std::cout << " - driverDescription: ";
+        std::cout.write(properties.description.data, properties.description.length);
+        std::cout << std::endl;
     }
     std::cout << std::hex;
     std::cout << " - adapterType: 0x" << properties.adapterType << std::endl;
@@ -137,34 +142,34 @@ int main(int, char**)
     //=================================================================
     WGPUDeviceDescriptor deviceDesc = {};
     deviceDesc.nextInChain = nullptr;
-    deviceDesc.label = "My Device"; // anything works here, that's your call
+    deviceDesc.label = WGPU_STR("My Device");
     deviceDesc.requiredFeatureCount = 0; // we do not require any specific feature
     deviceDesc.requiredLimits = nullptr; // we do not require any specific limit
     deviceDesc.defaultQueue.nextInChain = nullptr;
-    deviceDesc.defaultQueue.label = "The default queue";
-    deviceDesc.deviceLostCallbackInfo.callback = [](WGPUDevice const*, WGPUDeviceLostReason reason, char const* message, void*) {
+    // deviceDesc.defaultQueue.label = "The default queue";
+    deviceDesc.deviceLostCallbackInfo2.callback = [](WGPUDevice const*, WGPUDeviceLostReason reason, WGPUStringView message, void*, void*) {
         if (reason == WGPUDeviceLostReason_Destroyed) return;
         std::cerr << "Unexpected device lost: reason " << reason;
-        if (message) std::cerr << " (" << message << ")";
+        if (message.length > 0) std::cerr << " (" << message.data << ")";
         std::cerr << std::endl;
     };
-    deviceDesc.deviceLostCallbackInfo.mode = WGPUCallbackMode_AllowSpontaneous;
+    deviceDesc.deviceLostCallbackInfo2.mode = WGPUCallbackMode_AllowSpontaneous;
+    deviceDesc.uncapturedErrorCallbackInfo2.callback = [](WGPUDevice const*, WGPUErrorType type, WGPUStringView message, void*, void*) {
+        std::cout << "Uncaptured device error: type " << type;
+        if (message.length > 0) std::cout << " (" << message.data << ")";
+        std::cout << std::endl;
+    };
     //=================================================================
     //Device
     //=================================================================
     std::cout << "Requesting device..." << std::endl;
-    WGPUDevice mDevice = requestDeviceSync(mAdapter, &deviceDesc);
+WGPUDevice mDevice = requestDeviceSync(mInstance, mAdapter, &deviceDesc);
     std::cout << "Got device: " << mDevice << std::endl;
 
     wgpuAdapterRelease(mAdapter); //You can release the adapter at this point
     inspectDevice(mDevice);
 
-    auto onDeviceError = [](WGPUErrorType type, char const* message, void* /* pUserData */) {
-        std::cout << "Uncaptured device error: type " << type;
-        if (message) std::cout << " (" << message << ")";
-        std::cout << std::endl;
-    };
-    wgpuDeviceSetUncapturedErrorCallback(mDevice, onDeviceError, nullptr /* pUserData */);
+
     //=================================================================
     //Queue
     //=================================================================
@@ -177,13 +182,13 @@ int main(int, char**)
     //=================================================================
     WGPUCommandEncoderDescriptor encoderDesc = {};
     encoderDesc.nextInChain = nullptr;
-    encoderDesc.label = "My command encoder";
+    encoderDesc.label = WGPU_STR("My command encoder");
     WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(mDevice, &encoderDesc);
-    wgpuCommandEncoderInsertDebugMarker(encoder, "Do one thing");
-    wgpuCommandEncoderInsertDebugMarker(encoder, "Do another thing");
+    wgpuCommandEncoderInsertDebugMarker(encoder, WGPU_STR("Do one thing"));
+    wgpuCommandEncoderInsertDebugMarker(encoder, WGPU_STR("Do another thing"));
     WGPUCommandBufferDescriptor cmdBufferDescriptor = {};
     cmdBufferDescriptor.nextInChain = nullptr;
-    cmdBufferDescriptor.label = "Command buffer";
+    cmdBufferDescriptor.label = WGPU_STR("Command buffer");
     WGPUCommandBuffer command = wgpuCommandEncoderFinish(encoder, &cmdBufferDescriptor);
     wgpuCommandEncoderRelease(encoder); // release encoder after it's finished
 
