@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../PluginProcessor.h"
+#include <juce_audio_processors/juce_audio_processors.h>
+#include "PluginProcessor.h"
 
 //==============================================================================
 class AudioPluginAudioProcessorEditor final : public juce::AudioProcessorEditor
