@@ -60,6 +60,7 @@ private:
     WGPUInstance mInstance = nullptr;
     WGPURequestAdapterOptions adapterOpts = {};
     WGPUAdapterInfo initProperties = {};
+    WGPUAdapter mAdapter = nullptr;
     WGPUDevice mDevice = nullptr;
     WGPUQueue mQueue = nullptr;
 

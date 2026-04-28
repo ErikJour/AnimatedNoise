@@ -9,7 +9,7 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAud
     setSize (800, 450);
 
     //=================================================================
-    //Create webgpu instance - pluginEditor constructor
+    //Create webgpu instance
     //=================================================================
     descriptor.nextInChain = nullptr;
 
@@ -30,9 +30,7 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAud
     if (!mInstance)
     {
         std::cerr << "Failed to create WGPU instance." << std::endl;
-
     }
-
     std::cout << "Created WGPU instance." << mInstance << std::endl;
 
     //=================================================================
@@ -40,7 +38,7 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAud
     //=================================================================
     std::cout << "Requesting adapter..." << std::endl;
     adapterOpts.nextInChain = nullptr;
-    const WGPUAdapter mAdapter = requestAdapterSync(mInstance, &adapterOpts);
+    mAdapter = requestAdapterSync(mInstance, &adapterOpts);
     getAdapter(mAdapter, initProperties);
     //=================================================================
     // Query adapter BEFORE releasing it
@@ -124,7 +122,6 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAud
 
     wgpuAdapterRelease(mAdapter); //You can release the adapter at this point
     inspectDevice(mDevice);
-
 
     //=================================================================
     //Queue
