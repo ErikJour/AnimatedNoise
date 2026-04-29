@@ -4,241 +4,246 @@
 
 #ifndef ANIMATEDNOISE_WEBGPUWINDOW_H
 #define ANIMATEDNOISE_WEBGPUWINDOW_H
+
+#include <iostream>
 #include <webgpu/webgpu.h>
+#include "utilityHelper.h"
+#include "GpuSurface.h"
+
 #define WGPU_STR(s) WGPUStringView{s, sizeof(s) - 1}
 
 class WebGpuWindow
 {
-    public:
-        // Initialize everything and return true if it went all right
-        bool initialize()
-        {
-            //=================================================================
-            //Create webgpu instance
-            //=================================================================
-            descriptor.nextInChain = nullptr;
+public:
+    bool initialize()
+    {
+        //=================================================================
+        // Instance
+        //=================================================================
+        descriptor.nextInChain = nullptr;
 
-        #ifdef WEBGPU_BACKEND_DAWN
-            WGPUDawnTogglesDescriptor toggles;
-            toggles.chain.next = nullptr;
-            toggles.chain.sType = WGPUSType_DawnTogglesDescriptor;
-            toggles.disabledToggleCount = 0;
-            toggles.enabledToggleCount = 1;
-            const char* toggleName = "enable_immediate_error_handling";
-            toggles.enabledToggles = &toggleName;
+#ifdef WEBGPU_BACKEND_DAWN
+        WGPUDawnTogglesDescriptor toggles;
+        toggles.chain.next = nullptr;
+        toggles.chain.sType = WGPUSType_DawnTogglesDescriptor;
+        toggles.disabledToggleCount = 0;
+        toggles.enabledToggleCount = 1;
+        const char* toggleName = "enable_immediate_error_handling";
+        toggles.enabledToggles = &toggleName;
+        descriptor.nextInChain = &toggles.chain;
+#endif
 
-            descriptor.nextInChain = &toggles.chain;
-        #endif
-
-            mInstance = wgpuCreateInstance(&descriptor);
-
-            if (!mInstance)
-            {
-                std::cerr << "Failed to create WGPU instance." << std::endl;
-            }
-            std::cout << "Created WGPU instance." << mInstance << std::endl;
-
-            //=================================================================
-            //Get the adapter
-            //=================================================================
-            std::cout << "Requesting adapter..." << std::endl;
-            adapterOpts.nextInChain = nullptr;
-            mAdapter = requestAdapterSync(mInstance, &adapterOpts);
-            getAdapter(mAdapter, initProperties);
-            //=================================================================
-            // Query adapter BEFORE releasing it
-            //=================================================================
-            WGPUSupportedLimits supportedLimits = {};
-            supportedLimits.nextInChain = nullptr;
-
-            bool success = wgpuAdapterGetLimits(mAdapter, &supportedLimits) == WGPUStatus_Success;
-            if (success) {
-                std::cout << "Adapter limits:" << std::endl;
-                std::cout << " - maxTextureDimension1D: " << supportedLimits.limits.maxTextureDimension1D << std::endl;
-                std::cout << " - maxTextureDimension2D: " << supportedLimits.limits.maxTextureDimension2D << std::endl;
-                std::cout << " - maxTextureDimension3D: " << supportedLimits.limits.maxTextureDimension3D << std::endl;
-                std::cout << " - maxTextureArrayLayers: " << supportedLimits.limits.maxTextureArrayLayers << std::endl;
-            }
-
-            setFeatures(mAdapter);
-
-            //=================================================================
-            //Properties
-            //=================================================================
-            WGPUAdapterInfo properties = {};
-            properties.nextInChain = nullptr;
-            wgpuAdapterGetInfo(mAdapter, &properties);
-            std::cout << "Adapter properties:" << std::endl;
-            std::cout << " - vendorID: " << properties.vendorID << std::endl;
-            if (properties.vendor.length > 0) {
-                std::cout << " - vendorName: ";
-                std::cout.write(properties.vendor.data, static_cast<std::streamsize>(properties.vendor.length));
-                std::cout << std::endl;
-            }
-            if (properties.architecture.length > 0) {
-                std::cout << " - architecture: ";
-                std::cout.write(properties.architecture.data, static_cast<std::streamsize>(properties.architecture.length));
-                std::cout << std::endl;
-            }
-            std::cout << " - deviceID: " << properties.deviceID << std::endl;
-            if (properties.device.length > 0) {
-                std::cout << " - name: ";
-                std::cout.write(properties.device.data, static_cast<std::streamsize>(properties.device.length));
-                std::cout << std::endl;
-            }
-            if (properties.description.length > 0) {
-                std::cout << " - driverDescription: ";
-                std::cout.write(properties.description.data, static_cast<std::streamsize>(properties.description.length));
-                std::cout << std::endl;
-            }
-            std::cout << std::hex;
-            std::cout << " - adapterType: 0x" << properties.adapterType << std::endl;
-            std::cout << " - backendType: 0x" << properties.backendType << std::endl;
-            std::cout << std::dec; // Restore decimal numbers
-
-            //=================================================================
-            //Descriptor
-            //=================================================================
-            WGPUDeviceDescriptor deviceDesc = {};
-            deviceDesc.nextInChain = nullptr;
-            deviceDesc.label = WGPU_STR("My Device");
-            deviceDesc.requiredFeatureCount = 0; // we do not require any specific feature
-            deviceDesc.requiredLimits = nullptr; // we do not require any specific limit
-            deviceDesc.defaultQueue.nextInChain = nullptr;
-            // deviceDesc.defaultQueue.label = "The default queue";
-            deviceDesc.deviceLostCallbackInfo2.callback = [](WGPUDevice const*, WGPUDeviceLostReason reason, WGPUStringView message, void*, void*) {
-                if (reason == WGPUDeviceLostReason_Destroyed) return;
-                std::cerr << "Unexpected device lost: reason " << reason;
-                if (message.length > 0) std::cerr << " (" << message.data << ")";
-                std::cerr << std::endl;
-            };
-            deviceDesc.deviceLostCallbackInfo2.mode = WGPUCallbackMode_AllowSpontaneous;
-            deviceDesc.uncapturedErrorCallbackInfo2.callback = [](WGPUDevice const*, WGPUErrorType type, WGPUStringView message, void*, void*) {
-                std::cout << "Uncaptured device error: type " << type;
-                if (message.length > 0) std::cout << " (" << message.data << ")";
-                std::cout << std::endl;
-            };
-            //=================================================================
-            //Device
-            //=================================================================
-            std::cout << "Requesting device..." << std::endl;
-            mDevice = requestDeviceSync(mInstance, mAdapter, &deviceDesc);
-            std::cout << "Got device: " << mDevice << std::endl;
-
-            wgpuAdapterRelease(mAdapter); //You can release the adapter at this point
-            inspectDevice(mDevice);
-
-            //=================================================================
-            //Queue
-            //=================================================================
-            mQueue = wgpuDeviceGetQueue(mDevice);
-            //Example data send from cpu to gpu
-            // WGPUCommandBuffer commands[3];
-            // wgpuQueueSubmit(mQueue, 3, commands);
-            //=================================================================
-            //Command Encoder
-            //=================================================================
-            WGPUCommandEncoderDescriptor encoderDesc = {};
-            encoderDesc.nextInChain = nullptr;
-            encoderDesc.label = WGPU_STR("My command encoder");
-            WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(mDevice, &encoderDesc);
-            wgpuCommandEncoderInsertDebugMarker(encoder, WGPU_STR("Do one thing"));
-            wgpuCommandEncoderInsertDebugMarker(encoder, WGPU_STR("Do another thing"));
-            WGPUCommandBufferDescriptor cmdBufferDescriptor = {};
-            cmdBufferDescriptor.nextInChain = nullptr;
-            cmdBufferDescriptor.label = WGPU_STR("Command buffer");
-            WGPUCommandBuffer command = wgpuCommandEncoderFinish(encoder, &cmdBufferDescriptor);
-            wgpuCommandEncoderRelease(encoder); // release encoder after it's finished
-
-
-            WGPUQueueWorkDoneCallbackInfo2 callbackInfo = {};
-            callbackInfo.callback = [](WGPUQueueWorkDoneStatus status, void* pUserData, void*) {
-                std::cout << "Queued work finished with status: " << status << std::endl;
-                *reinterpret_cast<bool*>(pUserData) = true;
-            };
-            callbackInfo.mode = WGPUCallbackMode_AllowSpontaneous;
-            callbackInfo.userdata1 = &workDone;
-            wgpuQueueOnSubmittedWorkDone2(mQueue, callbackInfo);
-
-            // Finally submit the command queue
-            std::cout << "Submitting command..." << std::endl;
-            wgpuQueueSubmit(mQueue, 1, &command);
-            wgpuCommandBufferRelease(command);
-            std::cout << "Command submitted." << std::endl;
-
-            return true;
+        mInstance = wgpuCreateInstance(&descriptor);
+        if (!mInstance) {
+            std::cerr << "Failed to create WGPUInstance." << std::endl;
+            return false;
         }
-        // Uninitialize everything that was initialized
-        void terminate() const
-        {
-            //=================================================================
-            // Release resources — adapter already released above, don't pass it
-            //=================================================================
-            std::cout << "Releasing Queue..." << std::endl;
-            wgpuQueueRelease(mQueue);
-            std::cout << "Releasing device..." << std::endl;
-            wgpuDeviceRelease(mDevice);
-            // std::cout << "Releasing Command..." << std::endl;
-            // for (auto cmd : commands) {
-            //     wgpuCommandBufferRelease(cmd);
-            // }
-            std::cout << "Releasing instance..." << std::endl;
-            wgpuInstanceRelease(mInstance);
+
+        //=================================================================
+        // Adapter
+        //=================================================================
+        adapterOpts.nextInChain = nullptr;
+        mAdapter = requestAdapterSync(mInstance, &adapterOpts);
+        if (!mAdapter) {
+            std::cerr << "Failed to get WGPUAdapter." << std::endl;
+            return false;
         }
-        // Draw a frame and handle events
-        void mainLoop()
-        {
-                while (!workDone) {
-                    std::cout << "Ticking device..." << std::endl;
-            #ifdef WEBGPU_BACKEND_DAWN
-                    wgpuDeviceTick(mDevice);
-            #elif defined(WEBGPU_BACKEND_WGPU)
-                    wgpuDevicePoll(mDevice, false, nullptr);
-            #endif
-                }
+        getAdapter(mAdapter, initProperties);
+
+        //=================================================================
+        // Device
+        //=================================================================
+        WGPUDeviceDescriptor deviceDesc = {};
+        deviceDesc.label = WGPU_STR("My Device");
+        deviceDesc.deviceLostCallbackInfo2.callback = [](WGPUDevice const*, WGPUDeviceLostReason reason, WGPUStringView message, void*, void*) {
+            if (reason == WGPUDeviceLostReason_Destroyed) return;
+            std::cerr << "Device lost: reason " << reason;
+            if (message.length > 0) std::cerr << " (" << message.data << ")";
+            std::cerr << std::endl;
+        };
+        deviceDesc.deviceLostCallbackInfo2.mode = WGPUCallbackMode_AllowSpontaneous;
+        deviceDesc.uncapturedErrorCallbackInfo2.callback = [](WGPUDevice const*, WGPUErrorType type, WGPUStringView message, void*, void*) {
+            std::cerr << "Uncaptured device error: type " << type;
+            if (message.length > 0) std::cerr << " (" << message.data << ")";
+            std::cerr << std::endl;
+        };
+
+        mDevice = requestDeviceSync(mInstance, mAdapter, &deviceDesc);
+        if (!mDevice) {
+            std::cerr << "Failed to get WGPUDevice." << std::endl;
+            return false;
         }
-        // Return true as long as the main loop should keep on running
-        bool isRunning();
+
+        // mAdapter is intentionally kept alive here — needed by initSurface()
+        // to query WGPUSurfaceCapabilities. It is released inside applySurfaceConfig().
+
+        //=================================================================
+        // Queue
+        //=================================================================
+        mQueue = wgpuDeviceGetQueue(mDevice);
+
+        return true;
+    }
+
+    // Call once you have the native window handle (after the component has a peer).
+    // width/height should be the current editor dimensions in physical pixels.
+    bool initSurface(void* nativeHandle, uint32_t width, uint32_t height)
+    {
+#if defined(__APPLE__)
+        mSurface = createMetalSurface(mInstance, nativeHandle);
+#else
+        (void)nativeHandle;
+#endif
+        if (!mSurface) {
+            std::cerr << "Failed to create WGPUSurface." << std::endl;
+            return false;
+        }
+        applySurfaceConfig(width, height);
+        return true;
+    }
+
+    // Call from juce::Timer::timerCallback() at 60 Hz.
+    void renderFrame()
+    {
+        if (!mSurface) return;
+
+        WGPUSurfaceTexture surfaceTexture = {};
+        wgpuSurfaceGetCurrentTexture(mSurface, &surfaceTexture);
+
+        if (surfaceTexture.status != WGPUSurfaceGetCurrentTextureStatus_Success) return;
+
+        WGPUTextureViewDescriptor viewDesc = {};
+        viewDesc.format = mSurfaceFormat;
+        viewDesc.dimension = WGPUTextureViewDimension_2D;
+        viewDesc.mipLevelCount = 1;
+        viewDesc.arrayLayerCount = 1;
+        viewDesc.aspect = WGPUTextureAspect_All;
+        WGPUTextureView targetView = wgpuTextureCreateView(surfaceTexture.texture, &viewDesc);
+
+        WGPUCommandEncoderDescriptor encoderDesc = {};
+        encoderDesc.label = WGPU_STR("Frame encoder");
+        WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(mDevice, &encoderDesc);
+
+        WGPURenderPassColorAttachment colorAttachment = {};
+        colorAttachment.view       = targetView;
+        colorAttachment.loadOp     = WGPULoadOp_Clear;
+        colorAttachment.storeOp    = WGPUStoreOp_Store;
+        colorAttachment.clearValue = WGPUColor{ 0.5, 0.05, 0.1, 1.0 };
+        colorAttachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
+
+        WGPURenderPassDescriptor renderPassDesc = {};
+        renderPassDesc.colorAttachmentCount = 1;
+        renderPassDesc.colorAttachments     = &colorAttachment;
+
+        WGPURenderPassEncoder renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
+        wgpuRenderPassEncoderEnd(renderPass);
+        wgpuRenderPassEncoderRelease(renderPass);
+
+        WGPUCommandBufferDescriptor cmdDesc = {};
+        cmdDesc.label = WGPU_STR("Frame command buffer");
+        WGPUCommandBuffer command = wgpuCommandEncoderFinish(encoder, &cmdDesc);
+        wgpuCommandEncoderRelease(encoder);
+
+        wgpuQueueSubmit(mQueue, 1, &command);
+        wgpuCommandBufferRelease(command);
+        wgpuTextureViewRelease(targetView);
+        wgpuSurfacePresent(mSurface);
+
+#ifdef WEBGPU_BACKEND_DAWN
+        wgpuDeviceTick(mDevice);
+#endif
+
+        static int frame = 0;
+        if (++frame % 60 == 0)
+            std::cout << "Frame " << frame << std::endl;
+    }
+
+    // Call from PluginEditor::resized().
+    void onResize(uint32_t width, uint32_t height)
+    {
+        if (!mSurface) return;
+        wgpuSurfaceUnconfigure(mSurface);
+        applySurfaceConfig(width, height);
+    }
+
+    bool hasSurface() const { return mSurface != nullptr; }
+
+    void terminate()
+    {
+        if (mSurface) {
+            wgpuSurfaceUnconfigure(mSurface);
+            wgpuSurfaceRelease(mSurface);
+            mSurface = nullptr;
+        }
+        if (mAdapter) {
+            // Released here only if initSurface() was never called.
+            wgpuAdapterRelease(mAdapter);
+            mAdapter = nullptr;
+        }
+        wgpuQueueRelease(mQueue);
+        wgpuDeviceRelease(mDevice);
+        wgpuInstanceRelease(mInstance);
+    }
 
     //==============================================================================
-    //WebGPU Functions
+    // Diagnostic helpers
     //==============================================================================
     static void setFeatures(const WGPUAdapter adapter)
     {
-        // Call the function a first time with a null return address, just to get
-        // the entry count.
         WGPUSupportedFeatures supported = {};
         wgpuAdapterGetFeatures(adapter, &supported);
-
-        // Call the function a second time, with a non-null return address
         std::cout << "Adapter features:" << std::endl;
-        std::cout << std::hex; // Write integers as hexadecimal to ease comparison with webgpu.h literals
-        for (size_t i = 0; i < supported.featureCount; ++i) {
+        std::cout << std::hex;
+        for (size_t i = 0; i < supported.featureCount; ++i)
             std::cout << " - 0x" << supported.features[i] << std::endl;
-        }
-        std::cout << std::dec; // Restore decimal numbers
+        std::cout << std::dec;
     }
 
-    void getAdapter(const WGPUAdapter adapter, const WGPUAdapterInfo &properties)
+    void getAdapter(const WGPUAdapter adapter, const WGPUAdapterInfo& properties)
     {
         std::cout << "Got adapter: " << adapter << std::endl;
         wgpuAdapterGetInfo(adapter, &initProperties);
         std::cout << "Adapter name: ";
         std::cout.write(properties.device.data, static_cast<std::streamsize>(properties.device.length));
         std::cout << std::endl;
-        std::cout << "Adapter backend: " << properties.backendType << std::endl;
+        std::cout << "Adapter backend: 0x" << std::hex << properties.backendType << std::dec << std::endl;
     }
 
-    private:
+private:
+    // Queries surface caps on first call (using mAdapter), then releases mAdapter.
+    // Subsequent calls (from onResize) skip the caps query and just reconfigure.
+    void applySurfaceConfig(uint32_t width, uint32_t height)
+    {
+        if (mSurfaceFormat == WGPUTextureFormat_Undefined) {
+            WGPUSurfaceCapabilities caps = {};
+            wgpuSurfaceGetCapabilities(mSurface, mAdapter, &caps);
+            mSurfaceFormat = caps.formats[0];
+            wgpuSurfaceCapabilitiesFreeMembers(caps);
+            wgpuAdapterRelease(mAdapter);
+            mAdapter = nullptr;
+        }
 
-        WGPUInstanceDescriptor descriptor = {};
-        WGPUInstance mInstance = nullptr;
-        WGPURequestAdapterOptions adapterOpts = {};
-        WGPUAdapterInfo initProperties = {};
-        WGPUAdapter mAdapter = nullptr;
-        WGPUDevice mDevice = nullptr;
-        WGPUQueue mQueue = nullptr;
-        bool workDone = false;
+        WGPUSurfaceConfiguration config = {};
+        config.device       = mDevice;
+        config.format       = mSurfaceFormat;
+        config.usage        = WGPUTextureUsage_RenderAttachment;
+        config.width        = width;
+        config.height       = height;
+        config.presentMode  = WGPUPresentMode_Fifo;
+        config.alphaMode    = WGPUCompositeAlphaMode_Auto;
+
+        wgpuSurfaceConfigure(mSurface, &config);
+    }
+
+    WGPUInstanceDescriptor      descriptor    = {};
+    WGPUInstance                mInstance     = nullptr;
+    WGPURequestAdapterOptions   adapterOpts   = {};
+    WGPUAdapterInfo             initProperties = {};
+    WGPUAdapter                 mAdapter      = nullptr;
+    WGPUDevice                  mDevice       = nullptr;
+    WGPUQueue                   mQueue        = nullptr;
+    WGPUSurface                 mSurface      = nullptr;
+    WGPUTextureFormat           mSurfaceFormat = WGPUTextureFormat_Undefined;
 };
 
 #endif //ANIMATEDNOISE_WEBGPUWINDOW_H
