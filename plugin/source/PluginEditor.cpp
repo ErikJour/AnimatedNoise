@@ -8,6 +8,8 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAud
     juce::ignoreUnused (processorRef);
     setSize (800, 450);
     webGpuWindow.initialize();
+    // setResizable (true, true);
+
 }
 
 AudioPluginAudioProcessorEditor::~AudioPluginAudioProcessorEditor()
@@ -39,11 +41,6 @@ void AudioPluginAudioProcessorEditor::timerCallback()
 }
 
 //==============================================================================
-void AudioPluginAudioProcessorEditor::paint (juce::Graphics&)
-{
-    // WebGPU owns the entire background — JUCE painting is intentionally skipped.
-    // If the surface hasn't been created yet, the window is blank until the first frame.
-}
 
 void AudioPluginAudioProcessorEditor::resized()
 {

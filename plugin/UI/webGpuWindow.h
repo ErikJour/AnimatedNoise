@@ -102,8 +102,8 @@ public:
         return true;
     }
 
-    // Call from juce::Timer::timerCallback() at 60 Hz.
-    void renderFrame()
+    // Call from juce::Timer::timerCallback() at 60 Hz. Application::MainLoop() in tutorial
+    void renderFrame() const
     {
         if (!mSurface) return;
 
@@ -120,6 +120,13 @@ public:
         viewDesc.aspect = WGPUTextureAspect_All;
         WGPUTextureView targetView = wgpuTextureCreateView(surfaceTexture.texture, &viewDesc);
 
+        // The view holds its own reference to the texture, so we can release
+        // the surface texture's reference now (Dawn-specific; wgpu-native requires
+        // this to happen after wgpuSurfacePresent instead).
+#ifndef WEBGPU_BACKEND_WGPU
+        wgpuTextureRelease(surfaceTexture.texture);
+#endif
+
         WGPUCommandEncoderDescriptor encoderDesc = {};
         encoderDesc.label = WGPU_STR("Frame encoder");
         WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(mDevice, &encoderDesc);
@@ -128,14 +135,14 @@ public:
         colorAttachment.view       = targetView;
         colorAttachment.loadOp     = WGPULoadOp_Clear;
         colorAttachment.storeOp    = WGPUStoreOp_Store;
-        colorAttachment.clearValue = WGPUColor{ 0.5, 0.05, 0.1, 1.0 };
+        colorAttachment.clearValue = WGPUColor{ 0.1, 0.1, 0.1, 1.0 };
         colorAttachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
 
         WGPURenderPassDescriptor renderPassDesc = {};
         renderPassDesc.colorAttachmentCount = 1;
         renderPassDesc.colorAttachments     = &colorAttachment;
 
-        WGPURenderPassEncoder renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
+        const WGPURenderPassEncoder renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
         wgpuRenderPassEncoderEnd(renderPass);
         wgpuRenderPassEncoderRelease(renderPass);
 
