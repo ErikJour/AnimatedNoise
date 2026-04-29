@@ -65,6 +65,7 @@ target_sources(AnimatedNoise
         PRIVATE
         source/PluginEditor.cpp
         source/PluginProcessor.cpp
+        UI/webGpuWindow.cpp
 )
 
 if (APPLE)
