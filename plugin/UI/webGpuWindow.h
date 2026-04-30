@@ -17,6 +17,7 @@ public:
     WebGpuWindow();
     ~WebGpuWindow();
 
+    void setWindowColor();
     bool initialize();
     bool initSurface(void* nativeHandle, uint32_t width, uint32_t height);
     bool createPipeline();
@@ -61,23 +62,30 @@ private:
         wgpuSurfaceConfigure(mSurface, &config);
     }
 
-    WGPUInstanceDescriptor       descriptor    = {};
-    WGPUInstance                 mInstance     = nullptr;
-    WGPURequestAdapterOptions    adapterOpts   = {};
-    WGPUAdapterInfo              initProperties = {};
-    WGPUAdapter                  mAdapter      = nullptr;
-    WGPUDevice                   mDevice       = nullptr;
-    WGPUQueue                    mQueue        = nullptr;
-    WGPUSurface                  mSurface      = nullptr;
-    WGPUTextureFormat            mSurfaceFormat = WGPUTextureFormat_Undefined;
-    WGPUSupportedLimits          supportedLimits = {};
-    WGPURenderPipelineDescriptor pipelineDesc = {};
-    WGPURenderPipeline           mPipeline = {};
-    WGPUFragmentState            fragmentState = {};
-    WGPUBlendState               blendState = {};
-    WGPUColorTargetState         colorTarget = {};
-    WGPUShaderModuleDescriptor   shaderDesc = {};
-    WGPUShaderModule             mShaderModule = {};
+    //======================================================
+    //Colors
+    //======================================================
+    double mRed = {};
+    double mGreen = {};
+    double mBlue = {};
+
+    WGPUInstanceDescriptor         mDescriptor    = {};
+    WGPUInstance                   mInstance     = nullptr;
+    WGPURequestAdapterOptions      mAdapterOpts   = {};
+    WGPUAdapterInfo                mInitProperties = {};
+    WGPUAdapter                    mAdapter      = nullptr;
+    WGPUDevice                     mDevice       = nullptr;
+    WGPUQueue                      mQueue        = nullptr;
+    WGPUSurface                    mSurface      = nullptr;
+    WGPUTextureFormat              mSurfaceFormat = WGPUTextureFormat_Undefined;
+    WGPUSupportedLimits            mSupportedLimits = {};
+    WGPURenderPipelineDescriptor   mPipelineDesc = {};
+    WGPURenderPipeline             mPipeline = {};
+    WGPUFragmentState              mFragmentState = {};
+    WGPUBlendState                 mBlendState = {};
+    WGPUColorTargetState           mTargetColor = {};
+    WGPUShaderModuleDescriptor     mShaderDesc = {};
+    WGPUShaderModule               mShaderModule = {};
     WGPUShaderModuleWGSLDescriptor mShaderCodeDesc{};
 
 

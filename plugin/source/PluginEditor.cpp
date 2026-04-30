@@ -9,7 +9,6 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAud
     setSize (800, 450);
     webGpuWindow.initialize();
     // setResizable (true, true);
-
 }
 
 AudioPluginAudioProcessorEditor::~AudioPluginAudioProcessorEditor()
