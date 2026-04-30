@@ -79,25 +79,91 @@ bool WebGpuWindow::initialize()
         //=================================================================
         mQueue = wgpuDeviceGetQueue(mDevice);
 
+        //=================================================================
+        // Shader Module
+        //=================================================================
+        // Set the chained struct's header
+        mShaderCodeDesc.chain.next = nullptr;
+        mShaderCodeDesc.chain.sType = WGPUSType_ShaderSourceWGSL;
+        mShaderCodeDesc.code        = { shaderSource, strlen(shaderSource) }; // ← missing
+        shaderDesc.nextInChain = &mShaderCodeDesc.chain;
+        mShaderModule = wgpuDeviceCreateShaderModule(mDevice, &shaderDesc);
+        //=================================================================
+        // Pipeline Descriptor
+        //=================================================================
+        pipelineDesc.nextInChain = nullptr;
+        pipelineDesc.layout = nullptr;
+        //RENDER PIPELINE
+        // 1 Describe vertex pipeline state
+        pipelineDesc.vertex.bufferCount = 0;
+        pipelineDesc.vertex.buffers = nullptr;
+        pipelineDesc.vertex.module = mShaderModule;
+        pipelineDesc.vertex.entryPoint = WGPU_STR("vs_main");
+        pipelineDesc.vertex.constantCount = 0;
+        pipelineDesc.vertex.constants = nullptr;
+        // 2 Describe primitive pipeline state
+        pipelineDesc.primitive.topology = WGPUPrimitiveTopology_TriangleList;
+        pipelineDesc.primitive.stripIndexFormat = WGPUIndexFormat_Undefined;
+        pipelineDesc.primitive.frontFace = WGPUFrontFace_CCW;
+        pipelineDesc.primitive.cullMode = WGPUCullMode_None;
+        //blending stage configuration
+        pipelineDesc.fragment = &fragmentState;
+        // 4 Describe stencil/depth pipeline state
+        pipelineDesc.depthStencil = nullptr;
+        colorTarget.format = mSurfaceFormat;
+        colorTarget.blend = &blendState;
+        colorTarget.writeMask = WGPUColorWriteMask_All; // We could write to only some of the color channels.
+        blendState.color.srcFactor = WGPUBlendFactor_SrcAlpha;
+        blendState.color.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
+        blendState.color.operation = WGPUBlendOperation_Add;
+        blendState.alpha.srcFactor = WGPUBlendFactor_Zero;
+        blendState.alpha.dstFactor = WGPUBlendFactor_One;
+        blendState.alpha.operation = WGPUBlendOperation_Add;
+        // 5 Describe multi-sampling state
+        pipelineDesc.multisample.count = 1;         // Samples per pixel
+        pipelineDesc.multisample.mask = ~0u;         // Default value for the mask, meaning "all bits on"
+        pipelineDesc.multisample.alphaToCoverageEnabled = false;         // Default value as well (irrelevant for count = 1 anyways)
+        // 6 Describe pipeline layout
+
+        // mPipeline = wgpuDeviceCreateRenderPipeline(mDevice, &pipelineDesc);
+
         return true;
     }
 
     // Call once you have the native window handle (after the component has a peer).
     // width/height should be the current editor dimensions in physical pixels.
-    bool WebGpuWindow::initSurface(void* nativeHandle, const uint32_t width, const uint32_t height)
-    {
+bool WebGpuWindow::initSurface(void* nativeHandle, uint32_t width, uint32_t height)
+{
 #if defined(__APPLE__)
-        mSurface = createMetalSurface(mInstance, nativeHandle);
-#else
-        (void)nativeHandle;
+    mSurface = createMetalSurface(mInstance, nativeHandle);
 #endif
-        if (!mSurface) {
-            std::cerr << "Failed to create WGPUSurface." << std::endl;
-            return false;
-        }
-        applySurfaceConfig(width, height);
-        return true;
+    if (!mSurface) return false;
+
+    applySurfaceConfig(width, height);  // sets mSurfaceFormat
+    return createPipeline();            // now safe to use mSurfaceFormat
+}
+
+bool WebGpuWindow::createPipeline()
+{
+    colorTarget.format = mSurfaceFormat;  // now valid
+    colorTarget.blend  = &blendState;
+    colorTarget.writeMask = WGPUColorWriteMask_All;
+
+    fragmentState.module      = mShaderModule;
+    fragmentState.entryPoint  = WGPU_STR("fs_main");
+    fragmentState.targetCount = 1;
+    fragmentState.targets     = &colorTarget;
+    fragmentState.constants   = nullptr;
+
+    pipelineDesc.fragment = &fragmentState;
+
+    mPipeline = wgpuDeviceCreateRenderPipeline(mDevice, &pipelineDesc);
+    if (!mPipeline) {
+        std::cerr << "Failed to create render pipeline." << std::endl;
+        return false;
     }
+    return true;
+}
 
 void WebGpuWindow::renderFrame() const
     {
@@ -142,8 +208,12 @@ void WebGpuWindow::renderFrame() const
 
 
         const WGPURenderPassEncoder renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
+        wgpuRenderPassEncoderSetPipeline(renderPass, mPipeline);
+        wgpuRenderPassEncoderDraw(renderPass, 3, 1, 0, 0); // 3 vertices for your triangle
         wgpuRenderPassEncoderEnd(renderPass);
         wgpuRenderPassEncoderRelease(renderPass);
+
+
 
         WGPUCommandBufferDescriptor cmdDesc = {};
         cmdDesc.label = WGPU_STR("Frame command buffer");
@@ -171,20 +241,36 @@ void WebGpuWindow::onResize (uint32_t width, uint32_t height)
 
 void WebGpuWindow::terminate()
 {
+    if (mPipeline) {
+        wgpuRenderPipelineRelease(mPipeline);
+        mPipeline = nullptr;
+    }
+
     if (mSurface) {
         wgpuSurfaceUnconfigure(mSurface);
         wgpuSurfaceRelease(mSurface);
         mSurface = nullptr;
     }
+
+    if (mQueue) {
+        wgpuQueueRelease(mQueue);
+        mQueue = nullptr;
+    }
+
+    if (mDevice) {
+        wgpuDeviceRelease(mDevice);
+        mDevice = nullptr;
+    }
+
     if (mAdapter) {
-        // Released here only if initSurface() was never called.
         wgpuAdapterRelease(mAdapter);
         mAdapter = nullptr;
     }
-    wgpuQueueRelease(mQueue);
-    wgpuDeviceRelease(mDevice);
-    //Release instance last
-    wgpuInstanceRelease(mInstance);
+
+    if (mInstance) {
+        wgpuInstanceRelease(mInstance);
+        mInstance = nullptr;
+    }
 }
 
 void WebGpuWindow::setFeatures(const WGPUAdapter adapter)
