@@ -36,7 +36,12 @@ void AudioPluginAudioProcessorEditor::parentHierarchyChanged()
 
 void AudioPluginAudioProcessorEditor::timerCallback()
 {
-    webGpuWindow.renderFrame();
+    // Calculate time here (JUCE side)
+    static auto startTime = juce::Time::getMillisecondCounterHiRes();
+    const double elapsed = (juce::Time::getMillisecondCounterHiRes() - startTime) * 0.001;
+
+    // Pass it to the WebGpu class
+    webGpuWindow.renderFrame(static_cast<float>(elapsed));
 }
 
 //==============================================================================

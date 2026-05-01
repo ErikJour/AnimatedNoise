@@ -9,6 +9,13 @@
 #include "utilityHelper.h"
 #include "GpuSurface.h"
 
+struct MyUniforms {
+    float time = 0.0f;
+    float frequency = 10.0f;
+    float amplitude = 0.5f;
+    float _pad = 0.0f;
+};
+
 #define WGPU_STR(s) WGPUStringView{s, sizeof(s) - 1}
 
 class WebGpuWindow
@@ -23,7 +30,7 @@ public:
     bool createPipeline();
 
     // Call from juce::Timer::timerCallback() at 60 Hz. Application::MainLoop() in tutorial
-    void renderFrame() const;
+    void renderFrame(float currentTime) const;
     // Call from PluginEditor::resized().
     void onResize(uint32_t width, uint32_t height);
     [[nodiscard]] bool hasSurface() const { return mSurface != nullptr; }
@@ -35,6 +42,8 @@ public:
     static void setFeatures(WGPUAdapter adapter);
     void getAdapter(WGPUAdapter adapter, const WGPUAdapterInfo& properties);
     static void getLimits(WGPUAdapter adapter, WGPUSupportedLimits &limits);
+    void setUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer, float time) const;
+
 
 private:
     // Queries surface caps on first call (using mAdapter), then releases mAdapter.
@@ -65,7 +74,7 @@ private:
     //======================================================
     //Colors
     //======================================================
-    double mRed = {};
+    mutable double mRed = {};
     double mGreen = {};
     double mBlue = {};
 
@@ -87,6 +96,8 @@ private:
     WGPUShaderModuleDescriptor     mShaderDesc = {};
     WGPUShaderModule               mShaderModule = {};
     WGPUShaderModuleWGSLDescriptor mShaderCodeDesc{};
+    WGPUBuffer                     mUniformBuffer = nullptr;
+    WGPUBindGroup                  mBindGroup = nullptr;
 
 
 };

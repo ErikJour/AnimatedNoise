@@ -7,15 +7,12 @@
 WebGpuWindow::WebGpuWindow() = default;
 WebGpuWindow::~WebGpuWindow() = default;
 
-
-
 void WebGpuWindow::setWindowColor()
 {
     mRed = 0.3;
     mGreen = 0.25;
     mBlue = 0.2;
 }
-
 
 bool WebGpuWindow::initialize()
     {
@@ -41,9 +38,7 @@ bool WebGpuWindow::initialize()
             std::cerr << "Failed to create WGPUInstance." << std::endl;
             return false;
         }
-
         std::cout << "WGPU instance: " << mInstance << std::endl;
-
 
         //=================================================================
         // Adapter
@@ -120,7 +115,6 @@ bool WebGpuWindow::initialize()
         mPipelineDesc.fragment = &mFragmentState;
         // 4 Describe stencil/depth pipeline state
         mPipelineDesc.depthStencil = nullptr;
-        mTargetColor.format = mSurfaceFormat;
         mTargetColor.blend = &mBlendState;
         mTargetColor.writeMask = WGPUColorWriteMask_All; // We could write to only some of the color channels.
         mBlendState.color.srcFactor = WGPUBlendFactor_SrcAlpha;
@@ -173,11 +167,33 @@ bool WebGpuWindow::createPipeline()
         std::cerr << "Failed to create render pipeline." << std::endl;
         return false;
     }
+
+        //Shader
+        // 1. Create the Buffer
+        WGPUBufferDescriptor bufferDesc = {};
+        bufferDesc.size = sizeof(MyUniforms);
+        bufferDesc.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
+        mUniformBuffer = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
+
+        // 2. Create the Bind Group (This connects the buffer to @binding(0))
+        // We'll get the layout from the pipeline after it's created
+        WGPUBindGroupEntry entry = {};
+        entry.binding = 0;
+        entry.buffer = mUniformBuffer;
+        entry.offset = 0;
+        entry.size = sizeof(MyUniforms);
+
+        WGPUBindGroupDescriptor bgDesc = {};
+        bgDesc.layout = wgpuRenderPipelineGetBindGroupLayout(mPipeline, 0);
+        bgDesc.entryCount = 1;
+        bgDesc.entries = &entry;
+        mBindGroup = wgpuDeviceCreateBindGroup(mDevice, &bgDesc);
+
     return true;
 }
 
-void WebGpuWindow::renderFrame() const
-    {
+void WebGpuWindow::renderFrame(const float currentTime) const
+{
         if (!mSurface) return; //Surface check
 
         WGPUSurfaceTexture surfaceTexture = {};
@@ -191,6 +207,12 @@ void WebGpuWindow::renderFrame() const
         viewDesc.mipLevelCount = 1;
         viewDesc.arrayLayerCount = 1;
         viewDesc.aspect = WGPUTextureAspect_All;
+
+        //================================================================
+        setUniforms(mQueue, mUniformBuffer, currentTime);
+        //================================================================
+
+
         WGPUTextureView targetView = wgpuTextureCreateView(surfaceTexture.texture, &viewDesc);
 
         // The view holds its own reference to the texture, so we can release
@@ -220,6 +242,7 @@ void WebGpuWindow::renderFrame() const
 
         const WGPURenderPassEncoder renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
         wgpuRenderPassEncoderSetPipeline(renderPass, mPipeline);
+        wgpuRenderPassEncoderSetBindGroup(renderPass, 0, mBindGroup, 0, nullptr);
         wgpuRenderPassEncoderDraw(renderPass, 3, 1, 0, 0); // 3 vertices for your triangle
         wgpuRenderPassEncoderEnd(renderPass);
         wgpuRenderPassEncoderRelease(renderPass);
@@ -252,6 +275,17 @@ void WebGpuWindow::onResize (uint32_t width, uint32_t height)
 
 void WebGpuWindow::terminate()
 {
+    if (mBindGroup)
+    {
+        wgpuBindGroupRelease(mBindGroup);
+        mBindGroup = nullptr;
+    }
+    if (mUniformBuffer)
+    {
+        wgpuBufferRelease(mUniformBuffer);
+        mUniformBuffer = nullptr;
+    }
+
     if (mPipeline) {
         wgpuRenderPipelineRelease(mPipeline);
         mPipeline = nullptr;
@@ -315,6 +349,17 @@ void WebGpuWindow::getLimits(WGPUAdapter adapter, WGPUSupportedLimits &limits)
         std::cout << " - maxTextureDimension3D: " << limits.limits.maxTextureDimension3D << std::endl;
         std::cout << " - maxTextureArrayLayers: " << limits.limits.maxTextureArrayLayers << std::endl;
     }
+}
+
+void WebGpuWindow::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const float time) const
+{
+    MyUniforms uData;
+    uData.time = time;
+    mRed = (std::sin(time) * 0.5f) + 0.5f;
+    uData.frequency = 10.0f;
+    uData.amplitude = 0.5f;
+    uData._pad = 0.0f;
+    wgpuQueueWriteBuffer(queue, uniformBuffer, 0, &uData, sizeof(MyUniforms));
 }
 
 

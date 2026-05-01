@@ -9,6 +9,15 @@
 
 inline auto shaderSource = R"(
 
+struct Uniforms {
+    time: f32,
+    frequency: f32,
+    amplitude: f32,
+    _pad: f32
+};
+
+@group(0) @binding(0) var<uniform> u: Uniforms;
+
 const PI: f32 = 3.14159265359;
 
 struct VertexOutput {
@@ -67,10 +76,8 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
     //==============================================
     //Shader Code
     //==============================================
-    var patternSeventeenX: f32 = abs(vUv.x - 0.5);
-    var patternSeventeenY: f32 = abs(vUv.y - 0.5);
-    var patternSeventeen: f32 = min(patternSeventeenX, patternSeventeenY);
-    return vec4f(vec3f(patternSeventeen), 1.0);
+    let wave = sin(vUv.x * u.frequency + u.time) * u.amplitude;
+    return vec4f(wave, wave, wave, 1.0);
 }
 )";
 
