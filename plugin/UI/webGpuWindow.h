@@ -43,6 +43,8 @@ public:
     void getAdapter(WGPUAdapter adapter, const WGPUAdapterInfo& properties);
     static void getLimits(WGPUAdapter adapter, WGPUSupportedLimits &limits);
     void setUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer, float time) const;
+    void wgpuPollEvents([[maybe_unused]] WGPUDevice device, [[maybe_unused]] bool yieldToWebBrowser);
+
 
 
 private:
@@ -92,12 +94,16 @@ private:
     WGPURenderPipeline             mPipeline = {};
     WGPUFragmentState              mFragmentState = {};
     WGPUBlendState                 mBlendState = {};
-    WGPUColorTargetState           mTargetColor = {};
+    WGPUColorTargetState           mColorTarget = {};
     WGPUShaderModuleDescriptor     mShaderDesc = {};
     WGPUShaderModule               mShaderModule = {};
     WGPUShaderModuleWGSLDescriptor mShaderCodeDesc{};
     WGPUBuffer                     mUniformBuffer = nullptr;
     WGPUBindGroup                  mBindGroup = nullptr;
+    WGPUBufferDescriptor           mBufferDescriptor = {};
+    WGPUBuffer                     mBufferOne = nullptr;
+    WGPUBuffer                     mBufferTwo = nullptr;
+    // WGPUCommandEncoder             mEncoder = nullptr;
 
 
 };

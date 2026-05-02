@@ -30,6 +30,7 @@ struct VertexOutput {
 //====================================================================================
 @vertex
 fn vs_main(@builtin(vertex_index) in_vertex_index: u32) -> VertexOutput {
+    //Triangle One
     var out: VertexOutput;
     var p = vec2f(0.0, 0.0);
     var uv = vec2f(0.0, 0.0);
@@ -45,6 +46,8 @@ fn vs_main(@builtin(vertex_index) in_vertex_index: u32) -> VertexOutput {
     }
     out.position = vec4f(p, 0.0, 1.0);
     out.vUv = uv;
+    //Triangle Two
+
     return out;
 }
 
@@ -77,11 +80,13 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
     //Shader Code
     //==============================================
     let wave = sin(vUv.x * u.frequency + u.time) * u.amplitude;
-    return vec4f(wave, wave, wave, 1.0);
+    return vec4f(vUv.x, vUv.x, vUv.x, 1.0);
 }
 )";
 
 #endif //ANIMATEDNOISE_SHADER_H
+
+//Fragment Experiments
 
 //=====================================================
 //Pattern 3 - Bright right side fading to black on left
@@ -160,3 +165,29 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
 //let lightY = 0.015 / distance(lightUvY, vec2f(0.5));
 
 //let thirtyTwo = lightX + lightY;
+
+//Vertex Experiments
+//============================================
+//Standard triangle
+//===========================================
+// var out: VertexOutput;
+// var p = vec2f(0.0, 0.0);
+// var uv = vec2f(0.0, 0.0);
+// if (in_vertex_index == 0u) {
+//     p = vec2f(-0.5, -0.5);
+//     uv = vec2f(0.0, 0.0); // Bottom-left
+// } else if (in_vertex_index == 1u) {
+//     p = vec2f(0.5, -0.5);
+//     uv = vec2f(1.0, 0.0); // Bottom-right
+// } else {
+//     p = vec2f(0.0, 0.5);
+//     uv = vec2f(0.5, 1.0); // Top-center
+// }
+// //let wave = sin(p.x * u.frequency + u.time) * u.amplitude;
+// out.position = vec4f(p, 0.0, 1.0);
+// out.vUv = uv;
+// return out;
+
+//============================================
+//Standard triangle
+//===========================================

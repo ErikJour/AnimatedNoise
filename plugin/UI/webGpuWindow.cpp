@@ -115,8 +115,8 @@ bool WebGpuWindow::initialize()
         mPipelineDesc.fragment = &mFragmentState;
         // 4 Describe stencil/depth pipeline state
         mPipelineDesc.depthStencil = nullptr;
-        mTargetColor.blend = &mBlendState;
-        mTargetColor.writeMask = WGPUColorWriteMask_All; // We could write to only some of the color channels.
+        mColorTarget.blend = &mBlendState;
+        mColorTarget.writeMask = WGPUColorWriteMask_All;
         mBlendState.color.srcFactor = WGPUBlendFactor_SrcAlpha;
         mBlendState.color.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
         mBlendState.color.operation = WGPUBlendOperation_Add;
@@ -128,15 +128,52 @@ bool WebGpuWindow::initialize()
         mPipelineDesc.multisample.mask = ~0u;         // Default value for the mask, meaning "all bits on"
         mPipelineDesc.multisample.alphaToCoverageEnabled = false;         // Default value as well (irrelevant for count = 1 anyways)
         // 6 Describe pipeline layout
+        //========================================================
+        //Buffer Experimentation
+        //========================================================
+        // 1 Create a first buffer
+        mBufferDescriptor.nextInChain = nullptr;
+        mBufferDescriptor.label = WGPU_STR("GPU-side buffer");
+        mBufferDescriptor.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_CopySrc;
+        mBufferDescriptor.size = 16;
+        mBufferDescriptor.mappedAtCreation = false;
+        mBufferOne = wgpuDeviceCreateBuffer(mDevice, &mBufferDescriptor);
+        // 2 Create a second buffer
+        mBufferDescriptor.label = WGPU_STR("Output buffer");
+        mBufferDescriptor.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead;
+        mBufferTwo = wgpuDeviceCreateBuffer(mDevice, &mBufferDescriptor);
 
-        // mPipeline = wgpuDeviceCreateRenderPipeline(mDevice, &pipelineDesc);
+        // // 3 Write input data -- Breaking Here
 
+        // std::vector<uint8_t> numbers(16);
+        // for (uint8_t i = 0; i < 16; ++i) numbers[i] = i;
+        // wgpuQueueWriteBuffer(mQueue, mBufferOne, 0, numbers.data(), numbers.size());
+        //
+        // // 4 Encode and submit the buffer to buffer copy
+        // mEncoder = wgpuDeviceCreateCommandEncoder(mDevice, nullptr);
+        // WGPUCommandBuffer command = wgpuCommandEncoderFinish(mEncoder, nullptr);
+        // wgpuCommandEncoderRelease(mEncoder);
+        // wgpuQueueSubmit(mQueue, 1, &command);
+        // wgpuCommandBufferRelease(command);
+        // wgpuCommandEncoderCopyBufferToBuffer(mEncoder, mBufferOne, 0, mBufferTwo, 0, 16);
+        // //Copy Data
+        // auto onBuffer2Mapped = [](WGPUBufferMapAsyncStatus status, void* pUserData) {
+        // // We know by convention with ourselves that the user data is a pointer to 'ready':
+        // bool* pReady = reinterpret_cast<bool*>(pUserData);
+        // // We set ready to 'true'
+        // *pReady = true;
+        //
+        // std::cout << "Buffer 2 mapped with status " << status << std::endl;
+        // };
+        // wgpuBufferMapAsync(mBufferTwo, WGPUMapMode_Read, 0, 16, onBuffer2Mapped, nullptr /*pUserData*/);
+        // 5 Read buffer data back
+
+        // 6 Release buffers
 
         return true;
     }
 
-    // Call once you have the native window handle (after the component has a peer).
-    // width/height should be the current editor dimensions in physical pixels.
+
 bool WebGpuWindow::initSurface(void* nativeHandle, uint32_t width, uint32_t height)
 {
 #if defined(__APPLE__)
@@ -150,14 +187,15 @@ bool WebGpuWindow::initSurface(void* nativeHandle, uint32_t width, uint32_t heig
 
 bool WebGpuWindow::createPipeline()
 {
-    mTargetColor.format = mSurfaceFormat;  // now valid
-    mTargetColor.blend  = &mBlendState;
-    mTargetColor.writeMask = WGPUColorWriteMask_All;
+
+    mColorTarget.format = mSurfaceFormat;  // now valid
+    mColorTarget.blend  = &mBlendState;
+    mColorTarget.writeMask = WGPUColorWriteMask_All;
 
     mFragmentState.module      = mShaderModule;
     mFragmentState.entryPoint  = WGPU_STR("fs_main");
     mFragmentState.targetCount = 1;
-    mFragmentState.targets     = &mTargetColor;
+    mFragmentState.targets     = &mColorTarget;
     mFragmentState.constants   = nullptr;
 
     mPipelineDesc.fragment = &mFragmentState;
@@ -275,6 +313,16 @@ void WebGpuWindow::onResize (uint32_t width, uint32_t height)
 
 void WebGpuWindow::terminate()
 {
+    if (mBufferOne)
+    {
+        wgpuBufferRelease(mBufferOne);
+        mBufferOne = nullptr;
+    }
+    if (mBufferTwo)
+    {
+        wgpuBufferRelease(mBufferTwo);
+        mBufferOne = nullptr;
+    }
     if (mBindGroup)
     {
         wgpuBindGroupRelease(mBindGroup);
@@ -355,11 +403,17 @@ void WebGpuWindow::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, 
 {
     MyUniforms uData;
     uData.time = time;
-    mRed = (std::sin(time) * 0.5f) + 0.5f;
+    // mRed = (std::sin(time) * 0.5f) + 0.5f;
     uData.frequency = 10.0f;
     uData.amplitude = 0.5f;
     uData._pad = 0.0f;
     wgpuQueueWriteBuffer(queue, uniformBuffer, 0, &uData, sizeof(MyUniforms));
 }
+
+void WebGpuWindow::wgpuPollEvents([[maybe_unused]] WGPUDevice device, [[maybe_unused]] bool yieldToWebBrowser)
+{
+    wgpuDeviceTick(device);
+}
+
 
 
