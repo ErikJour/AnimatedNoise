@@ -106,3 +106,13 @@ target_compile_definitions(AnimatedNoise
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
 )
+
+#==================================
+# Shader file
+#==================================
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/UI/shader.wgsl" SHADER_SOURCE)
+configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/UI/shader.wgsl.h.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/shader.wgsl.h"
+)
+target_include_directories(AnimatedNoise PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")

@@ -8,6 +8,10 @@
 #include <Shader.h>
 #include "utilityHelper.h"
 #include "GpuSurface.h"
+#include "shaderLoader.h"
+#include "shader.wgsl.h"     // ← correct, this is the generated file
+#include <filesystem>
+
 
 struct MyUniforms {
     float time = 0.0f;
@@ -29,9 +33,7 @@ public:
     bool initSurface(void* nativeHandle, uint32_t width, uint32_t height);
     bool createPipeline();
 
-    // Call from juce::Timer::timerCallback() at 60 Hz. Application::MainLoop() in tutorial
-    void renderFrame(float currentTime) const;
-    // Call from PluginEditor::resized().
+    void renderFrame(float currentTime);
     void onResize(uint32_t width, uint32_t height);
     [[nodiscard]] bool hasSurface() const { return mSurface != nullptr; }
     void terminate();
@@ -44,12 +46,11 @@ public:
     static void getLimits(WGPUAdapter adapter, WGPUSupportedLimits &limits);
     void setUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer, float time) const;
     void wgpuPollEvents([[maybe_unused]] WGPUDevice device, [[maybe_unused]] bool yieldToWebBrowser);
+    void InitializeBuffers();
 
 
 
 private:
-    // Queries surface caps on first call (using mAdapter), then releases mAdapter.
-    // Subsequent calls (from onResize) skip the caps query and just reconfigure.
     void applySurfaceConfig(uint32_t width, uint32_t height)
     {
         if (mSurfaceFormat == WGPUTextureFormat_Undefined) {
@@ -72,6 +73,19 @@ private:
 
         wgpuSurfaceConfigure(mSurface, &config);
     }
+    static void setDefault(WGPULimits &limits);
+    static WGPURequiredLimits GetRequiredLimits(WGPUAdapter adapter);
+    void BufferTest();
+
+#ifdef DEBUG
+    void reloadShader();
+#endif
+
+    //======================================================
+    //System
+    //======================================================
+    std::filesystem::path mShaderPath;
+    std::filesystem::file_time_type mLastShaderWriteTime;
 
     //======================================================
     //Colors
@@ -79,6 +93,8 @@ private:
     mutable double mRed = {};
     double mGreen = {};
     double mBlue = {};
+    WGPUBuffer vertexBuffer = nullptr;
+    uint32_t vertexCount{};
 
     WGPUInstanceDescriptor         mDescriptor    = {};
     WGPUInstance                   mInstance     = nullptr;
@@ -103,7 +119,14 @@ private:
     WGPUBufferDescriptor           mBufferDescriptor = {};
     WGPUBuffer                     mBufferOne = nullptr;
     WGPUBuffer                     mBufferTwo = nullptr;
-    // WGPUCommandEncoder             mEncoder = nullptr;
+    WGPUCommandEncoder             mEncoder = nullptr;
+    std::vector<WGPUVertexBufferLayout> mVertexBufferLayouts;
+    WGPUVertexAttribute            mVertexAttribs[2]   = {};
+    WGPUVertexAttribute            mPositionAttrib;
+    WGPUBuffer                     mPositionBuffer;
+    WGPUBuffer                     mColorBuffer;
+    WGPUVertexAttribute            mColorAttrib;
+    std::string                    mShaderSource;
 
 
 };

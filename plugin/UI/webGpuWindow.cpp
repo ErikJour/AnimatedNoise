@@ -74,6 +74,10 @@ bool WebGpuWindow::initialize()
             std::cerr << std::endl;
         };
 
+        //Recquired limits
+        // WGPURequiredLimits requiredLimits = GetRequiredLimits(mAdapter);
+        deviceDesc.requiredLimits = nullptr;
+
         mDevice = requestDeviceSync(mInstance, mAdapter, &deviceDesc);
         if (!mDevice) {
             std::cerr << "Failed to get WGPUDevice." << std::endl;
@@ -127,50 +131,34 @@ bool WebGpuWindow::initialize()
         mPipelineDesc.multisample.count = 1;         // Samples per pixel
         mPipelineDesc.multisample.mask = ~0u;         // Default value for the mask, meaning "all bits on"
         mPipelineDesc.multisample.alphaToCoverageEnabled = false;         // Default value as well (irrelevant for count = 1 anyways)
-        // 6 Describe pipeline layout
-        //========================================================
-        //Buffer Experimentation
-        //========================================================
-        // 1 Create a first buffer
-        mBufferDescriptor.nextInChain = nullptr;
-        mBufferDescriptor.label = WGPU_STR("GPU-side buffer");
-        mBufferDescriptor.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_CopySrc;
-        mBufferDescriptor.size = 16;
-        mBufferDescriptor.mappedAtCreation = false;
-        mBufferOne = wgpuDeviceCreateBuffer(mDevice, &mBufferDescriptor);
-        // 2 Create a second buffer
-        mBufferDescriptor.label = WGPU_STR("Output buffer");
-        mBufferDescriptor.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead;
-        mBufferTwo = wgpuDeviceCreateBuffer(mDevice, &mBufferDescriptor);
 
-        // // 3 Write input data -- Breaking Here
+        //Vertex Shader
+        vertexCount = static_cast<uint32_t>(positionData.size() / 2);
+        assert(vertexCount == static_cast<uint32_t>(colorData.size() / 3));
 
-        // std::vector<uint8_t> numbers(16);
-        // for (uint8_t i = 0; i < 16; ++i) numbers[i] = i;
-        // wgpuQueueWriteBuffer(mQueue, mBufferOne, 0, numbers.data(), numbers.size());
-        //
-        // // 4 Encode and submit the buffer to buffer copy
-        // mEncoder = wgpuDeviceCreateCommandEncoder(mDevice, nullptr);
-        // WGPUCommandBuffer command = wgpuCommandEncoderFinish(mEncoder, nullptr);
-        // wgpuCommandEncoderRelease(mEncoder);
-        // wgpuQueueSubmit(mQueue, 1, &command);
-        // wgpuCommandBufferRelease(command);
-        // wgpuCommandEncoderCopyBufferToBuffer(mEncoder, mBufferOne, 0, mBufferTwo, 0, 16);
-        // //Copy Data
-        // auto onBuffer2Mapped = [](WGPUBufferMapAsyncStatus status, void* pUserData) {
-        // // We know by convention with ourselves that the user data is a pointer to 'ready':
-        // bool* pReady = reinterpret_cast<bool*>(pUserData);
-        // // We set ready to 'true'
-        // *pReady = true;
-        //
-        // std::cout << "Buffer 2 mapped with status " << status << std::endl;
-        // };
-        // wgpuBufferMapAsync(mBufferTwo, WGPUMapMode_Read, 0, 16, onBuffer2Mapped, nullptr /*pUserData*/);
-        // 5 Read buffer data back
+    #ifdef DEBUG
+        mShaderPath = "/Users/erikjourgensen/Desktop/April 2026/Repositories/AnimatedNoise/plugin/UI/shader.wgsl";
+        mLastShaderWriteTime = std::filesystem::last_write_time(mShaderPath);
+    #endif
 
-        // 6 Release buffers
+        WGPUBufferDescriptor bufferDesc{};
+        bufferDesc.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
+        bufferDesc.mappedAtCreation = false;
 
-        return true;
+        bufferDesc.label = WGPU_STR("Vertex Position");
+        bufferDesc.size = positionData.size() * sizeof(float);
+        mPositionBuffer = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
+        wgpuQueueWriteBuffer(mQueue, mPositionBuffer, 0, positionData.data(), bufferDesc.size);
+
+        bufferDesc.label = WGPU_STR("Vertex Color");
+        bufferDesc.size = colorData.size() * sizeof(float);
+        mColorBuffer = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
+        wgpuQueueWriteBuffer(mQueue, mColorBuffer, 0, colorData.data(), bufferDesc.size);
+
+        InitializeBuffers();
+
+
+    return true;
     }
 
 
@@ -187,6 +175,10 @@ bool WebGpuWindow::initSurface(void* nativeHandle, uint32_t width, uint32_t heig
 
 bool WebGpuWindow::createPipeline()
 {
+
+    if (mBindGroup)    { wgpuBindGroupRelease(mBindGroup);    mBindGroup    = nullptr; }
+    if (mUniformBuffer){ wgpuBufferRelease(mUniformBuffer);   mUniformBuffer= nullptr; }
+    if (mPipeline)     { wgpuRenderPipelineRelease(mPipeline); mPipeline    = nullptr; }
 
     mColorTarget.format = mSurfaceFormat;  // now valid
     mColorTarget.blend  = &mBlendState;
@@ -230,9 +222,20 @@ bool WebGpuWindow::createPipeline()
     return true;
 }
 
-void WebGpuWindow::renderFrame(const float currentTime) const
+void WebGpuWindow::renderFrame(const float currentTime)
 {
+
+    #ifdef DEBUG
+        auto writeTime = std::filesystem::last_write_time(mShaderPath);
+        if (writeTime != mLastShaderWriteTime) {
+            mLastShaderWriteTime = writeTime;
+            reloadShader();
+            return; // skip this frame, render cleanly next frame
+        }
+    #endif
+
         if (!mSurface) return; //Surface check
+        if (!mPipeline) return;  // guard against failed reload
 
         WGPUSurfaceTexture surfaceTexture = {};
         wgpuSurfaceGetCurrentTexture(mSurface, &surfaceTexture);
@@ -279,13 +282,16 @@ void WebGpuWindow::renderFrame(const float currentTime) const
 
 
         const WGPURenderPassEncoder renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
+
         wgpuRenderPassEncoderSetPipeline(renderPass, mPipeline);
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mPositionBuffer, 0, wgpuBufferGetSize(mPositionBuffer));
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 1, mColorBuffer, 0, wgpuBufferGetSize(mColorBuffer));
         wgpuRenderPassEncoderSetBindGroup(renderPass, 0, mBindGroup, 0, nullptr);
-        wgpuRenderPassEncoderDraw(renderPass, 3, 1, 0, 0); // 3 vertices for your triangle
+        wgpuRenderPassEncoderDraw(renderPass, vertexCount, 1, 0, 0);
+
+        // wgpuRenderPassEncoderDraw(renderPass, 3, 1, 0, 0); // 3 vertices for your triangle
         wgpuRenderPassEncoderEnd(renderPass);
         wgpuRenderPassEncoderRelease(renderPass);
-
-
 
         WGPUCommandBufferDescriptor cmdDesc = {};
         cmdDesc.label = WGPU_STR("Frame command buffer");
@@ -313,6 +319,11 @@ void WebGpuWindow::onResize (uint32_t width, uint32_t height)
 
 void WebGpuWindow::terminate()
 {
+    if (vertexBuffer) {
+        wgpuBufferRelease(vertexBuffer);
+        vertexBuffer = nullptr;
+    }
+
     if (mBufferOne)
     {
         wgpuBufferRelease(mBufferOne);
@@ -321,8 +332,9 @@ void WebGpuWindow::terminate()
     if (mBufferTwo)
     {
         wgpuBufferRelease(mBufferTwo);
-        mBufferOne = nullptr;
+        mBufferTwo = nullptr;
     }
+
     if (mBindGroup)
     {
         wgpuBindGroupRelease(mBindGroup);
@@ -414,6 +426,168 @@ void WebGpuWindow::wgpuPollEvents([[maybe_unused]] WGPUDevice device, [[maybe_un
 {
     wgpuDeviceTick(device);
 }
+
+void WebGpuWindow::setDefault(WGPULimits &limits) {
+    limits.maxTextureDimension1D = WGPU_LIMIT_U32_UNDEFINED;
+    limits.maxTextureDimension2D = WGPU_LIMIT_U32_UNDEFINED;
+    limits.maxTextureDimension3D = WGPU_LIMIT_U32_UNDEFINED;
+    // [...] Set everything to WGPU_LIMIT_U32_UNDEFINED or WGPU_LIMIT_U64_UNDEFINED to mean no limit
+}
+
+WGPURequiredLimits WebGpuWindow::GetRequiredLimits(WGPUAdapter adapter)
+{
+    // Get adapter supported limits, in case we need them
+    WGPUSupportedLimits supportedLimits;
+    supportedLimits.nextInChain = nullptr;
+    wgpuAdapterGetLimits(adapter, &supportedLimits);
+
+    WGPURequiredLimits requiredLimits{};
+    setDefault(requiredLimits.limits);
+
+    // We use at most 1 vertex attribute for now
+    requiredLimits.limits.maxVertexAttributes = 2;
+    // We should also tell that we use 1 vertex buffers
+    requiredLimits.limits.maxVertexBuffers = 1;
+    // Maximum size of a buffer is 6 vertices of 2 float each
+    requiredLimits.limits.maxBufferSize = 6 * 5 * sizeof(float);
+    // Maximum stride between 2 consecutive vertices in the vertex buffer
+    requiredLimits.limits.maxVertexBufferArrayStride = 5 * sizeof(float);
+    requiredLimits.limits.maxInterStageShaderComponents = 3;
+
+
+    // [...] Other device limits
+
+    return requiredLimits;
+}
+
+void WebGpuWindow::BufferTest()
+{
+    //========================================================
+        //Buffer Experimentation
+        //========================================================
+        // 1 Create a first buffer
+        mBufferDescriptor.nextInChain = nullptr;
+        mBufferDescriptor.label = WGPU_STR("GPU-side buffer");
+        mBufferDescriptor.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_CopySrc;
+        mBufferDescriptor.size = 16;
+        mBufferDescriptor.mappedAtCreation = false;
+        mBufferOne = wgpuDeviceCreateBuffer(mDevice, &mBufferDescriptor);
+        // 2 Create a second buffer
+        mBufferDescriptor.label = WGPU_STR("Output buffer");
+        mBufferDescriptor.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead;
+        mBufferTwo = wgpuDeviceCreateBuffer(mDevice, &mBufferDescriptor);
+
+        // // 3 Write input data -- Breaking Here
+
+        std::vector<uint8_t> numbers(16);
+        for (uint8_t i = 0; i < 16; ++i) numbers[i] = i;
+        wgpuQueueWriteBuffer(mQueue, mBufferOne, 0, numbers.data(), numbers.size());
+        //
+        // // 4 Encode and submit the buffer to buffer copy
+        mEncoder = wgpuDeviceCreateCommandEncoder(mDevice, nullptr);
+        wgpuCommandEncoderCopyBufferToBuffer(mEncoder, mBufferOne, 0, mBufferTwo, 0, 16);
+
+        WGPUCommandBuffer command = wgpuCommandEncoderFinish(mEncoder, nullptr);
+        wgpuCommandEncoderRelease(mEncoder);
+        wgpuQueueSubmit(mQueue, 1, &command);
+        wgpuCommandBufferRelease(command);
+
+        // Copy Data
+        struct MapContext {
+            bool ready;
+            WGPUBuffer buffer;
+        };
+        MapContext context = { false, mBufferTwo };
+
+        auto onBuffer2Mapped = [](WGPUMapAsyncStatus status, WGPUStringView /*message*/,
+                                   void* pUserData1, void* /*pUserData2*/) {
+            MapContext* ctx = static_cast<MapContext*>(pUserData1);
+        ctx->ready = true;
+        std::cout << "Buffer 2 mapped with status " << status << std::endl;
+        if (status != WGPUMapAsyncStatus_Success) return;
+
+        uint8_t* bufferData = (uint8_t*)wgpuBufferGetConstMappedRange(ctx->buffer, 0, 16);
+        for (int i = 0; i < 16; ++i) {
+            std::cout << "data[" << i << "] = " << (int)bufferData[i] << std::endl;
+        }
+        wgpuBufferUnmap(ctx->buffer);
+        };
+
+        WGPUBufferMapCallbackInfo2 callbackInfo{};
+        callbackInfo.nextInChain = nullptr;
+        callbackInfo.mode        = WGPUCallbackMode_AllowSpontaneous;
+        callbackInfo.callback    = onBuffer2Mapped;
+        callbackInfo.userdata1   = (void*)&context;
+        callbackInfo.userdata2   = nullptr;
+
+        wgpuBufferMapAsync2(mBufferTwo, WGPUMapMode_Read, 0, 16, callbackInfo);
+
+        while (!context.ready) {
+            wgpuInstanceProcessEvents(mInstance);
+        }
+
+        // 6 Release buffers
+        wgpuBufferRelease(mBufferOne);  mBufferOne = nullptr;
+        wgpuBufferRelease(mBufferTwo);  mBufferTwo = nullptr;
+}
+
+void WebGpuWindow::InitializeBuffers()
+{
+    mVertexBufferLayouts.resize(2); // ← must come first
+
+    // Attribute 0: Position (x, y)
+    mVertexAttribs[0].shaderLocation = 0;
+    mVertexAttribs[0].format         = WGPUVertexFormat_Float32x2;
+    mVertexAttribs[0].offset         = 0;
+
+    // Attribute 1: Color (r, g, b)
+    mVertexAttribs[1].shaderLocation = 1;
+    mVertexAttribs[1].format         = WGPUVertexFormat_Float32x3;
+    mVertexAttribs[1].offset         = 2 * sizeof(float);
+
+    mPositionAttrib.shaderLocation = 0; // @location(0)
+    mPositionAttrib.format = WGPUVertexFormat_Float32x2; // size of position
+    mPositionAttrib.offset = 0;
+
+    mVertexBufferLayouts[0].attributeCount = 1;
+    mVertexBufferLayouts[0].attributes = &mPositionAttrib;
+    mVertexBufferLayouts[0].arrayStride = 2 * sizeof(float); // stride = size of position
+    mVertexBufferLayouts[0].stepMode = WGPUVertexStepMode_Vertex;
+
+    mColorAttrib.shaderLocation = 1; // @location(1)
+    mColorAttrib.format = WGPUVertexFormat_Float32x3; // size of color
+    mColorAttrib.offset = 0;
+
+    mVertexBufferLayouts[1].attributeCount = 1;
+    mVertexBufferLayouts[1].attributes = &mColorAttrib;
+    mVertexBufferLayouts[1].arrayStride = 3 * sizeof(float); // stride = size of color
+    mVertexBufferLayouts[1].stepMode = WGPUVertexStepMode_Vertex;
+
+    mPipelineDesc.vertex.bufferCount = static_cast<uint32_t>(mVertexBufferLayouts.size());
+    mPipelineDesc.vertex.buffers     = mVertexBufferLayouts.data();
+}
+
+#ifdef DEBUG
+void WebGpuWindow::reloadShader() {
+    mShaderSource = loadShader(mShaderPath.string());
+    mShaderCodeDesc.code = { mShaderSource.c_str(), mShaderSource.size() };
+
+    wgpuShaderModuleRelease(mShaderModule);
+    mShaderModule = wgpuDeviceCreateShaderModule(mDevice, &mShaderDesc);
+
+    if (!mShaderModule) {
+        std::cerr << "Shader compile failed — keeping old pipeline." << std::endl;
+        return;
+    }
+
+    // ← This is the missing line — update the pipeline descriptor before rebuilding
+    mPipelineDesc.vertex.module = mShaderModule;
+
+    createPipeline();
+    std::cout << "Shader reloaded." << std::endl;
+}
+#endif
+
 
 
 
