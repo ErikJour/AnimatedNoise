@@ -9,157 +9,150 @@ WebGpuWindow::~WebGpuWindow() = default;
 
 void WebGpuWindow::setWindowColor()
 {
+    //=================================================================
+    // Experiment with window color
+    //=================================================================
     mRed = 0.3;
     mGreen = 0.25;
     mBlue = 0.2;
 }
 
 bool WebGpuWindow::initialize()
-    {
-        setWindowColor();
-        //=================================================================
-        // Instance
-        //=================================================================
-        mDescriptor.nextInChain = nullptr; //This is a way to hook up future wegpu features. Typically set this to null
+{
+    setWindowColor();
+    //=================================================================
+    // Instance
+    //=================================================================
+    WGPUInstanceDescriptor descriptor = {};
+    descriptor.nextInChain = nullptr;
+    WGPUDawnTogglesDescriptor toggles = {};
+    toggles.chain.next = nullptr;
+    toggles.chain.sType = WGPUSType_DawnTogglesDescriptor;
+    toggles.disabledToggleCount = 0;
+    toggles.enabledToggleCount = 1;
+    static constexpr auto toggleName = "enable_immediate_error_handling";
+    toggles.enabledToggles = &toggleName;
+    descriptor.nextInChain = &toggles.chain;
 
-        WGPUDawnTogglesDescriptor toggles;
-        toggles.chain.next = nullptr;
-        toggles.chain.sType = WGPUSType_DawnTogglesDescriptor;
-        toggles.disabledToggleCount = 0;
-        toggles.enabledToggleCount = 1;
-        const auto toggleName = "enable_immediate_error_handling";
-        toggles.enabledToggles = &toggleName;
-        mDescriptor.nextInChain = &toggles.chain;
-
-        mInstance = wgpuCreateInstance(&mDescriptor); //instance created here. Takes descriptor as argument
-
-        //Quick check to make sure our instance exists
-        if (!mInstance) {
+    mInstance = wgpuCreateInstance(&descriptor);
+    if (!mInstance) {
             std::cerr << "Failed to create WGPUInstance." << std::endl;
             return false;
         }
-        std::cout << "WGPU instance: " << mInstance << std::endl;
-
-        //=================================================================
-        // Adapter
-        //=================================================================
-        mAdapterOpts.nextInChain = nullptr;
-        mAdapter = requestAdapterSync(mInstance, &mAdapterOpts); //In utilityHelper.h
-        if (!mAdapter) {
+    std::cout << "WGPU instance: " << mInstance << std::endl;
+    //=================================================================
+    // Adapter
+    //=================================================================
+    WGPURequestAdapterOptions adapterOpts = {};;
+    adapterOpts.nextInChain = nullptr;
+    mAdapter = requestAdapterSync(mInstance, &adapterOpts);
+    if (!mAdapter) {
             std::cerr << "Failed to get WGPUAdapter." << std::endl;
             return false;
-        }
-        getAdapter(mAdapter, mInitProperties);
-        //Check hardware limits here:
-        getLimits(mAdapter, mSupportedLimits);
-
-        //set Features
-        setFeatures(mAdapter);
-
-        //=================================================================
-        // Device - Our main object to interact with
-        //=================================================================
-        WGPUDeviceDescriptor deviceDesc = {};
-        deviceDesc.label = WGPU_STR("My Device");
-        deviceDesc.deviceLostCallbackInfo2.callback = [](WGPUDevice const*, WGPUDeviceLostReason reason, WGPUStringView message, void*, void*) {
+    }
+    getAdapter(mAdapter, mInitProperties);
+    getLimits(mAdapter, mSupportedLimits);
+    setFeatures(mAdapter);
+    //=================================================================
+    // Device - Our main object to interact with
+    //=================================================================
+    WGPUDeviceDescriptor deviceDesc = {};
+    deviceDesc.label = WGPU_STR("My Device");
+    deviceDesc.deviceLostCallbackInfo2.callback = [](WGPUDevice const*,
+                                                            const WGPUDeviceLostReason reason,
+                                                            const WGPUStringView message,
+                                                            void*, void*) {
             if (reason == WGPUDeviceLostReason_Destroyed) return;
             std::cerr << "Device lost: reason " << reason;
             if (message.length > 0) std::cerr << " (" << message.data << ")";
             std::cerr << std::endl;
-        };
-        deviceDesc.deviceLostCallbackInfo2.mode = WGPUCallbackMode_AllowSpontaneous;
-        deviceDesc.uncapturedErrorCallbackInfo2.callback = [](WGPUDevice const*, WGPUErrorType type, WGPUStringView message, void*, void*) {
+    };
+    deviceDesc.deviceLostCallbackInfo2.mode = WGPUCallbackMode_AllowSpontaneous;
+    deviceDesc.uncapturedErrorCallbackInfo2.callback = [](WGPUDevice const*, WGPUErrorType type, WGPUStringView message, void*, void*) {
             std::cerr << "Uncaptured device error: type " << type;
             if (message.length > 0) std::cerr << " (" << message.data << ")";
             std::cerr << std::endl;
-        };
+    };
 
-        //Recquired limits
-        // WGPURequiredLimits requiredLimits = GetRequiredLimits(mAdapter);
-        deviceDesc.requiredLimits = nullptr;
+    deviceDesc.requiredLimits = nullptr;
 
-        mDevice = requestDeviceSync(mInstance, mAdapter, &deviceDesc);
-        if (!mDevice) {
+    mDevice = requestDeviceSync(mInstance, mAdapter, &deviceDesc);
+    if (!mDevice) {
             std::cerr << "Failed to get WGPUDevice." << std::endl;
             return false;
-        }
-        //=================================================================
-        // Queue
-        //=================================================================
-        mQueue = wgpuDeviceGetQueue(mDevice);
-
-        //=================================================================
-        // Shader Module
-        //=================================================================
-        // Set the chained struct's header
-        mShaderCodeDesc.chain.next = nullptr;
-        mShaderCodeDesc.chain.sType = WGPUSType_ShaderSourceWGSL;
-        mShaderCodeDesc.code        = { shaderSource, strlen(shaderSource) }; // ← missing
-        mShaderDesc.nextInChain = &mShaderCodeDesc.chain;
-        mShaderModule = wgpuDeviceCreateShaderModule(mDevice, &mShaderDesc);
-        //=================================================================
-        // Pipeline Descriptor
-        //=================================================================
-        mPipelineDesc.nextInChain = nullptr;
-        mPipelineDesc.layout = nullptr;
-        //RENDER PIPELINE
-        // 1 Describe vertex pipeline state
-        mPipelineDesc.vertex.bufferCount = 0;
-        mPipelineDesc.vertex.buffers = nullptr;
-        mPipelineDesc.vertex.module = mShaderModule;
-        mPipelineDesc.vertex.entryPoint = WGPU_STR("vs_main");
-        mPipelineDesc.vertex.constantCount = 0;
-        mPipelineDesc.vertex.constants = nullptr;
-        // 2 Describe primitive pipeline state
-        mPipelineDesc.primitive.topology = WGPUPrimitiveTopology_TriangleList;
-        mPipelineDesc.primitive.stripIndexFormat = WGPUIndexFormat_Undefined;
-        mPipelineDesc.primitive.frontFace = WGPUFrontFace_CCW;
-        mPipelineDesc.primitive.cullMode = WGPUCullMode_None;
-        //blending stage configuration
-        mPipelineDesc.fragment = &mFragmentState;
-        // 4 Describe stencil/depth pipeline state
-        mPipelineDesc.depthStencil = nullptr;
-        mColorTarget.blend = &mBlendState;
-        mColorTarget.writeMask = WGPUColorWriteMask_All;
-        mBlendState.color.srcFactor = WGPUBlendFactor_SrcAlpha;
-        mBlendState.color.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
-        mBlendState.color.operation = WGPUBlendOperation_Add;
-        mBlendState.alpha.srcFactor = WGPUBlendFactor_Zero;
-        mBlendState.alpha.dstFactor = WGPUBlendFactor_One;
-        mBlendState.alpha.operation = WGPUBlendOperation_Add;
-        // 5 Describe multi-sampling state
-        mPipelineDesc.multisample.count = 1;         // Samples per pixel
-        mPipelineDesc.multisample.mask = ~0u;         // Default value for the mask, meaning "all bits on"
-        mPipelineDesc.multisample.alphaToCoverageEnabled = false;         // Default value as well (irrelevant for count = 1 anyways)
-
-        //Vertex Shader
-        vertexCount = static_cast<uint32_t>(positionData.size() / 2);
-        assert(vertexCount == static_cast<uint32_t>(colorData.size() / 3));
+    }
+    //=================================================================
+    // Queue
+    //=================================================================
+    mQueue = wgpuDeviceGetQueue(mDevice);
+    //=================================================================
+    // Shader Module
+    //=================================================================
+    // Set the chained struct's header
+    mShaderCodeDesc.chain.next = nullptr;
+    mShaderCodeDesc.chain.sType = WGPUSType_ShaderSourceWGSL;
+    mShaderCodeDesc.code        = { shaderSource, strlen(shaderSource) }; // ← missing
+    mShaderDesc.nextInChain = &mShaderCodeDesc.chain;
+    mShaderModule = wgpuDeviceCreateShaderModule(mDevice, &mShaderDesc);
+    //=================================================================
+    // Pipeline Descriptor
+    //=================================================================
+    mPipelineDesc.nextInChain = nullptr;
+    mPipelineDesc.layout = nullptr;
+    //RENDER PIPELINE
+    // 1 Describe vertex pipeline state
+    mPipelineDesc.vertex.bufferCount = 0;
+    mPipelineDesc.vertex.buffers = nullptr;
+    mPipelineDesc.vertex.module = mShaderModule;
+    mPipelineDesc.vertex.entryPoint = WGPU_STR("vs_main");
+    mPipelineDesc.vertex.constantCount = 0;
+    mPipelineDesc.vertex.constants = nullptr;
+    // 2 Describe primitive pipeline state
+    mPipelineDesc.primitive.topology = WGPUPrimitiveTopology_TriangleList;
+    mPipelineDesc.primitive.stripIndexFormat = WGPUIndexFormat_Undefined;
+    mPipelineDesc.primitive.frontFace = WGPUFrontFace_CCW;
+    mPipelineDesc.primitive.cullMode = WGPUCullMode_None;
+    //blending stage configuration
+    mPipelineDesc.fragment = &mFragmentState;
+    // 4 Describe stencil/depth pipeline state
+    mPipelineDesc.depthStencil = nullptr;
+    mColorTarget.blend = &mBlendState;
+    mColorTarget.writeMask = WGPUColorWriteMask_All;
+    mBlendState.color.srcFactor = WGPUBlendFactor_SrcAlpha;
+    mBlendState.color.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
+    mBlendState.color.operation = WGPUBlendOperation_Add;
+    mBlendState.alpha.srcFactor = WGPUBlendFactor_Zero;
+    mBlendState.alpha.dstFactor = WGPUBlendFactor_One;
+    mBlendState.alpha.operation = WGPUBlendOperation_Add;
+    // 5 Describe multi-sampling state
+    mPipelineDesc.multisample.count = 1;
+    mPipelineDesc.multisample.mask = ~0u;
+    mPipelineDesc.multisample.alphaToCoverageEnabled = false;
+    //Vertex Shader
+    vertexCount = static_cast<uint32_t>(positionData.size() / 2);
+    assert(vertexCount == static_cast<uint32_t>(colorData.size() / 3));
 
     #ifdef DEBUG
         mShaderPath = "/Users/erikjourgensen/Desktop/April 2026/Repositories/AnimatedNoise/plugin/UI/shader.wgsl";
         mLastShaderWriteTime = std::filesystem::last_write_time(mShaderPath);
     #endif
 
-        WGPUBufferDescriptor bufferDesc{};
-        bufferDesc.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
-        bufferDesc.mappedAtCreation = false;
+    WGPUBufferDescriptor bufferDesc{};
+    bufferDesc.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
+    bufferDesc.mappedAtCreation = false;
+    bufferDesc.label = WGPU_STR("Vertex Position");
+    bufferDesc.size = positionData.size() * sizeof(float);
+    mPositionBuffer = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
+    wgpuQueueWriteBuffer(mQueue, mPositionBuffer, 0, positionData.data(), bufferDesc.size);
 
-        bufferDesc.label = WGPU_STR("Vertex Position");
-        bufferDesc.size = positionData.size() * sizeof(float);
-        mPositionBuffer = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
-        wgpuQueueWriteBuffer(mQueue, mPositionBuffer, 0, positionData.data(), bufferDesc.size);
-
-        bufferDesc.label = WGPU_STR("Vertex Color");
-        bufferDesc.size = colorData.size() * sizeof(float);
-        mColorBuffer = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
-        wgpuQueueWriteBuffer(mQueue, mColorBuffer, 0, colorData.data(), bufferDesc.size);
-
-        InitializeBuffers();
-
+    bufferDesc.label = WGPU_STR("Vertex Color");
+    bufferDesc.size = colorData.size() * sizeof(float);
+    mColorBuffer = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
+    wgpuQueueWriteBuffer(mQueue, mColorBuffer, 0, colorData.data(), bufferDesc.size);
+    InitializeBuffers();
 
     return true;
-    }
+}
 
 
 bool WebGpuWindow::initSurface(void* nativeHandle, uint32_t width, uint32_t height)
@@ -169,13 +162,12 @@ bool WebGpuWindow::initSurface(void* nativeHandle, uint32_t width, uint32_t heig
 #endif
     if (!mSurface) return false;
 
-    applySurfaceConfig(width, height);  // sets mSurfaceFormat
-    return createPipeline();            // now safe to use mSurfaceFormat
+    applySurfaceConfig(width, height);
+    return createPipeline();
 }
 
 bool WebGpuWindow::createPipeline()
 {
-
     if (mBindGroup)    { wgpuBindGroupRelease(mBindGroup);    mBindGroup    = nullptr; }
     if (mUniformBuffer){ wgpuBufferRelease(mUniformBuffer);   mUniformBuffer= nullptr; }
     if (mPipeline)     { wgpuRenderPipelineRelease(mPipeline); mPipeline    = nullptr; }
@@ -197,34 +189,32 @@ bool WebGpuWindow::createPipeline()
         std::cerr << "Failed to create render pipeline." << std::endl;
         return false;
     }
-
-        //Shader
-        // 1. Create the Buffer
-        WGPUBufferDescriptor bufferDesc = {};
-        bufferDesc.size = sizeof(MyUniforms);
-        bufferDesc.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
-        mUniformBuffer = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
-
-        // 2. Create the Bind Group (This connects the buffer to @binding(0))
-        // We'll get the layout from the pipeline after it's created
-        WGPUBindGroupEntry entry = {};
-        entry.binding = 0;
-        entry.buffer = mUniformBuffer;
-        entry.offset = 0;
-        entry.size = sizeof(MyUniforms);
-
-        WGPUBindGroupDescriptor bgDesc = {};
-        bgDesc.layout = wgpuRenderPipelineGetBindGroupLayout(mPipeline, 0);
-        bgDesc.entryCount = 1;
-        bgDesc.entries = &entry;
-        mBindGroup = wgpuDeviceCreateBindGroup(mDevice, &bgDesc);
+    //=================================================================
+    // Shader
+    //=================================================================
+    // 1. Create the Buffer
+    WGPUBufferDescriptor bufferDesc = {};
+    bufferDesc.size = sizeof(MyUniforms);
+    bufferDesc.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
+    mUniformBuffer = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
+    // 2. Create the Bind Group (This connects the buffer to @binding(0))
+    // We'll get the layout from the pipeline after it's created
+    WGPUBindGroupEntry entry = {};
+    entry.binding = 0;
+    entry.buffer = mUniformBuffer;
+    entry.offset = 0;
+    entry.size = sizeof(MyUniforms);
+    WGPUBindGroupDescriptor bgDesc = {};
+    bgDesc.layout = wgpuRenderPipelineGetBindGroupLayout(mPipeline, 0);
+    bgDesc.entryCount = 1;
+    bgDesc.entries = &entry;
+    mBindGroup = wgpuDeviceCreateBindGroup(mDevice, &bgDesc);
 
     return true;
 }
 
 void WebGpuWindow::renderFrame(const float currentTime)
 {
-
     #ifdef DEBUG
         auto writeTime = std::filesystem::last_write_time(mShaderPath);
         if (writeTime != mLastShaderWriteTime) {
@@ -248,14 +238,8 @@ void WebGpuWindow::renderFrame(const float currentTime)
         viewDesc.mipLevelCount = 1;
         viewDesc.arrayLayerCount = 1;
         viewDesc.aspect = WGPUTextureAspect_All;
-
-        //================================================================
         setUniforms(mQueue, mUniformBuffer, currentTime);
-        //================================================================
-
-
         WGPUTextureView targetView = wgpuTextureCreateView(surfaceTexture.texture, &viewDesc);
-
         // The view holds its own reference to the texture, so we can release
         // the surface texture's reference now (Dawn-specific; wgpu-native requires
         // this to happen after wgpuSurfacePresent instead).
@@ -280,7 +264,6 @@ void WebGpuWindow::renderFrame(const float currentTime)
         renderPassDesc.colorAttachments     = &colorAttachment;
         renderPassDesc.depthStencilAttachment = nullptr;
 
-
         const WGPURenderPassEncoder renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
 
         wgpuRenderPassEncoderSetPipeline(renderPass, mPipeline);
@@ -289,7 +272,7 @@ void WebGpuWindow::renderFrame(const float currentTime)
         wgpuRenderPassEncoderSetBindGroup(renderPass, 0, mBindGroup, 0, nullptr);
         wgpuRenderPassEncoderDraw(renderPass, vertexCount, 1, 0, 0);
 
-        // wgpuRenderPassEncoderDraw(renderPass, 3, 1, 0, 0); // 3 vertices for your triangle
+        // wgpuRenderPassEncoderDraw(renderPass, 3, 1, 0, 0); // 3 vertices for triangle
         wgpuRenderPassEncoderEnd(renderPass);
         wgpuRenderPassEncoderRelease(renderPass);
 
@@ -319,10 +302,6 @@ void WebGpuWindow::onResize (uint32_t width, uint32_t height)
 
 void WebGpuWindow::terminate()
 {
-    if (vertexBuffer) {
-        wgpuBufferRelease(vertexBuffer);
-        vertexBuffer = nullptr;
-    }
 
     if (mBufferOne)
     {
@@ -463,95 +442,87 @@ WGPURequiredLimits WebGpuWindow::GetRequiredLimits(WGPUAdapter adapter)
 void WebGpuWindow::BufferTest()
 {
     //========================================================
-        //Buffer Experimentation
-        //========================================================
-        // 1 Create a first buffer
-        mBufferDescriptor.nextInChain = nullptr;
-        mBufferDescriptor.label = WGPU_STR("GPU-side buffer");
-        mBufferDescriptor.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_CopySrc;
-        mBufferDescriptor.size = 16;
-        mBufferDescriptor.mappedAtCreation = false;
-        mBufferOne = wgpuDeviceCreateBuffer(mDevice, &mBufferDescriptor);
-        // 2 Create a second buffer
-        mBufferDescriptor.label = WGPU_STR("Output buffer");
-        mBufferDescriptor.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead;
-        mBufferTwo = wgpuDeviceCreateBuffer(mDevice, &mBufferDescriptor);
+    //Buffer Experimentation
+    //========================================================
+    // 1 Create a first buffer
+    WGPUBufferDescriptor  bufferDescriptor = {};
+    bufferDescriptor.nextInChain = nullptr;
+    bufferDescriptor.label = WGPU_STR("GPU-side buffer");
+    bufferDescriptor.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_CopySrc;
+    bufferDescriptor.size = 16;
+    bufferDescriptor.mappedAtCreation = false;
+    mBufferOne = wgpuDeviceCreateBuffer(mDevice, &bufferDescriptor);
+    // 2 Create a second buffer
+    bufferDescriptor.label = WGPU_STR("Output buffer");
+    bufferDescriptor.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead;
+    mBufferTwo = wgpuDeviceCreateBuffer(mDevice, &bufferDescriptor);
+    //3 Write input data -- Breaking Here
+    std::vector<uint8_t> numbers(16);
+    for (uint8_t i = 0; i < 16; ++i) numbers[i] = i;
+    wgpuQueueWriteBuffer(mQueue, mBufferOne, 0, numbers.data(), numbers.size());
+    //4 Encode and submit the buffer to buffer copy
+    WGPUCommandEncoder encoder = {};
+    encoder = wgpuDeviceCreateCommandEncoder(mDevice, nullptr);
+    wgpuCommandEncoderCopyBufferToBuffer(encoder,
+                                        mBufferOne,
+                                        0,
+                                        mBufferTwo,
+                                        0,
+                                        16);
 
-        // // 3 Write input data -- Breaking Here
+    WGPUCommandBuffer command = wgpuCommandEncoderFinish(encoder, nullptr);
+    wgpuCommandEncoderRelease(encoder);
+    wgpuQueueSubmit(mQueue, 1, &command);
+    wgpuCommandBufferRelease(command);
 
-        std::vector<uint8_t> numbers(16);
-        for (uint8_t i = 0; i < 16; ++i) numbers[i] = i;
-        wgpuQueueWriteBuffer(mQueue, mBufferOne, 0, numbers.data(), numbers.size());
-        //
-        // // 4 Encode and submit the buffer to buffer copy
-        mEncoder = wgpuDeviceCreateCommandEncoder(mDevice, nullptr);
-        wgpuCommandEncoderCopyBufferToBuffer(mEncoder, mBufferOne, 0, mBufferTwo, 0, 16);
-
-        WGPUCommandBuffer command = wgpuCommandEncoderFinish(mEncoder, nullptr);
-        wgpuCommandEncoderRelease(mEncoder);
-        wgpuQueueSubmit(mQueue, 1, &command);
-        wgpuCommandBufferRelease(command);
-
-        // Copy Data
-        struct MapContext {
+    // Copy Data
+    struct MapContext {
             bool ready;
             WGPUBuffer buffer;
-        };
-        MapContext context = { false, mBufferTwo };
+    };
+    MapContext context = { false, mBufferTwo };
 
-        auto onBuffer2Mapped = [](WGPUMapAsyncStatus status, WGPUStringView /*message*/,
+    auto onBuffer2Mapped = [](WGPUMapAsyncStatus status, WGPUStringView /*message*/,
                                    void* pUserData1, void* /*pUserData2*/) {
-            MapContext* ctx = static_cast<MapContext*>(pUserData1);
-        ctx->ready = true;
-        std::cout << "Buffer 2 mapped with status " << status << std::endl;
-        if (status != WGPUMapAsyncStatus_Success) return;
+    MapContext* ctx = static_cast<MapContext*>(pUserData1);
+    ctx->ready = true;
+    std::cout << "Buffer 2 mapped with status " << status << std::endl;
+    if (status != WGPUMapAsyncStatus_Success) return;
 
-        uint8_t* bufferData = (uint8_t*)wgpuBufferGetConstMappedRange(ctx->buffer, 0, 16);
-        for (int i = 0; i < 16; ++i) {
-            std::cout << "data[" << i << "] = " << (int)bufferData[i] << std::endl;
-        }
-        wgpuBufferUnmap(ctx->buffer);
-        };
+    uint8_t* bufferData = (uint8_t*)wgpuBufferGetConstMappedRange(ctx->buffer, 0, 16);
+    for (int i = 0; i < 16; ++i) {
+        std::cout << "data[" << i << "] = " << (int)bufferData[i] << std::endl;
+    }
+    wgpuBufferUnmap(ctx->buffer);
+    };
 
-        WGPUBufferMapCallbackInfo2 callbackInfo{};
-        callbackInfo.nextInChain = nullptr;
-        callbackInfo.mode        = WGPUCallbackMode_AllowSpontaneous;
-        callbackInfo.callback    = onBuffer2Mapped;
-        callbackInfo.userdata1   = (void*)&context;
-        callbackInfo.userdata2   = nullptr;
+    WGPUBufferMapCallbackInfo2 callbackInfo{};
+    callbackInfo.nextInChain = nullptr;
+    callbackInfo.mode        = WGPUCallbackMode_AllowSpontaneous;callbackInfo.callback    = onBuffer2Mapped;
+    callbackInfo.userdata1   = (void*)&context;
+    callbackInfo.userdata2   = nullptr;
 
-        wgpuBufferMapAsync2(mBufferTwo, WGPUMapMode_Read, 0, 16, callbackInfo);
+    wgpuBufferMapAsync2(mBufferTwo, WGPUMapMode_Read, 0, 16, callbackInfo);
 
-        while (!context.ready) {
-            wgpuInstanceProcessEvents(mInstance);
-        }
-
-        // 6 Release buffers
-        wgpuBufferRelease(mBufferOne);  mBufferOne = nullptr;
-        wgpuBufferRelease(mBufferTwo);  mBufferTwo = nullptr;
+    while (!context.ready) {
+        wgpuInstanceProcessEvents(mInstance);
+    }
+    // 6 Release buffers
+    wgpuBufferRelease(mBufferOne);  mBufferOne = nullptr;
+    wgpuBufferRelease(mBufferTwo);  mBufferTwo = nullptr;
 }
 
 void WebGpuWindow::InitializeBuffers()
 {
-    mVertexBufferLayouts.resize(2); // ← must come first
-
-    // Attribute 0: Position (x, y)
-    mVertexAttribs[0].shaderLocation = 0;
-    mVertexAttribs[0].format         = WGPUVertexFormat_Float32x2;
-    mVertexAttribs[0].offset         = 0;
-
-    // Attribute 1: Color (r, g, b)
-    mVertexAttribs[1].shaderLocation = 1;
-    mVertexAttribs[1].format         = WGPUVertexFormat_Float32x3;
-    mVertexAttribs[1].offset         = 2 * sizeof(float);
+    mVertexBufferLayouts.resize(2);
 
     mPositionAttrib.shaderLocation = 0; // @location(0)
-    mPositionAttrib.format = WGPUVertexFormat_Float32x2; // size of position
+    mPositionAttrib.format = WGPUVertexFormat_Float32x2;
     mPositionAttrib.offset = 0;
 
     mVertexBufferLayouts[0].attributeCount = 1;
     mVertexBufferLayouts[0].attributes = &mPositionAttrib;
-    mVertexBufferLayouts[0].arrayStride = 2 * sizeof(float); // stride = size of position
+    mVertexBufferLayouts[0].arrayStride = 2 * sizeof(float);
     mVertexBufferLayouts[0].stepMode = WGPUVertexStepMode_Vertex;
 
     mColorAttrib.shaderLocation = 1; // @location(1)
@@ -580,7 +551,6 @@ void WebGpuWindow::reloadShader() {
         return;
     }
 
-    // ← This is the missing line — update the pipeline descriptor before rebuilding
     mPipelineDesc.vertex.module = mShaderModule;
 
     createPipeline();

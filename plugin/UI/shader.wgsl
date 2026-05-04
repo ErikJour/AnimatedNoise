@@ -30,6 +30,5 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4f {
-    return vec4f(in.color, 0.3);
-
+    return vec4f(sin(u.time) * in.color, 1.0);
 }

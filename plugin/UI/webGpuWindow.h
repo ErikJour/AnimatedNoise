@@ -93,12 +93,9 @@ private:
     mutable double mRed = {};
     double mGreen = {};
     double mBlue = {};
-    WGPUBuffer vertexBuffer = nullptr;
     uint32_t vertexCount{};
 
-    WGPUInstanceDescriptor         mDescriptor    = {};
     WGPUInstance                   mInstance     = nullptr;
-    WGPURequestAdapterOptions      mAdapterOpts   = {};
     WGPUAdapterInfo                mInitProperties = {};
     WGPUAdapter                    mAdapter      = nullptr;
     WGPUDevice                     mDevice       = nullptr;
@@ -106,6 +103,7 @@ private:
     WGPUSurface                    mSurface      = nullptr;
     WGPUTextureFormat              mSurfaceFormat = WGPUTextureFormat_Undefined;
     WGPUSupportedLimits            mSupportedLimits = {};
+
     WGPURenderPipelineDescriptor   mPipelineDesc = {};
     WGPURenderPipeline             mPipeline = {};
     WGPUFragmentState              mFragmentState = {};
@@ -116,16 +114,13 @@ private:
     WGPUShaderModuleWGSLDescriptor mShaderCodeDesc{};
     WGPUBuffer                     mUniformBuffer = nullptr;
     WGPUBindGroup                  mBindGroup = nullptr;
-    WGPUBufferDescriptor           mBufferDescriptor = {};
     WGPUBuffer                     mBufferOne = nullptr;
     WGPUBuffer                     mBufferTwo = nullptr;
-    WGPUCommandEncoder             mEncoder = nullptr;
     std::vector<WGPUVertexBufferLayout> mVertexBufferLayouts;
-    WGPUVertexAttribute            mVertexAttribs[2]   = {};
-    WGPUVertexAttribute            mPositionAttrib;
-    WGPUBuffer                     mPositionBuffer;
-    WGPUBuffer                     mColorBuffer;
-    WGPUVertexAttribute            mColorAttrib;
+    WGPUVertexAttribute            mPositionAttrib{};
+    WGPUBuffer                     mPositionBuffer{};
+    WGPUBuffer                     mColorBuffer{};
+    WGPUVertexAttribute            mColorAttrib{};
     std::string                    mShaderSource;
 
 
