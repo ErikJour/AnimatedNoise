@@ -9,7 +9,7 @@
 #include "utilityHelper.h"
 #include "GpuSurface.h"
 #include "shaderLoader.h"
-#include "shader.wgsl.h"     // ← correct, this is the generated file
+#include "shader.wgsl.h"
 #include <filesystem>
 
 
@@ -37,7 +37,6 @@ public:
     void onResize(uint32_t width, uint32_t height);
     [[nodiscard]] bool hasSurface() const { return mSurface != nullptr; }
     void terminate();
-
     //==============================================================================
     // Diagnostic helpers
     //==============================================================================
@@ -47,9 +46,6 @@ public:
     void setUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer, float time) const;
     void wgpuPollEvents([[maybe_unused]] WGPUDevice device, [[maybe_unused]] bool yieldToWebBrowser);
     void InitializeBuffers();
-
-
-
 private:
     void applySurfaceConfig(uint32_t width, uint32_t height)
     {
@@ -80,21 +76,20 @@ private:
 #ifdef DEBUG
     void reloadShader();
 #endif
-
     //======================================================
     //System
     //======================================================
     std::filesystem::path mShaderPath;
     std::filesystem::file_time_type mLastShaderWriteTime;
-
     //======================================================
     //Colors
     //======================================================
     mutable double mRed = {};
     double mGreen = {};
     double mBlue = {};
-    uint32_t vertexCount{};
-
+    //======================================================
+    //Primary
+    //======================================================
     WGPUInstance                   mInstance     = nullptr;
     WGPUAdapterInfo                mInitProperties = {};
     WGPUAdapter                    mAdapter      = nullptr;
@@ -103,7 +98,6 @@ private:
     WGPUSurface                    mSurface      = nullptr;
     WGPUTextureFormat              mSurfaceFormat = WGPUTextureFormat_Undefined;
     WGPUSupportedLimits            mSupportedLimits = {};
-
     WGPURenderPipelineDescriptor   mPipelineDesc = {};
     WGPURenderPipeline             mPipeline = {};
     WGPUFragmentState              mFragmentState = {};
@@ -117,12 +111,12 @@ private:
     WGPUBuffer                     mBufferOne = nullptr;
     WGPUBuffer                     mBufferTwo = nullptr;
     std::vector<WGPUVertexBufferLayout> mVertexBufferLayouts;
-    WGPUVertexAttribute            mPositionAttrib{};
-    WGPUBuffer                     mPositionBuffer{};
-    WGPUBuffer                     mColorBuffer{};
-    WGPUVertexAttribute            mColorAttrib{};
+    std::array<WGPUVertexAttribute, 2> mVertexAttribs;
     std::string                    mShaderSource;
 
-
+    //Index Buffers
+    WGPUBuffer mPointBuffer  = nullptr;
+    WGPUBuffer mIndexBuffer  = nullptr;
+    uint32_t   indexCount    = 0;
 };
 

@@ -128,9 +128,6 @@ bool WebGpuWindow::initialize()
     mPipelineDesc.multisample.count = 1;
     mPipelineDesc.multisample.mask = ~0u;
     mPipelineDesc.multisample.alphaToCoverageEnabled = false;
-    //Vertex Shader
-    vertexCount = static_cast<uint32_t>(positionData.size() / 2);
-    assert(vertexCount == static_cast<uint32_t>(colorData.size() / 3));
 
     #ifdef DEBUG
         mShaderPath = "/Users/erikjourgensen/Desktop/April 2026/Repositories/AnimatedNoise/plugin/UI/shader.wgsl";
@@ -138,19 +135,24 @@ bool WebGpuWindow::initialize()
     #endif
 
     WGPUBufferDescriptor bufferDesc{};
-    bufferDesc.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
     bufferDesc.mappedAtCreation = false;
-    bufferDesc.label = WGPU_STR("Vertex Position");
-    bufferDesc.size = positionData.size() * sizeof(float);
-    mPositionBuffer = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
-    wgpuQueueWriteBuffer(mQueue, mPositionBuffer, 0, positionData.data(), bufferDesc.size);
+    //Index Chapter
+    // 1. Point buffer (interleaved x, y, r, g, b)
+    bufferDesc.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
+    bufferDesc.size  = pointData.size() * sizeof(float);
+    bufferDesc.label = WGPU_STR("Point Buffer");
+    mPointBuffer = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
+    wgpuQueueWriteBuffer(mQueue, mPointBuffer, 0, pointData.data(), bufferDesc.size);
+    // 2. Index buffer (reuse bufferDesc, per tutorial)
+    bufferDesc.size = indexData.size() * sizeof(uint16_t);
+    bufferDesc.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
+    bufferDesc.size = (bufferDesc.size + 3ULL) & ~3ULL;
+    indexData.resize((indexData.size() + 1ULL) & ~1ULL);
+    bufferDesc.label = WGPU_STR("Index Buffer");
+    mIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
+    wgpuQueueWriteBuffer(mQueue, mIndexBuffer, 0, indexData.data(), bufferDesc.size);
 
-    bufferDesc.label = WGPU_STR("Vertex Color");
-    bufferDesc.size = colorData.size() * sizeof(float);
-    mColorBuffer = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
-    wgpuQueueWriteBuffer(mQueue, mColorBuffer, 0, colorData.data(), bufferDesc.size);
     InitializeBuffers();
-
     return true;
 }
 
@@ -267,10 +269,10 @@ void WebGpuWindow::renderFrame(const float currentTime)
         const WGPURenderPassEncoder renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
 
         wgpuRenderPassEncoderSetPipeline(renderPass, mPipeline);
-        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mPositionBuffer, 0, wgpuBufferGetSize(mPositionBuffer));
-        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 1, mColorBuffer, 0, wgpuBufferGetSize(mColorBuffer));
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mPointBuffer, 0, wgpuBufferGetSize(mPointBuffer));
+        wgpuRenderPassEncoderSetIndexBuffer(renderPass, mIndexBuffer, WGPUIndexFormat_Uint16, 0, wgpuBufferGetSize(mIndexBuffer));
         wgpuRenderPassEncoderSetBindGroup(renderPass, 0, mBindGroup, 0, nullptr);
-        wgpuRenderPassEncoderDraw(renderPass, vertexCount, 1, 0, 0);
+        wgpuRenderPassEncoderDrawIndexed(renderPass, indexCount, 1, 0, 0, 0);
 
         // wgpuRenderPassEncoderDraw(renderPass, 3, 1, 0, 0); // 3 vertices for triangle
         wgpuRenderPassEncoderEnd(renderPass);
@@ -302,6 +304,17 @@ void WebGpuWindow::onResize (uint32_t width, uint32_t height)
 
 void WebGpuWindow::terminate()
 {
+    if (mPointBuffer)
+    {
+    wgpuBufferRelease(mPointBuffer);
+        mPointBuffer = nullptr;
+    }
+
+    if (mIndexBuffer)
+    {
+        wgpuBufferRelease(mIndexBuffer);
+        mIndexBuffer = nullptr;
+    }
 
     if (mBufferOne)
     {
@@ -514,27 +527,23 @@ void WebGpuWindow::BufferTest()
 
 void WebGpuWindow::InitializeBuffers()
 {
-    mVertexBufferLayouts.resize(2);
+    indexCount = static_cast<uint32_t>(indexData.size());
 
-    mPositionAttrib.shaderLocation = 0; // @location(0)
-    mPositionAttrib.format = WGPUVertexFormat_Float32x2;
-    mPositionAttrib.offset = 0;
+    mVertexAttribs[0].shaderLocation = 0;
+    mVertexAttribs[0].format         = WGPUVertexFormat_Float32x2;
+    mVertexAttribs[0].offset         = 0;
 
-    mVertexBufferLayouts[0].attributeCount = 1;
-    mVertexBufferLayouts[0].attributes = &mPositionAttrib;
-    mVertexBufferLayouts[0].arrayStride = 2 * sizeof(float);
-    mVertexBufferLayouts[0].stepMode = WGPUVertexStepMode_Vertex;
+    mVertexAttribs[1].shaderLocation = 1;
+    mVertexAttribs[1].format         = WGPUVertexFormat_Float32x3;
+    mVertexAttribs[1].offset         = 2 * sizeof(float);
 
-    mColorAttrib.shaderLocation = 1; // @location(1)
-    mColorAttrib.format = WGPUVertexFormat_Float32x3; // size of color
-    mColorAttrib.offset = 0;
+    mVertexBufferLayouts.resize(1);
+    mVertexBufferLayouts[0].attributeCount = 2;
+    mVertexBufferLayouts[0].attributes     = mVertexAttribs.data();
+    mVertexBufferLayouts[0].arrayStride    = 5 * sizeof(float);
+    mVertexBufferLayouts[0].stepMode       = WGPUVertexStepMode_Vertex;
 
-    mVertexBufferLayouts[1].attributeCount = 1;
-    mVertexBufferLayouts[1].attributes = &mColorAttrib;
-    mVertexBufferLayouts[1].arrayStride = 3 * sizeof(float); // stride = size of color
-    mVertexBufferLayouts[1].stepMode = WGPUVertexStepMode_Vertex;
-
-    mPipelineDesc.vertex.bufferCount = static_cast<uint32_t>(mVertexBufferLayouts.size());
+    mPipelineDesc.vertex.bufferCount = 1;
     mPipelineDesc.vertex.buffers     = mVertexBufferLayouts.data();
 }
 
