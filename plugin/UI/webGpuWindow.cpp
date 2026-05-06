@@ -394,7 +394,7 @@ WGPURequiredLimits WebGpuWindow::GetRequiredLimits(WGPUAdapter adapter)
     // We should also tell that we use 1 vertex buffers
     requiredLimits.limits.maxVertexBuffers = 1;
     // Maximum size of a buffer is 6 vertices of 2 float each
-    requiredLimits.limits.maxBufferSize = 6 * 5 * sizeof(float);
+    requiredLimits.limits.maxBufferSize = 15 * 5 * sizeof(float);
     // Maximum stride between 2 consecutive vertices in the vertex buffer
     requiredLimits.limits.maxVertexBufferArrayStride = 5 * sizeof(float);
     requiredLimits.limits.maxInterStageShaderComponents = 3;
@@ -480,7 +480,8 @@ void WebGpuWindow::BufferTest()
 
 void WebGpuWindow::InitializeBuffers()
 {
-    indexCount = static_cast<uint32_t>(indexData.size());
+    std::vector<float> pointData;
+    std::vector<uint16_t> indexData;
 
     //Attribute 0 — Position (location 0)
     mVertexAttribs[0].shaderLocation = 0;
@@ -505,7 +506,18 @@ void WebGpuWindow::InitializeBuffers()
 
     WGPUBufferDescriptor bufferDesc{};
     bufferDesc.mappedAtCreation = false;
+
     //Index Chapter
+
+
+    bool success = loadGeometry(RESOURCE_DIR "/webgpu.txt", pointData, indexData);
+    // Check for errors
+    if (!success) {
+        std::cerr << "Could not load geometry!" << std::endl;
+        exit(1);
+    }
+    indexCount = static_cast<uint32_t>(indexData.size());
+
     // 1. Point buffer (interleaved x, y, r, g, b)
     bufferDesc.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
     bufferDesc.size  = pointData.size() * sizeof(float);
@@ -519,6 +531,7 @@ void WebGpuWindow::InitializeBuffers()
     indexData.resize((indexData.size() + 1ULL) & ~1ULL);
     bufferDesc.label = WGPU_STR("Index Buffer");
     mIndexBuffer     = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
+
     wgpuQueueWriteBuffer(mQueue, mIndexBuffer, 0, indexData.data(), bufferDesc.size);
 }
 
@@ -540,6 +553,66 @@ void WebGpuWindow::reloadShader() {
     std::cout << "Shader reloaded." << std::endl;
 }
 #endif
+
+bool WebGpuWindow::loadGeometry(
+    const std::filesystem::path& path,
+    std::vector<float>& pointData,
+    std::vector<uint16_t>& indexData
+) {
+    std::ifstream file(path);
+    if (!file.is_open()) {
+        return false;
+    }
+
+    pointData.clear();
+    indexData.clear();
+
+    enum class Section {
+        None,
+        Points,
+        Indices,
+    };
+    Section currentSection = Section::None;
+
+    float value;
+    uint16_t index;
+    std::string line;
+    while (!file.eof()) {
+        getline(file, line);
+
+        // overcome the `CRLF` problem
+        if (!line.empty() && line.back() == '\r') {
+            line.pop_back();
+        }
+
+        if (line == "[points]") {
+            currentSection = Section::Points;
+        }
+        else if (line == "[indices]") {
+            currentSection = Section::Indices;
+        }
+        else if (line[0] == '#' || line.empty()) {
+            // Do nothing, this is a comment
+        }
+        else if (currentSection == Section::Points) {
+            std::istringstream iss(line);
+            // Get x, y, r, g, b
+            for (int i = 0; i < 5; ++i) {
+                iss >> value;
+                pointData.push_back(value);
+            }
+        }
+        else if (currentSection == Section::Indices) {
+            std::istringstream iss(line);
+            // Get corners #0 #1 and #2
+            for (int i = 0; i < 3; ++i) {
+                iss >> index;
+                indexData.push_back(index);
+            }
+        }
+    }
+    return true;
+}
 
 
 

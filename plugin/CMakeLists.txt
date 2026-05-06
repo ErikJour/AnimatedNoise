@@ -107,6 +107,10 @@ target_compile_definitions(AnimatedNoise
         JUCE_VST3_CAN_REPLACE_VST2=0
 )
 
+target_compile_definitions(AnimatedNoise PRIVATE
+        RESOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/resources"
+)
+
 #==================================
 # Shader file
 #==================================

@@ -22,6 +22,8 @@ const PI: f32 = 3.14159265359;
 @vertex
 fn vs_main(in: VertexInput) -> VertexOutput {
     var out: VertexOutput;
+    let wave = sin(u.time * u.frequency) * u.amplitude;
+
     out.position = vec4f(in.position, 0.0, 1.0);
     out.color = in.color;
     return out;

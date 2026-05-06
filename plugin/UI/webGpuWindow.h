@@ -11,8 +11,6 @@
 #include "shaderLoader.h"
 #include "shader.wgsl.h"
 #include <filesystem>
-
-
 #include "MyUniforms.h"
 
 #define WGPU_STR(s) WGPUStringView{s, sizeof(s) - 1}
@@ -74,6 +72,12 @@ private:
     static void setDefault(WGPULimits &limits);
     static WGPURequiredLimits GetRequiredLimits(WGPUAdapter adapter);
     void BufferTest();
+    bool loadGeometry(
+                    const std::filesystem::path& path,
+                    std::vector<float>& pointData,
+                    std::vector<uint16_t>& indexData
+                    );
+
 
 #ifdef DEBUG
     void reloadShader();
