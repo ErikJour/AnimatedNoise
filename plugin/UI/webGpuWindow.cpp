@@ -67,14 +67,16 @@ bool WebGpuWindow::createDevice()
         std::cerr << std::endl;
     };
     deviceDesc.deviceLostCallbackInfo2.mode = WGPUCallbackMode_AllowSpontaneous;
-    deviceDesc.uncapturedErrorCallbackInfo2.callback = [](WGPUDevice const*, WGPUErrorType type, WGPUStringView message, void*, void*) {
+    deviceDesc.uncapturedErrorCallbackInfo2.callback = [](WGPUDevice const*,
+                                                        const WGPUErrorType type,
+                                                        const WGPUStringView message,
+                                                        void*, void*) {
         std::cerr << "Uncaptured device error: type " << type;
         if (message.length > 0) std::cerr << " (" << message.data << ")";
         std::cerr << std::endl;
     };
 
     deviceDesc.requiredLimits = nullptr;
-
     mDevice = requestDeviceSync(mInstance, mAdapter, &deviceDesc);
     if (!mDevice) {
         std::cerr << "Failed to get WGPUDevice." << std::endl;
@@ -98,7 +100,8 @@ bool WebGpuWindow::createShader()
     mShaderDesc.nextInChain = &mShaderCodeDesc.chain;
 
 #ifdef DEBUG
-    mShaderPath = "/Users/erikjourgensen/Desktop/April 2026/Repositories/AnimatedNoise/plugin/UI/shader.wgsl";
+    // mShaderPath = "/Users/erikjourgensen/Desktop/April 2026/Repositories/AnimatedNoise/plugin/UI/shader.wgsl";
+    mShaderPath = DEBUG_SHADER_PATH;
     mShaderSource = loadShader(mShaderPath.string());
     mShaderCodeDesc.code = { mShaderSource.c_str(), mShaderSource.size() };
     mLastShaderWriteTime = std::filesystem::last_write_time(mShaderPath);

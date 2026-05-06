@@ -115,4 +115,7 @@ configure_file(
         "${CMAKE_CURRENT_SOURCE_DIR}/UI/shader.wgsl.h.in"
         "${CMAKE_CURRENT_BINARY_DIR}/shader.wgsl.h"
 )
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+        DEBUG_SHADER_PATH="${CMAKE_CURRENT_SOURCE_DIR}/UI/shader.wgsl"
+)
 target_include_directories(AnimatedNoise PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")

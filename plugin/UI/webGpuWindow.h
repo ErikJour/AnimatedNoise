@@ -35,10 +35,10 @@ public:
     bool createQueue();
     bool createShader();
     void configurePipeline();
+
     bool initialize();
     bool initSurface(void* nativeHandle, uint32_t width, uint32_t height);
     bool createPipeline();
-
     void renderFrame(float currentTime);
     void onResize(uint32_t width, uint32_t height);
     [[nodiscard]] bool hasSurface() const { return mSurface != nullptr; }
@@ -53,7 +53,8 @@ public:
     void wgpuPollEvents([[maybe_unused]] WGPUDevice device, [[maybe_unused]] bool yieldToWebBrowser);
     void InitializeBuffers();
 private:
-    void applySurfaceConfig(uint32_t width, uint32_t height)
+
+    void applySurfaceConfig(const uint32_t width, const uint32_t height)
     {
         if (mSurfaceFormat == WGPUTextureFormat_Undefined) {
             WGPUSurfaceCapabilities caps = {};
@@ -82,20 +83,12 @@ private:
 #ifdef DEBUG
     void reloadShader();
 #endif
-    //======================================================
-    //System
-    //======================================================
+
     std::filesystem::path mShaderPath;
     std::filesystem::file_time_type mLastShaderWriteTime;
-    //======================================================
-    //Colors
-    //======================================================
     mutable double mRed = {};
     double mGreen = {};
     double mBlue = {};
-    //======================================================
-    //Primary
-    //======================================================
     WGPUInstance                   mInstance     = nullptr;
     WGPUAdapterInfo                mInitProperties = {};
     WGPUAdapter                    mAdapter      = nullptr;
@@ -119,7 +112,6 @@ private:
     std::vector<WGPUVertexBufferLayout> mVertexBufferLayouts = {};
     std::array<WGPUVertexAttribute, 2> mVertexAttribs = {};
     std::string                    mShaderSource;
-
     //Index Buffers
     WGPUBuffer mPointBuffer  = nullptr;
     WGPUBuffer mIndexBuffer  = nullptr;
