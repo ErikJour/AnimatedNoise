@@ -29,6 +29,12 @@ public:
     ~WebGpuWindow();
 
     void setWindowColor();
+    bool createInstance();
+    bool createAdapter();
+    bool createDevice();
+    bool createQueue();
+    bool createShader();
+    void configurePipeline();
     bool initialize();
     bool initSurface(void* nativeHandle, uint32_t width, uint32_t height);
     bool createPipeline();

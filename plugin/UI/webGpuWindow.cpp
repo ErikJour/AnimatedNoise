@@ -1,7 +1,6 @@
 //
 // Created by Erik Jourgensen on 4/29/26.
 //
-
 #include "webGpuWindow.h"
 
 WebGpuWindow::WebGpuWindow() = default;
@@ -17,12 +16,8 @@ void WebGpuWindow::setWindowColor()
     mBlue = 0.2;
 }
 
-bool WebGpuWindow::initialize()
+bool WebGpuWindow::createInstance()
 {
-    setWindowColor();
-    //=================================================================
-    // Descriptor, Toggles (logging), and Instance Creation
-    //=================================================================
     WGPUInstanceDescriptor descriptor = {};
     descriptor.nextInChain = nullptr;
     WGPUDawnTogglesDescriptor toggles = {};
@@ -36,62 +31,70 @@ bool WebGpuWindow::initialize()
 
     mInstance = wgpuCreateInstance(&descriptor);
     if (!mInstance) {
-            std::cerr << "Failed to create WGPUInstance." << std::endl;
-            return false;
-        }
+        std::cerr << "Failed to create WGPUInstance." << std::endl;
+        return false;
+    }
     std::cout << "WGPU instance: " << mInstance << std::endl;
-    //=================================================================
-    // Adapter - Bridge Between Dawn and GPU
-    //=================================================================
+    return true;
+}
+
+bool WebGpuWindow::createAdapter()
+{
     WGPURequestAdapterOptions adapterOpts = {};
     adapterOpts.nextInChain = nullptr;
     mAdapter = requestAdapterSync(mInstance, &adapterOpts);
     if (!mAdapter) {
-            std::cerr << "Failed to get WGPUAdapter." << std::endl;
-            return false;
+        std::cerr << "Failed to get WGPUAdapter." << std::endl;
+        return false;
     }
     getAdapter(mAdapter, mInitProperties); //What GPU Do I have?
     getLimits(mAdapter, mSupportedLimits); //Hardware Limits
     setFeatures(mAdapter); //Optional Features
-    //=================================================================
-    // Device - Our main object to interact with
-    //=================================================================
+    return true;
+}
+
+bool WebGpuWindow::createDevice()
+{
     WGPUDeviceDescriptor deviceDesc = {};
     deviceDesc.label = WGPU_STR("My Device");
     deviceDesc.deviceLostCallbackInfo2.callback = [](WGPUDevice const*,
                                                             const WGPUDeviceLostReason reason,
                                                             const WGPUStringView message,
                                                             void*, void*) {
-            if (reason == WGPUDeviceLostReason_Destroyed) return;
-            std::cerr << "Device lost: reason " << reason;
-            if (message.length > 0) std::cerr << " (" << message.data << ")";
-            std::cerr << std::endl;
+        if (reason == WGPUDeviceLostReason_Destroyed) return;
+        std::cerr << "Device lost: reason " << reason;
+        if (message.length > 0) std::cerr << " (" << message.data << ")";
+        std::cerr << std::endl;
     };
     deviceDesc.deviceLostCallbackInfo2.mode = WGPUCallbackMode_AllowSpontaneous;
     deviceDesc.uncapturedErrorCallbackInfo2.callback = [](WGPUDevice const*, WGPUErrorType type, WGPUStringView message, void*, void*) {
-            std::cerr << "Uncaptured device error: type " << type;
-            if (message.length > 0) std::cerr << " (" << message.data << ")";
-            std::cerr << std::endl;
+        std::cerr << "Uncaptured device error: type " << type;
+        if (message.length > 0) std::cerr << " (" << message.data << ")";
+        std::cerr << std::endl;
     };
 
     deviceDesc.requiredLimits = nullptr;
 
     mDevice = requestDeviceSync(mInstance, mAdapter, &deviceDesc);
     if (!mDevice) {
-            std::cerr << "Failed to get WGPUDevice." << std::endl;
-            return false;
+        std::cerr << "Failed to get WGPUDevice." << std::endl;
+        return false;
     }
-    //=================================================================
-    // Queue
-    //=================================================================
+    return true;
+}
+
+bool WebGpuWindow::createQueue()
+{
     mQueue = wgpuDeviceGetQueue(mDevice);
-    //=================================================================
-    // Shader Module
-    //=================================================================
-    // Set the chained struct's header
+    if (!mQueue) { return false; }
+    std::cout << "WGPUQueue " << mQueue << std::endl;
+    return true;
+}
+
+bool WebGpuWindow::createShader()
+{
     mShaderCodeDesc.chain.next = nullptr;
     mShaderCodeDesc.chain.sType = WGPUSType_ShaderSourceWGSL;
-    // mShaderCodeDesc.code        = { shaderSource, strlen(shaderSource) }; // ← missing
     mShaderDesc.nextInChain = &mShaderCodeDesc.chain;
 
 #ifdef DEBUG
@@ -103,12 +106,18 @@ bool WebGpuWindow::initialize()
     mShaderCodeDesc.code = { shaderSource, strlen(shaderSource) };
 #endif
     mShaderModule = wgpuDeviceCreateShaderModule(mDevice, &mShaderDesc);
-    //=================================================================
-    // Pipeline Descriptor
-    //=================================================================
+    if (!mShaderModule) {
+        std::cerr << "Failed to create shader module." << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+void WebGpuWindow::configurePipeline()
+{
     mPipelineDesc.nextInChain = nullptr;
     mPipelineDesc.layout = nullptr;
-    //RENDER PIPELINE
     // 1 Describe vertex pipeline state
     mPipelineDesc.vertex.bufferCount = 0;
     mPipelineDesc.vertex.buffers = nullptr;
@@ -137,29 +146,20 @@ bool WebGpuWindow::initialize()
     mPipelineDesc.multisample.count = 1;
     mPipelineDesc.multisample.mask = ~0u;
     mPipelineDesc.multisample.alphaToCoverageEnabled = false;
+}
 
-    WGPUBufferDescriptor bufferDesc{};
-    bufferDesc.mappedAtCreation = false;
-    //Index Chapter
-    // 1. Point buffer (interleaved x, y, r, g, b)
-    bufferDesc.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
-    bufferDesc.size  = pointData.size() * sizeof(float);
-    bufferDesc.label = WGPU_STR("Point Buffer");
-    mPointBuffer = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
-    wgpuQueueWriteBuffer(mQueue, mPointBuffer, 0, pointData.data(), bufferDesc.size);
-    // 2. Index buffer (reuse bufferDesc, per tutorial)
-    bufferDesc.size = indexData.size() * sizeof(uint16_t);
-    bufferDesc.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
-    bufferDesc.size = (bufferDesc.size + 3ULL) & ~3ULL;
-    indexData.resize((indexData.size() + 1ULL) & ~1ULL);
-    bufferDesc.label = WGPU_STR("Index Buffer");
-    mIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
-    wgpuQueueWriteBuffer(mQueue, mIndexBuffer, 0, indexData.data(), bufferDesc.size);
-
+bool WebGpuWindow::initialize()
+{
+    setWindowColor();
+    if (!createInstance())      return false;
+    if (!createAdapter())       return false;
+    if (!createDevice())        return false;
+    if (!createQueue())         return false;
+    if (!createShader())        return false;
+    configurePipeline();
     InitializeBuffers();
     return true;
 }
-
 
 bool WebGpuWindow::initSurface(void* nativeHandle, uint32_t width, uint32_t height)
 {
@@ -174,11 +174,11 @@ bool WebGpuWindow::initSurface(void* nativeHandle, uint32_t width, uint32_t heig
 
 bool WebGpuWindow::createPipeline()
 {
-    if (mBindGroup)    { wgpuBindGroupRelease(mBindGroup);    mBindGroup    = nullptr; }
-    if (mUniformBuffer){ wgpuBufferRelease(mUniformBuffer);   mUniformBuffer= nullptr; }
-    if (mPipeline)     { wgpuRenderPipelineRelease(mPipeline); mPipeline    = nullptr; }
+    if (mBindGroup)    { wgpuBindGroupRelease(mBindGroup);    mBindGroup     = nullptr; }
+    if (mUniformBuffer){ wgpuBufferRelease(mUniformBuffer);   mUniformBuffer = nullptr; }
+    if (mPipeline)     { wgpuRenderPipelineRelease(mPipeline); mPipeline     = nullptr; }
 
-    mColorTarget.format = mSurfaceFormat;  // now valid
+    mColorTarget.format = mSurfaceFormat;
     mColorTarget.blend  = &mBlendState;
     mColorTarget.writeMask = WGPUColorWriteMask_All;
 
@@ -195,16 +195,12 @@ bool WebGpuWindow::createPipeline()
         std::cerr << "Failed to create render pipeline." << std::endl;
         return false;
     }
-    //=================================================================
-    // Shader
-    //=================================================================
     // 1. Create the Buffer
     WGPUBufferDescriptor bufferDesc = {};
     bufferDesc.size = sizeof(MyUniforms);
     bufferDesc.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
     mUniformBuffer = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
     // 2. Create the Bind Group (This connects the buffer to @binding(0))
-    // We'll get the layout from the pipeline after it's created
     WGPUBindGroupEntry entry = {};
     entry.binding = 0;
     entry.buffer = mUniformBuffer;
@@ -248,9 +244,6 @@ void WebGpuWindow::renderFrame(const float currentTime)
         viewDesc.aspect = WGPUTextureAspect_All;
         setUniforms(mQueue, mUniformBuffer, currentTime);
         WGPUTextureView targetView = wgpuTextureCreateView(surfaceTexture.texture, &viewDesc);
-        // The view holds its own reference to the texture, so we can release
-        // the surface texture's reference now (Dawn-specific; wgpu-native requires
-        // this to happen after wgpuSurfacePresent instead).
         wgpuTextureRelease(surfaceTexture.texture);
 
         WGPUCommandEncoderDescriptor encoderDesc = {};
@@ -310,70 +303,18 @@ void WebGpuWindow::onResize (uint32_t width, uint32_t height)
 
 void WebGpuWindow::terminate()
 {
-    if (mPointBuffer)
-    {
-    wgpuBufferRelease(mPointBuffer);
-        mPointBuffer = nullptr;
-    }
-
-    if (mIndexBuffer)
-    {
-        wgpuBufferRelease(mIndexBuffer);
-        mIndexBuffer = nullptr;
-    }
-
-    if (mBufferOne)
-    {
-        wgpuBufferRelease(mBufferOne);
-        mBufferOne = nullptr;
-    }
-    if (mBufferTwo)
-    {
-        wgpuBufferRelease(mBufferTwo);
-        mBufferTwo = nullptr;
-    }
-
-    if (mBindGroup)
-    {
-        wgpuBindGroupRelease(mBindGroup);
-        mBindGroup = nullptr;
-    }
-    if (mUniformBuffer)
-    {
-        wgpuBufferRelease(mUniformBuffer);
-        mUniformBuffer = nullptr;
-    }
-
-    if (mPipeline) {
-        wgpuRenderPipelineRelease(mPipeline);
-        mPipeline = nullptr;
-    }
-
-    if (mSurface) {
-        wgpuSurfaceUnconfigure(mSurface);
-        wgpuSurfaceRelease(mSurface);
-        mSurface = nullptr;
-    }
-
-    if (mQueue) {
-        wgpuQueueRelease(mQueue);
-        mQueue = nullptr;
-    }
-
-    if (mDevice) {
-        wgpuDeviceRelease(mDevice);
-        mDevice = nullptr;
-    }
-
-    if (mAdapter) {
-        wgpuAdapterRelease(mAdapter);
-        mAdapter = nullptr;
-    }
-
-    if (mInstance) {
-        wgpuInstanceRelease(mInstance);
-        mInstance = nullptr;
-    }
+    if (mPointBuffer)   { wgpuBufferRelease(mPointBuffer); mPointBuffer = nullptr; }
+    if (mIndexBuffer)   { wgpuBufferRelease(mIndexBuffer); mIndexBuffer = nullptr; }
+    if (mBufferOne)     { wgpuBufferRelease(mBufferOne); mBufferOne = nullptr; }
+    if (mBufferTwo)     { wgpuBufferRelease(mBufferTwo); mBufferTwo = nullptr; }
+    if (mBindGroup)     { wgpuBindGroupRelease(mBindGroup); mBindGroup = nullptr; }
+    if (mUniformBuffer) { wgpuBufferRelease(mUniformBuffer); mUniformBuffer = nullptr; }
+    if (mPipeline)      { wgpuRenderPipelineRelease(mPipeline); mPipeline = nullptr; }
+    if (mSurface)       { wgpuSurfaceUnconfigure(mSurface); wgpuSurfaceRelease(mSurface); mSurface = nullptr; }
+    if (mQueue)         { wgpuQueueRelease(mQueue); mQueue = nullptr; }
+    if (mDevice)        { wgpuDeviceRelease(mDevice); mDevice = nullptr; }
+    if (mAdapter)       { wgpuAdapterRelease(mAdapter); mAdapter = nullptr; }
+    if (mInstance)      { wgpuInstanceRelease(mInstance); mInstance = nullptr; }
 }
 
 void WebGpuWindow::setFeatures(const WGPUAdapter adapter)
@@ -554,6 +495,24 @@ void WebGpuWindow::InitializeBuffers()
     //Wiring Into the Pipeline Descriptor
     mPipelineDesc.vertex.bufferCount = 1;
     mPipelineDesc.vertex.buffers     = mVertexBufferLayouts.data();
+
+    WGPUBufferDescriptor bufferDesc{};
+    bufferDesc.mappedAtCreation = false;
+    //Index Chapter
+    // 1. Point buffer (interleaved x, y, r, g, b)
+    bufferDesc.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
+    bufferDesc.size  = pointData.size() * sizeof(float);
+    bufferDesc.label = WGPU_STR("Point Buffer");
+    mPointBuffer = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
+    wgpuQueueWriteBuffer(mQueue, mPointBuffer, 0, pointData.data(), bufferDesc.size);
+    // 2. Index buffer (reuse bufferDesc, per tutorial)
+    bufferDesc.size = indexData.size() * sizeof(uint16_t);
+    bufferDesc.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
+    bufferDesc.size = (bufferDesc.size + 3ULL) & ~3ULL;
+    indexData.resize((indexData.size() + 1ULL) & ~1ULL);
+    bufferDesc.label = WGPU_STR("Index Buffer");
+    mIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
+    wgpuQueueWriteBuffer(mQueue, mIndexBuffer, 0, indexData.data(), bufferDesc.size);
 }
 
 #ifdef DEBUG
