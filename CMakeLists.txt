@@ -15,8 +15,19 @@ project(
 )
 
 
+include(FetchContent)
+FetchContent_Declare(
+    Catch2
+    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+    GIT_TAG        v3.7.0
+)
+FetchContent_MakeAvailable(Catch2)
+
 add_subdirectory(libs/JUCE)
 add_subdirectory(webgpu)
 add_subdirectory(plugin)
+
+enable_testing()
+add_subdirectory(tests)
 
 

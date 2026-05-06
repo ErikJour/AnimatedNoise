@@ -3,33 +3,31 @@
 //
 #include "webGpuWindow.h"
 
-WebGpuWindow::WebGpuWindow() = default;
-WebGpuWindow::~WebGpuWindow() = default;
+WebGpuWindow::WebGpuWindow()    = default;
+WebGpuWindow::~WebGpuWindow()   = default;
 
 void WebGpuWindow::setWindowColor()
 {
-    //=================================================================
-    // Experiment with window color
-    //=================================================================
-    mRed = 0.3;
-    mGreen = 0.25;
-    mBlue = 0.2;
+    mRed    = 0.3;
+    mGreen  = 0.25;
+    mBlue   = 0.2;
 }
 
 bool WebGpuWindow::createInstance()
 {
     WGPUInstanceDescriptor descriptor = {};
-    descriptor.nextInChain = nullptr;
+    descriptor.nextInChain            = nullptr;
     WGPUDawnTogglesDescriptor toggles = {};
-    toggles.chain.next = nullptr;
-    toggles.chain.sType = WGPUSType_DawnTogglesDescriptor;
-    toggles.disabledToggleCount = 0;
-    toggles.enabledToggleCount = 1;
-    static constexpr auto toggleName = "enable_immediate_error_handling";
-    toggles.enabledToggles = &toggleName;
-    descriptor.nextInChain = &toggles.chain;
+    toggles.chain.next                = nullptr;
+    toggles.chain.sType               = WGPUSType_DawnTogglesDescriptor;
+    toggles.disabledToggleCount       = 0;
+    toggles.enabledToggleCount        = 1;
+    static constexpr auto toggleName  = "enable_immediate_error_handling";
+    toggles.enabledToggles            = &toggleName;
+    descriptor.nextInChain            = &toggles.chain;
 
-    mInstance = wgpuCreateInstance(&descriptor);
+    mInstance                         = wgpuCreateInstance(&descriptor);
+
     if (!mInstance) {
         std::cerr << "Failed to create WGPUInstance." << std::endl;
         return false;
@@ -41,22 +39,25 @@ bool WebGpuWindow::createInstance()
 bool WebGpuWindow::createAdapter()
 {
     WGPURequestAdapterOptions adapterOpts = {};
-    adapterOpts.nextInChain = nullptr;
-    mAdapter = requestAdapterSync(mInstance, &adapterOpts);
+    adapterOpts.nextInChain               = nullptr;
+    mAdapter                              = requestAdapterSync(mInstance, &adapterOpts);
     if (!mAdapter) {
         std::cerr << "Failed to get WGPUAdapter." << std::endl;
         return false;
     }
-    getAdapter(mAdapter, mInitProperties); //What GPU Do I have?
-    getLimits(mAdapter, mSupportedLimits); //Hardware Limits
-    setFeatures(mAdapter); //Optional Features
+    getAdapter(mAdapter, mInitProperties);
+    getLimits(mAdapter, mSupportedLimits);
+    setFeatures(mAdapter);
     return true;
 }
 
 bool WebGpuWindow::createDevice()
 {
-    WGPUDeviceDescriptor deviceDesc = {};
-    deviceDesc.label = WGPU_STR("My Device");
+    WGPUDeviceDescriptor deviceDesc         = {};
+    deviceDesc.label                        = WGPU_STR("My Device");
+    deviceDesc.deviceLostCallbackInfo2.mode = WGPUCallbackMode_AllowSpontaneous;
+    deviceDesc.requiredLimits               = nullptr;
+
     deviceDesc.deviceLostCallbackInfo2.callback = [](WGPUDevice const*,
                                                             const WGPUDeviceLostReason reason,
                                                             const WGPUStringView message,
@@ -66,7 +67,7 @@ bool WebGpuWindow::createDevice()
         if (message.length > 0) std::cerr << " (" << message.data << ")";
         std::cerr << std::endl;
     };
-    deviceDesc.deviceLostCallbackInfo2.mode = WGPUCallbackMode_AllowSpontaneous;
+
     deviceDesc.uncapturedErrorCallbackInfo2.callback = [](WGPUDevice const*,
                                                         const WGPUErrorType type,
                                                         const WGPUStringView message,
@@ -76,12 +77,13 @@ bool WebGpuWindow::createDevice()
         std::cerr << std::endl;
     };
 
-    deviceDesc.requiredLimits = nullptr;
     mDevice = requestDeviceSync(mInstance, mAdapter, &deviceDesc);
+
     if (!mDevice) {
         std::cerr << "Failed to get WGPUDevice." << std::endl;
         return false;
     }
+
     return true;
 }
 
@@ -95,16 +97,15 @@ bool WebGpuWindow::createQueue()
 
 bool WebGpuWindow::createShader()
 {
-    mShaderCodeDesc.chain.next = nullptr;
+    mShaderCodeDesc.chain.next  = nullptr;
     mShaderCodeDesc.chain.sType = WGPUSType_ShaderSourceWGSL;
-    mShaderDesc.nextInChain = &mShaderCodeDesc.chain;
+    mShaderDesc.nextInChain     = &mShaderCodeDesc.chain;
 
 #ifdef DEBUG
-    // mShaderPath = "/Users/erikjourgensen/Desktop/April 2026/Repositories/AnimatedNoise/plugin/UI/shader.wgsl";
-    mShaderPath = DEBUG_SHADER_PATH;
-    mShaderSource = loadShader(mShaderPath.string());
+    mShaderPath             = DEBUG_SHADER_PATH;
+    mShaderSource           = loadShader(mShaderPath.string());
     mShaderCodeDesc.code = { mShaderSource.c_str(), mShaderSource.size() };
-    mLastShaderWriteTime = std::filesystem::last_write_time(mShaderPath);
+    mLastShaderWriteTime    = std::filesystem::last_write_time(mShaderPath);
 #else
     mShaderCodeDesc.code = { shaderSource, strlen(shaderSource) };
 #endif
@@ -119,37 +120,38 @@ bool WebGpuWindow::createShader()
 
 void WebGpuWindow::configurePipeline()
 {
-    mPipelineDesc.nextInChain = nullptr;
-    mPipelineDesc.layout = nullptr;
+    mPipelineDesc.nextInChain                        = nullptr;
+    mPipelineDesc.layout                             = nullptr;
     // 1 Describe vertex pipeline state
-    mPipelineDesc.vertex.bufferCount = 0;
-    mPipelineDesc.vertex.buffers = nullptr;
-    mPipelineDesc.vertex.module = mShaderModule;
-    mPipelineDesc.vertex.entryPoint = WGPU_STR("vs_main");
-    mPipelineDesc.vertex.constantCount = 0;
-    mPipelineDesc.vertex.constants = nullptr;
+    mPipelineDesc.vertex.bufferCount                 = 0;
+    mPipelineDesc.vertex.buffers                     = nullptr;
+    mPipelineDesc.vertex.module                      = mShaderModule;
+    mPipelineDesc.vertex.entryPoint                  = WGPU_STR("vs_main");
+    mPipelineDesc.vertex.constantCount               = 0;
+    mPipelineDesc.vertex.constants                   = nullptr;
     // 2 Describe primitive pipeline state
-    mPipelineDesc.primitive.topology = WGPUPrimitiveTopology_TriangleList;
-    mPipelineDesc.primitive.stripIndexFormat = WGPUIndexFormat_Undefined;
-    mPipelineDesc.primitive.frontFace = WGPUFrontFace_CCW;
-    mPipelineDesc.primitive.cullMode = WGPUCullMode_None;
+    mPipelineDesc.primitive.topology                 = WGPUPrimitiveTopology_TriangleList;
+    mPipelineDesc.primitive.stripIndexFormat         = WGPUIndexFormat_Undefined;
+    mPipelineDesc.primitive.frontFace                = WGPUFrontFace_CCW;
+    mPipelineDesc.primitive.cullMode                 = WGPUCullMode_None;
     //blending stage configuration
-    mPipelineDesc.fragment = &mFragmentState;
+    mPipelineDesc.fragment                           = &mFragmentState;
     // 4 Describe stencil/depth pipeline state
-    mPipelineDesc.depthStencil = nullptr;
-    mColorTarget.blend = &mBlendState;
-    mColorTarget.writeMask = WGPUColorWriteMask_All;
-    mBlendState.color.srcFactor = WGPUBlendFactor_SrcAlpha;
-    mBlendState.color.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
-    mBlendState.color.operation = WGPUBlendOperation_Add;
-    mBlendState.alpha.srcFactor = WGPUBlendFactor_Zero;
-    mBlendState.alpha.dstFactor = WGPUBlendFactor_One;
-    mBlendState.alpha.operation = WGPUBlendOperation_Add;
+    mPipelineDesc.depthStencil                       = nullptr;
+    mColorTarget.blend                               = &mBlendState;
+    mColorTarget.writeMask                           = WGPUColorWriteMask_All;
+    mBlendState.color.srcFactor                      = WGPUBlendFactor_SrcAlpha;
+    mBlendState.color.dstFactor                      = WGPUBlendFactor_OneMinusSrcAlpha;
+    mBlendState.color.operation                      = WGPUBlendOperation_Add;
+    mBlendState.alpha.srcFactor                      = WGPUBlendFactor_Zero;
+    mBlendState.alpha.dstFactor                      = WGPUBlendFactor_One;
+    mBlendState.alpha.operation                      = WGPUBlendOperation_Add;
     // 5 Describe multi-sampling state
-    mPipelineDesc.multisample.count = 1;
-    mPipelineDesc.multisample.mask = ~0u;
+    mPipelineDesc.multisample.count                  = 1;
+    mPipelineDesc.multisample.mask                   = ~0u;
     mPipelineDesc.multisample.alphaToCoverageEnabled = false;
 }
+
 
 bool WebGpuWindow::initialize()
 {
@@ -164,7 +166,7 @@ bool WebGpuWindow::initialize()
     return true;
 }
 
-bool WebGpuWindow::initSurface(void* nativeHandle, uint32_t width, uint32_t height)
+bool WebGpuWindow::initSurface(void* nativeHandle, const uint32_t width, const uint32_t height)
 {
 #if defined(__APPLE__)
     mSurface = createMetalSurface(mInstance, nativeHandle);
@@ -181,9 +183,9 @@ bool WebGpuWindow::createPipeline()
     if (mUniformBuffer){ wgpuBufferRelease(mUniformBuffer);   mUniformBuffer = nullptr; }
     if (mPipeline)     { wgpuRenderPipelineRelease(mPipeline); mPipeline     = nullptr; }
 
-    mColorTarget.format = mSurfaceFormat;
-    mColorTarget.blend  = &mBlendState;
-    mColorTarget.writeMask = WGPUColorWriteMask_All;
+    mColorTarget.format        = mSurfaceFormat;
+    mColorTarget.blend         = &mBlendState;
+    mColorTarget.writeMask     = WGPUColorWriteMask_All;
 
     mFragmentState.module      = mShaderModule;
     mFragmentState.entryPoint  = WGPU_STR("fs_main");
@@ -191,7 +193,7 @@ bool WebGpuWindow::createPipeline()
     mFragmentState.targets     = &mColorTarget;
     mFragmentState.constants   = nullptr;
 
-    mPipelineDesc.fragment = &mFragmentState;
+    mPipelineDesc.fragment     = &mFragmentState;
 
     mPipeline = wgpuDeviceCreateRenderPipeline(mDevice, &mPipelineDesc);
     if (!mPipeline) {
@@ -200,22 +202,22 @@ bool WebGpuWindow::createPipeline()
     }
     // 1. Create the Buffer
     WGPUBufferDescriptor bufferDesc = {};
-    bufferDesc.size = sizeof(MyUniforms);
-    bufferDesc.usage = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
-    mUniformBuffer = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
+    bufferDesc.size                 = sizeof(MyUniforms);
+    bufferDesc.usage                = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
+    mUniformBuffer                  = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
     // 2. Create the Bind Group (This connects the buffer to @binding(0))
-    WGPUBindGroupEntry entry = {};
-    entry.binding = 0;
-    entry.buffer = mUniformBuffer;
-    entry.offset = 0;
-    entry.size = sizeof(MyUniforms);
-    WGPUBindGroupDescriptor bgDesc = {};
-    WGPUBindGroupLayout bgl = wgpuRenderPipelineGetBindGroupLayout(mPipeline, 0);
-    bgDesc.layout     = bgl;
-    bgDesc.entryCount = 1;
-    bgDesc.entries    = &entry;
-    mBindGroup = wgpuDeviceCreateBindGroup(mDevice, &bgDesc);
-    wgpuBindGroupLayoutRelease(bgl);  // we're done with our reference
+    WGPUBindGroupEntry entry        = {};
+    entry.binding                   = 0;
+    entry.buffer                    = mUniformBuffer;
+    entry.offset                    = 0;
+    entry.size                      = sizeof(MyUniforms);
+    WGPUBindGroupDescriptor bgDesc  = {};
+    WGPUBindGroupLayout bgl         = wgpuRenderPipelineGetBindGroupLayout(mPipeline, 0);
+    bgDesc.layout                   = bgl;
+    bgDesc.entryCount               = 1;
+    bgDesc.entries                  = &entry;
+    mBindGroup                      = wgpuDeviceCreateBindGroup(mDevice, &bgDesc);
+    wgpuBindGroupLayoutRelease(bgl);
 
     return true;
 }
@@ -231,20 +233,23 @@ void WebGpuWindow::renderFrame(const float currentTime)
         }
     #endif
 
-        if (!mSurface) return; //Surface check
-        if (!mPipeline) return;  // guard against failed reload
+        if (!mPipeline) return;
+
+        if (!mSurface) return;
 
         WGPUSurfaceTexture surfaceTexture = {};
         wgpuSurfaceGetCurrentTexture(mSurface, &surfaceTexture);
 
         if (surfaceTexture.status != WGPUSurfaceGetCurrentTextureStatus_Success) return;
-
         WGPUTextureViewDescriptor viewDesc = {};
         viewDesc.format = mSurfaceFormat;
         viewDesc.dimension = WGPUTextureViewDimension_2D;
         viewDesc.mipLevelCount = 1;
         viewDesc.arrayLayerCount = 1;
         viewDesc.aspect = WGPUTextureAspect_All;
+        //=====================================
+        //Push into buffer / fill buffer
+        //=====================================
         setUniforms(mQueue, mUniformBuffer, currentTime);
         WGPUTextureView targetView = wgpuTextureCreateView(surfaceTexture.texture, &viewDesc);
         wgpuTextureRelease(surfaceTexture.texture);
@@ -252,7 +257,6 @@ void WebGpuWindow::renderFrame(const float currentTime)
         WGPUCommandEncoderDescriptor encoderDesc = {};
         encoderDesc.label = WGPU_STR("Frame encoder");
         WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(mDevice, &encoderDesc);
-
         //======================================================
         //Color Attachment
         //======================================================
@@ -264,9 +268,9 @@ void WebGpuWindow::renderFrame(const float currentTime)
         colorAttachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
 
         WGPURenderPassDescriptor renderPassDesc = {};
-        renderPassDesc.colorAttachmentCount = 1;
-        renderPassDesc.colorAttachments     = &colorAttachment;
-        renderPassDesc.depthStencilAttachment = nullptr;
+        renderPassDesc.colorAttachmentCount     = 1;
+        renderPassDesc.colorAttachments         = &colorAttachment;
+        renderPassDesc.depthStencilAttachment   = nullptr;
 
         const WGPURenderPassEncoder renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
 
@@ -284,18 +288,19 @@ void WebGpuWindow::renderFrame(const float currentTime)
         cmdDesc.label = WGPU_STR("Frame command buffer");
         WGPUCommandBuffer command = wgpuCommandEncoderFinish(encoder, &cmdDesc);
         wgpuCommandEncoderRelease(encoder);
-
+        //==============================================
+        //Process the frame
+        //==============================================
         wgpuQueueSubmit(mQueue, 1, &command);
         wgpuCommandBufferRelease(command);
         wgpuTextureViewRelease(targetView);
         wgpuSurfacePresent(mSurface);
-
         wgpuDeviceTick(mDevice);
 
         static int frame = 0;
         if (++frame % 60 == 0)
             std::cout << "Frame " << frame << std::endl;
-    }
+}
 
 void WebGpuWindow::onResize (uint32_t width, uint32_t height)
 {
@@ -355,11 +360,11 @@ void WebGpuWindow::getLimits(WGPUAdapter adapter, WGPUSupportedLimits &limits)
 
 void WebGpuWindow::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const float time) const
 {
-    MyUniforms uData;
-    uData.time = time;
+    MyUniforms      uData;
+    uData.time      = time;
     uData.frequency = 10.0f;
     uData.amplitude = 0.5f;
-    uData._pad = 0.0f;
+    uData._pad      = 0.0f;
     wgpuQueueWriteBuffer(queue, uniformBuffer, 0, &uData, sizeof(MyUniforms));
 }
 
@@ -372,7 +377,6 @@ void WebGpuWindow::setDefault(WGPULimits &limits) {
     limits.maxTextureDimension1D = WGPU_LIMIT_U32_UNDEFINED;
     limits.maxTextureDimension2D = WGPU_LIMIT_U32_UNDEFINED;
     limits.maxTextureDimension3D = WGPU_LIMIT_U32_UNDEFINED;
-    // [...] Set everything to WGPU_LIMIT_U32_UNDEFINED or WGPU_LIMIT_U64_UNDEFINED to mean no limit
 }
 
 WGPURequiredLimits WebGpuWindow::GetRequiredLimits(WGPUAdapter adapter)
@@ -509,29 +513,28 @@ void WebGpuWindow::InitializeBuffers()
     mPointBuffer = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
     wgpuQueueWriteBuffer(mQueue, mPointBuffer, 0, pointData.data(), bufferDesc.size);
     // 2. Index buffer (reuse bufferDesc, per tutorial)
-    bufferDesc.size = indexData.size() * sizeof(uint16_t);
+    bufferDesc.size  = indexData.size() * sizeof(uint16_t);
     bufferDesc.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
-    bufferDesc.size = (bufferDesc.size + 3ULL) & ~3ULL;
+    bufferDesc.size  = (bufferDesc.size + 3ULL) & ~3ULL;
     indexData.resize((indexData.size() + 1ULL) & ~1ULL);
     bufferDesc.label = WGPU_STR("Index Buffer");
-    mIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
+    mIndexBuffer     = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
     wgpuQueueWriteBuffer(mQueue, mIndexBuffer, 0, indexData.data(), bufferDesc.size);
 }
 
 #ifdef DEBUG
 void WebGpuWindow::reloadShader() {
-    mShaderSource = loadShader(mShaderPath.string());
-    mShaderCodeDesc.code = { mShaderSource.c_str(), mShaderSource.size() };
+    mShaderSource                    = loadShader(mShaderPath.string());
+    mShaderCodeDesc.code          = { mShaderSource.c_str(), mShaderSource.size() };
 
-    WGPUShaderModule newModule = wgpuDeviceCreateShaderModule(mDevice, &mShaderDesc);
+    const WGPUShaderModule newModule = wgpuDeviceCreateShaderModule(mDevice, &mShaderDesc);
     if (!newModule) {
         std::cerr << "Shader compile failed — keeping old pipeline." << std::endl;
-        return;  // old mShaderModule still valid
+        return;
     }
 
     wgpuShaderModuleRelease(mShaderModule);
-    mShaderModule = newModule;
-
+    mShaderModule               = newModule;
     mPipelineDesc.vertex.module = mShaderModule;
     createPipeline();
     std::cout << "Shader reloaded." << std::endl;

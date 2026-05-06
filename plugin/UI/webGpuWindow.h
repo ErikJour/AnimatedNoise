@@ -13,12 +13,7 @@
 #include <filesystem>
 
 
-struct MyUniforms {
-    float time = 0.0f;
-    float frequency = 10.0f;
-    float amplitude = 0.5f;
-    float _pad = 0.0f;
-};
+#include "MyUniforms.h"
 
 #define WGPU_STR(s) WGPUStringView{s, sizeof(s) - 1}
 
@@ -93,7 +88,7 @@ private:
     WGPUAdapterInfo                mInitProperties = {};
     WGPUAdapter                    mAdapter      = nullptr;
     WGPUDevice                     mDevice       = nullptr;
-    WGPUQueue                      mQueue        = nullptr;
+    WGPUQueue                      mQueue        = nullptr; //This is like my process block
     WGPUSurface                    mSurface      = nullptr;
     WGPUTextureFormat              mSurfaceFormat = WGPUTextureFormat_Undefined;
     WGPUSupportedLimits            mSupportedLimits = {};
