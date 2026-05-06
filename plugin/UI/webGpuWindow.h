@@ -110,8 +110,8 @@ private:
     WGPUBindGroup                  mBindGroup = nullptr;
     WGPUBuffer                     mBufferOne = nullptr;
     WGPUBuffer                     mBufferTwo = nullptr;
-    std::vector<WGPUVertexBufferLayout> mVertexBufferLayouts;
-    std::array<WGPUVertexAttribute, 2> mVertexAttribs;
+    std::vector<WGPUVertexBufferLayout> mVertexBufferLayouts = {};
+    std::array<WGPUVertexAttribute, 2> mVertexAttribs = {};
     std::string                    mShaderSource;
 
     //Index Buffers

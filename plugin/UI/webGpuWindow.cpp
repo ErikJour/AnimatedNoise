@@ -21,7 +21,7 @@ bool WebGpuWindow::initialize()
 {
     setWindowColor();
     //=================================================================
-    // Instance
+    // Descriptor, Toggles (logging), and Instance Creation
     //=================================================================
     WGPUInstanceDescriptor descriptor = {};
     descriptor.nextInChain = nullptr;
@@ -41,18 +41,18 @@ bool WebGpuWindow::initialize()
         }
     std::cout << "WGPU instance: " << mInstance << std::endl;
     //=================================================================
-    // Adapter
+    // Adapter - Bridge Between Dawn and GPU
     //=================================================================
-    WGPURequestAdapterOptions adapterOpts = {};;
+    WGPURequestAdapterOptions adapterOpts = {};
     adapterOpts.nextInChain = nullptr;
     mAdapter = requestAdapterSync(mInstance, &adapterOpts);
     if (!mAdapter) {
             std::cerr << "Failed to get WGPUAdapter." << std::endl;
             return false;
     }
-    getAdapter(mAdapter, mInitProperties);
-    getLimits(mAdapter, mSupportedLimits);
-    setFeatures(mAdapter);
+    getAdapter(mAdapter, mInitProperties); //What GPU Do I have?
+    getLimits(mAdapter, mSupportedLimits); //Hardware Limits
+    setFeatures(mAdapter); //Optional Features
     //=================================================================
     // Device - Our main object to interact with
     //=================================================================
@@ -91,8 +91,17 @@ bool WebGpuWindow::initialize()
     // Set the chained struct's header
     mShaderCodeDesc.chain.next = nullptr;
     mShaderCodeDesc.chain.sType = WGPUSType_ShaderSourceWGSL;
-    mShaderCodeDesc.code        = { shaderSource, strlen(shaderSource) }; // ← missing
+    // mShaderCodeDesc.code        = { shaderSource, strlen(shaderSource) }; // ← missing
     mShaderDesc.nextInChain = &mShaderCodeDesc.chain;
+
+#ifdef DEBUG
+    mShaderPath = "/Users/erikjourgensen/Desktop/April 2026/Repositories/AnimatedNoise/plugin/UI/shader.wgsl";
+    mShaderSource = loadShader(mShaderPath.string());
+    mShaderCodeDesc.code = { mShaderSource.c_str(), mShaderSource.size() };
+    mLastShaderWriteTime = std::filesystem::last_write_time(mShaderPath);
+#else
+    mShaderCodeDesc.code = { shaderSource, strlen(shaderSource) };
+#endif
     mShaderModule = wgpuDeviceCreateShaderModule(mDevice, &mShaderDesc);
     //=================================================================
     // Pipeline Descriptor
@@ -128,11 +137,6 @@ bool WebGpuWindow::initialize()
     mPipelineDesc.multisample.count = 1;
     mPipelineDesc.multisample.mask = ~0u;
     mPipelineDesc.multisample.alphaToCoverageEnabled = false;
-
-    #ifdef DEBUG
-        mShaderPath = "/Users/erikjourgensen/Desktop/April 2026/Repositories/AnimatedNoise/plugin/UI/shader.wgsl";
-        mLastShaderWriteTime = std::filesystem::last_write_time(mShaderPath);
-    #endif
 
     WGPUBufferDescriptor bufferDesc{};
     bufferDesc.mappedAtCreation = false;
@@ -207,10 +211,12 @@ bool WebGpuWindow::createPipeline()
     entry.offset = 0;
     entry.size = sizeof(MyUniforms);
     WGPUBindGroupDescriptor bgDesc = {};
-    bgDesc.layout = wgpuRenderPipelineGetBindGroupLayout(mPipeline, 0);
+    WGPUBindGroupLayout bgl = wgpuRenderPipelineGetBindGroupLayout(mPipeline, 0);
+    bgDesc.layout     = bgl;
     bgDesc.entryCount = 1;
-    bgDesc.entries = &entry;
+    bgDesc.entries    = &entry;
     mBindGroup = wgpuDeviceCreateBindGroup(mDevice, &bgDesc);
+    wgpuBindGroupLayoutRelease(bgl);  // we're done with our reference
 
     return true;
 }
@@ -407,7 +413,6 @@ void WebGpuWindow::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, 
 {
     MyUniforms uData;
     uData.time = time;
-    // mRed = (std::sin(time) * 0.5f) + 0.5f;
     uData.frequency = 10.0f;
     uData.amplitude = 0.5f;
     uData._pad = 0.0f;
@@ -529,20 +534,24 @@ void WebGpuWindow::InitializeBuffers()
 {
     indexCount = static_cast<uint32_t>(indexData.size());
 
+    //Attribute 0 — Position (location 0)
     mVertexAttribs[0].shaderLocation = 0;
     mVertexAttribs[0].format         = WGPUVertexFormat_Float32x2;
     mVertexAttribs[0].offset         = 0;
 
+    //Attribute 1 — Color (location 1)
     mVertexAttribs[1].shaderLocation = 1;
     mVertexAttribs[1].format         = WGPUVertexFormat_Float32x3;
     mVertexAttribs[1].offset         = 2 * sizeof(float);
 
+    // Vertex Buffer Layout
     mVertexBufferLayouts.resize(1);
     mVertexBufferLayouts[0].attributeCount = 2;
     mVertexBufferLayouts[0].attributes     = mVertexAttribs.data();
     mVertexBufferLayouts[0].arrayStride    = 5 * sizeof(float);
     mVertexBufferLayouts[0].stepMode       = WGPUVertexStepMode_Vertex;
 
+    //Wiring Into the Pipeline Descriptor
     mPipelineDesc.vertex.bufferCount = 1;
     mPipelineDesc.vertex.buffers     = mVertexBufferLayouts.data();
 }
@@ -552,16 +561,16 @@ void WebGpuWindow::reloadShader() {
     mShaderSource = loadShader(mShaderPath.string());
     mShaderCodeDesc.code = { mShaderSource.c_str(), mShaderSource.size() };
 
-    wgpuShaderModuleRelease(mShaderModule);
-    mShaderModule = wgpuDeviceCreateShaderModule(mDevice, &mShaderDesc);
-
-    if (!mShaderModule) {
+    WGPUShaderModule newModule = wgpuDeviceCreateShaderModule(mDevice, &mShaderDesc);
+    if (!newModule) {
         std::cerr << "Shader compile failed — keeping old pipeline." << std::endl;
-        return;
+        return;  // old mShaderModule still valid
     }
 
-    mPipelineDesc.vertex.module = mShaderModule;
+    wgpuShaderModuleRelease(mShaderModule);
+    mShaderModule = newModule;
 
+    mPipelineDesc.vertex.module = mShaderModule;
     createPipeline();
     std::cout << "Shader reloaded." << std::endl;
 }
