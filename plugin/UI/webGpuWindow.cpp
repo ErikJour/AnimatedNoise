@@ -97,24 +97,25 @@ bool WebGpuWindow::createQueue()
 
 bool WebGpuWindow::createShader()
 {
-    mShaderCodeDesc.chain.next  = nullptr;
-    mShaderCodeDesc.chain.sType = WGPUSType_ShaderSourceWGSL;
-    mShaderDesc.nextInChain     = &mShaderCodeDesc.chain;
-
 #ifdef DEBUG
-    mShaderPath             = DEBUG_SHADER_PATH;
-    mShaderSource           = loadShader(mShaderPath.string());
-    mShaderCodeDesc.code = { mShaderSource.c_str(), mShaderSource.size() };
-    mLastShaderWriteTime    = std::filesystem::last_write_time(mShaderPath);
+    mShaderPath          = DEBUG_SHADER_PATH;
+    mLastShaderWriteTime = std::filesystem::last_write_time(mShaderPath);
+    mShaderModule        = ResourceManager::loadShaderModule(mShaderPath, mDevice);
 #else
-    mShaderCodeDesc.code = { shaderSource, strlen(shaderSource) };
+    WGPUShaderModuleWGSLDescriptor shaderCodeDesc{};
+    shaderCodeDesc.chain.next  = nullptr;
+    shaderCodeDesc.chain.sType = WGPUSType_ShaderSourceWGSL;
+    shaderCodeDesc.code        = { shaderSource, strlen(shaderSource) };
+
+    WGPUShaderModuleDescriptor shaderDesc{};
+    shaderDesc.nextInChain     = &shaderCodeDesc.chain;
+    mShaderModule              = wgpuDeviceCreateShaderModule(mDevice, &shaderDesc);
 #endif
-    mShaderModule = wgpuDeviceCreateShaderModule(mDevice, &mShaderDesc);
+
     if (!mShaderModule) {
         std::cerr << "Failed to create shader module." << std::endl;
         return false;
     }
-
     return true;
 }
 
@@ -510,7 +511,7 @@ void WebGpuWindow::InitializeBuffers()
     //Index Chapter
 
 
-    bool success = loadGeometry(RESOURCE_DIR "/webgpu.txt", pointData, indexData);
+    bool success = ResourceManager::loadGeometry(RESOURCE_DIR "/webgpu.txt", pointData, indexData);
     // Check for errors
     if (!success) {
         std::cerr << "Could not load geometry!" << std::endl;
@@ -536,16 +537,13 @@ void WebGpuWindow::InitializeBuffers()
 }
 
 #ifdef DEBUG
-void WebGpuWindow::reloadShader() {
-    mShaderSource                    = loadShader(mShaderPath.string());
-    mShaderCodeDesc.code          = { mShaderSource.c_str(), mShaderSource.size() };
-
-    const WGPUShaderModule newModule = wgpuDeviceCreateShaderModule(mDevice, &mShaderDesc);
+void WebGpuWindow::reloadShader()
+{
+    const WGPUShaderModule newModule = ResourceManager::loadShaderModule(mShaderPath, mDevice);
     if (!newModule) {
         std::cerr << "Shader compile failed — keeping old pipeline." << std::endl;
         return;
     }
-
     wgpuShaderModuleRelease(mShaderModule);
     mShaderModule               = newModule;
     mPipelineDesc.vertex.module = mShaderModule;
@@ -554,65 +552,6 @@ void WebGpuWindow::reloadShader() {
 }
 #endif
 
-bool WebGpuWindow::loadGeometry(
-    const std::filesystem::path& path,
-    std::vector<float>& pointData,
-    std::vector<uint16_t>& indexData
-) {
-    std::ifstream file(path);
-    if (!file.is_open()) {
-        return false;
-    }
-
-    pointData.clear();
-    indexData.clear();
-
-    enum class Section {
-        None,
-        Points,
-        Indices,
-    };
-    Section currentSection = Section::None;
-
-    float value;
-    uint16_t index;
-    std::string line;
-    while (!file.eof()) {
-        getline(file, line);
-
-        // overcome the `CRLF` problem
-        if (!line.empty() && line.back() == '\r') {
-            line.pop_back();
-        }
-
-        if (line == "[points]") {
-            currentSection = Section::Points;
-        }
-        else if (line == "[indices]") {
-            currentSection = Section::Indices;
-        }
-        else if (line[0] == '#' || line.empty()) {
-            // Do nothing, this is a comment
-        }
-        else if (currentSection == Section::Points) {
-            std::istringstream iss(line);
-            // Get x, y, r, g, b
-            for (int i = 0; i < 5; ++i) {
-                iss >> value;
-                pointData.push_back(value);
-            }
-        }
-        else if (currentSection == Section::Indices) {
-            std::istringstream iss(line);
-            // Get corners #0 #1 and #2
-            for (int i = 0; i < 3; ++i) {
-                iss >> index;
-                indexData.push_back(index);
-            }
-        }
-    }
-    return true;
-}
 
 
 

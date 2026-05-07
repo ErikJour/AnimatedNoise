@@ -66,6 +66,7 @@ target_sources(AnimatedNoise
         source/PluginEditor.cpp
         source/PluginProcessor.cpp
         UI/webGpuWindow.cpp
+        UI/ResourceManager.cpp
 )
 
 if (APPLE)
@@ -107,9 +108,20 @@ target_compile_definitions(AnimatedNoise
         JUCE_VST3_CAN_REPLACE_VST2=0
 )
 
+option(DEV_MODE "Set up development helper settings" ON)
+
+if(DEV_MODE)
 target_compile_definitions(AnimatedNoise PRIVATE
         RESOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/resources"
 )
+
+else()
+    # In release mode, we just load resources relatively to wherever the
+    # executable is launched from, so that the binary is portable
+    target_compile_definitions(AnimatedNoise PRIVATE
+            RESOURCE_DIR="./resources"
+    )
+endif()
 
 #==================================
 # Shader file

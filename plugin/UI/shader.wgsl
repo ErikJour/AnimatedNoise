@@ -23,8 +23,9 @@ const PI: f32 = 3.14159265359;
 fn vs_main(in: VertexInput) -> VertexOutput {
     var out: VertexOutput;
     let wave = sin(u.time * u.frequency) * u.amplitude;
-
-    out.position = vec4f(in.position, 0.0, 1.0);
+    let ratio = 800.0 / 450.0; //w / h
+    let offset = vec2f(-0.6875, -0.463); // The offset that we want to apply to the position
+    out.position = vec4f(in.position.x + offset.x, (in.position.y + offset.y) * ratio, 0.0, 1.0);
     out.color = in.color;
     return out;
 }
@@ -32,5 +33,8 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4f {
     let wave = sin(u.time * u.frequency) * u.amplitude;
-    return vec4f(in.color * (0.5 + wave * 0.0), 1.0);
+    let linear_color = pow(in.color, vec3f(2.2));
+
+    return vec4f(linear_color, 1.0);
+
 }

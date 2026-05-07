@@ -12,6 +12,8 @@
 #include "shader.wgsl.h"
 #include <filesystem>
 #include "MyUniforms.h"
+#include "ResourceManager.h"
+
 
 #define WGPU_STR(s) WGPUStringView{s, sizeof(s) - 1}
 
@@ -36,9 +38,9 @@ public:
     void onResize(uint32_t width, uint32_t height);
     [[nodiscard]] bool hasSurface() const { return mSurface != nullptr; }
     void terminate();
-    //==============================================================================
+    //=====================================
     // Diagnostic helpers
-    //==============================================================================
+    //=====================================
     static void setFeatures(WGPUAdapter adapter);
     void getAdapter(WGPUAdapter adapter, const WGPUAdapterInfo& properties);
     static void getLimits(WGPUAdapter adapter, WGPUSupportedLimits &limits);
@@ -72,12 +74,6 @@ private:
     static void setDefault(WGPULimits &limits);
     static WGPURequiredLimits GetRequiredLimits(WGPUAdapter adapter);
     void BufferTest();
-    bool loadGeometry(
-                    const std::filesystem::path& path,
-                    std::vector<float>& pointData,
-                    std::vector<uint16_t>& indexData
-                    );
-
 
 #ifdef DEBUG
     void reloadShader();
@@ -101,16 +97,13 @@ private:
     WGPUFragmentState              mFragmentState = {};
     WGPUBlendState                 mBlendState = {};
     WGPUColorTargetState           mColorTarget = {};
-    WGPUShaderModuleDescriptor     mShaderDesc = {};
     WGPUShaderModule               mShaderModule = {};
-    WGPUShaderModuleWGSLDescriptor mShaderCodeDesc{};
     WGPUBuffer                     mUniformBuffer = nullptr;
     WGPUBindGroup                  mBindGroup = nullptr;
     WGPUBuffer                     mBufferOne = nullptr;
     WGPUBuffer                     mBufferTwo = nullptr;
     std::vector<WGPUVertexBufferLayout> mVertexBufferLayouts = {};
     std::array<WGPUVertexAttribute, 2> mVertexAttribs = {};
-    std::string                    mShaderSource;
     //Index Buffers
     WGPUBuffer mPointBuffer  = nullptr;
     WGPUBuffer mIndexBuffer  = nullptr;
