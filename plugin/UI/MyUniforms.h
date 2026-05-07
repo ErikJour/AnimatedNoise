@@ -8,3 +8,6 @@ struct MyUniforms {
     float amplitude = 0.5f;
     float _pad      = 0.0f;
 };
+
+static_assert(sizeof(MyUniforms) % 16 == 0);
+

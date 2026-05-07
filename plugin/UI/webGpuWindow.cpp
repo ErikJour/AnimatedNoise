@@ -138,7 +138,13 @@ void WebGpuWindow::configurePipeline()
     //blending stage configuration
     mPipelineDesc.fragment                           = &mFragmentState;
     // 4 Describe stencil/depth pipeline state
-    mPipelineDesc.depthStencil                       = nullptr;
+    setDefault(depthStencilState);
+    depthStencilState.format            = WGPUTextureFormat_Depth24Plus;
+    depthStencilState.depthCompare      = WGPUCompareFunction_Less;
+    depthStencilState.depthWriteEnabled = true;
+    depthStencilState.stencilReadMask   = 0;
+    depthStencilState.stencilWriteMask  = 0;
+    mPipelineDesc.depthStencil          = &depthStencilState;
     mColorTarget.blend                               = &mBlendState;
     mColorTarget.writeMask                           = WGPUColorWriteMask_All;
     mBlendState.color.srcFactor                      = WGPUBlendFactor_SrcAlpha;
@@ -150,7 +156,26 @@ void WebGpuWindow::configurePipeline()
     // 5 Describe multi-sampling state
     mPipelineDesc.multisample.count                  = 1;
     mPipelineDesc.multisample.mask                   = ~0u;
-    mPipelineDesc.multisample.alphaToCoverageEnabled = false;
+    mPipelineDesc.multisample.alphaToCoverageEnabled = false;WGPUTextureFormat depthFormat = WGPUTextureFormat_Depth24Plus;
+
+    WGPUTextureDescriptor depthTexDesc   = {};
+    depthTexDesc.dimension               = WGPUTextureDimension_2D;
+    depthTexDesc.format                  = depthFormat;
+    depthTexDesc.mipLevelCount           = 1;
+    depthTexDesc.sampleCount             = 1;
+    depthTexDesc.size                    = { 800, 450, 1 };
+    depthTexDesc.usage                   = WGPUTextureUsage_RenderAttachment;
+    depthTexDesc.viewFormatCount         = 1;
+    depthTexDesc.viewFormats             = &depthFormat;
+    mDepthTexture = wgpuDeviceCreateTexture(mDevice, &depthTexDesc);
+
+    WGPUTextureViewDescriptor depthViewDesc = {};
+    depthViewDesc.format                    = depthFormat;
+    depthViewDesc.dimension                 = WGPUTextureViewDimension_2D;
+    depthViewDesc.aspect                    = WGPUTextureAspect_DepthOnly;
+    depthViewDesc.mipLevelCount             = 1;
+    depthViewDesc.arrayLayerCount           = 1;
+    mDepthTextureView = wgpuTextureCreateView(mDepthTexture, &depthViewDesc);
 }
 
 
@@ -271,7 +296,18 @@ void WebGpuWindow::renderFrame(const float currentTime)
         WGPURenderPassDescriptor renderPassDesc = {};
         renderPassDesc.colorAttachmentCount     = 1;
         renderPassDesc.colorAttachments         = &colorAttachment;
-        renderPassDesc.depthStencilAttachment   = nullptr;
+        WGPURenderPassDepthStencilAttachment depthStencilAttachment = {};
+        depthStencilAttachment.view             = mDepthTextureView;
+        depthStencilAttachment.depthClearValue  = 1.0f;
+        depthStencilAttachment.depthLoadOp      = WGPULoadOp_Clear;
+        depthStencilAttachment.depthStoreOp     = WGPUStoreOp_Store;
+        depthStencilAttachment.depthReadOnly    = false;
+        // Dawn-specific:
+
+        depthStencilAttachment.stencilLoadOp    = WGPULoadOp_Undefined;
+        depthStencilAttachment.stencilStoreOp   = WGPUStoreOp_Undefined;
+        depthStencilAttachment.stencilReadOnly  = true;
+        renderPassDesc.depthStencilAttachment = &depthStencilAttachment; // was nullptr
 
         const WGPURenderPassEncoder renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
 
@@ -312,6 +348,8 @@ void WebGpuWindow::onResize (uint32_t width, uint32_t height)
 
 void WebGpuWindow::terminate()
 {
+    if (mDepthTextureView) { wgpuTextureViewRelease(mDepthTextureView); mDepthTextureView = nullptr; }
+    if (mDepthTexture)     { wgpuTextureDestroy(mDepthTexture); wgpuTextureRelease(mDepthTexture); mDepthTexture = nullptr; }
     if (mPointBuffer)   { wgpuBufferRelease(mPointBuffer); mPointBuffer = nullptr; }
     if (mIndexBuffer)   { wgpuBufferRelease(mIndexBuffer); mIndexBuffer = nullptr; }
     if (mBufferOne)     { wgpuBufferRelease(mBufferOne); mBufferOne = nullptr; }
@@ -380,6 +418,28 @@ void WebGpuWindow::setDefault(WGPULimits &limits) {
     limits.maxTextureDimension3D = WGPU_LIMIT_U32_UNDEFINED;
 }
 
+void WebGpuWindow::setDefault(WGPUStencilFaceState& stencilFaceState)
+{
+    stencilFaceState.compare      = WGPUCompareFunction_Always;
+    stencilFaceState.failOp       = WGPUStencilOperation_Keep;
+    stencilFaceState.depthFailOp  = WGPUStencilOperation_Keep;
+    stencilFaceState.passOp       = WGPUStencilOperation_Keep;
+}
+
+void WebGpuWindow::setDefault(WGPUDepthStencilState& depthStencilState)
+{
+    depthStencilState.format             = WGPUTextureFormat_Undefined;
+    depthStencilState.depthWriteEnabled  = false;
+    depthStencilState.depthCompare       = WGPUCompareFunction_Always;
+    depthStencilState.stencilReadMask    = 0xFFFFFFFF;
+    depthStencilState.stencilWriteMask   = 0xFFFFFFFF;
+    depthStencilState.depthBias          = 0;
+    depthStencilState.depthBiasSlopeScale = 0;
+    depthStencilState.depthBiasClamp     = 0;
+    setDefault(depthStencilState.stencilFront);
+    setDefault(depthStencilState.stencilBack);
+}
+
 WGPURequiredLimits WebGpuWindow::GetRequiredLimits(WGPUAdapter adapter)
 {
     // Get adapter supported limits, in case we need them
@@ -397,7 +457,7 @@ WGPURequiredLimits WebGpuWindow::GetRequiredLimits(WGPUAdapter adapter)
     // Maximum size of a buffer is 6 vertices of 2 float each
     requiredLimits.limits.maxBufferSize = 15 * 5 * sizeof(float);
     // Maximum stride between 2 consecutive vertices in the vertex buffer
-    requiredLimits.limits.maxVertexBufferArrayStride = 5 * sizeof(float);
+    requiredLimits.limits.maxVertexBufferArrayStride = 6 * sizeof(float);
     requiredLimits.limits.maxInterStageShaderComponents = 3;
 
 
@@ -486,19 +546,19 @@ void WebGpuWindow::InitializeBuffers()
 
     //Attribute 0 — Position (location 0)
     mVertexAttribs[0].shaderLocation = 0;
-    mVertexAttribs[0].format         = WGPUVertexFormat_Float32x2;
+    mVertexAttribs[0].format         = WGPUVertexFormat_Float32x3;
     mVertexAttribs[0].offset         = 0;
 
     //Attribute 1 — Color (location 1)
     mVertexAttribs[1].shaderLocation = 1;
     mVertexAttribs[1].format         = WGPUVertexFormat_Float32x3;
-    mVertexAttribs[1].offset         = 2 * sizeof(float);
+    mVertexAttribs[1].offset         = 3 * sizeof(float);
 
     // Vertex Buffer Layout
     mVertexBufferLayouts.resize(1);
     mVertexBufferLayouts[0].attributeCount = 2;
     mVertexBufferLayouts[0].attributes     = mVertexAttribs.data();
-    mVertexBufferLayouts[0].arrayStride    = 5 * sizeof(float);
+    mVertexBufferLayouts[0].arrayStride    = 6 * sizeof(float);
     mVertexBufferLayouts[0].stepMode       = WGPUVertexStepMode_Vertex;
 
     //Wiring Into the Pipeline Descriptor
@@ -511,7 +571,10 @@ void WebGpuWindow::InitializeBuffers()
     //Index Chapter
 
 
-    bool success = ResourceManager::loadGeometry(RESOURCE_DIR "/webgpu.txt", pointData, indexData);
+    bool success = ResourceManager::loadGeometry(RESOURCE_DIR "/pyramid.txt",
+                                                        pointData,
+                                                        indexData,
+                                                        3 /* dimensions */);
     // Check for errors
     if (!success) {
         std::cerr << "Could not load geometry!" << std::endl;

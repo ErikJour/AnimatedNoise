@@ -69,11 +69,39 @@ private:
         config.presentMode  = WGPUPresentMode_Fifo;
         config.alphaMode    = WGPUCompositeAlphaMode_Auto;
 
+        if (mDepthTextureView) { wgpuTextureViewRelease(mDepthTextureView); mDepthTextureView = nullptr; }
+        if (mDepthTexture)     { wgpuTextureDestroy(mDepthTexture); wgpuTextureRelease(mDepthTexture); mDepthTexture = nullptr; }
+
+        WGPUTextureFormat depthFormat = WGPUTextureFormat_Depth24Plus;
+
+        WGPUTextureDescriptor depthTexDesc   = {};
+        depthTexDesc.dimension               = WGPUTextureDimension_2D;
+        depthTexDesc.format                  = depthFormat;
+        depthTexDesc.mipLevelCount           = 1;
+        depthTexDesc.sampleCount             = 1;
+        depthTexDesc.size = { width, height, 1 };
+
+        depthTexDesc.usage                   = WGPUTextureUsage_RenderAttachment;
+        depthTexDesc.viewFormatCount         = 1;
+        depthTexDesc.viewFormats             = &depthFormat;
+        mDepthTexture = wgpuDeviceCreateTexture(mDevice, &depthTexDesc);
+
+        WGPUTextureViewDescriptor depthViewDesc = {};
+        depthViewDesc.format                    = depthFormat;
+        depthViewDesc.dimension                 = WGPUTextureViewDimension_2D;
+        depthViewDesc.aspect                    = WGPUTextureAspect_DepthOnly;
+        depthViewDesc.mipLevelCount             = 1;
+        depthViewDesc.arrayLayerCount           = 1;
+        mDepthTextureView = wgpuTextureCreateView(mDepthTexture, &depthViewDesc);
+
         wgpuSurfaceConfigure(mSurface, &config);
     }
     static void setDefault(WGPULimits &limits);
+    static void setDefault(WGPUStencilFaceState& stencilFaceState);   // ADD
+    static void setDefault(WGPUDepthStencilState& depthStencilState); // ADD
     static WGPURequiredLimits GetRequiredLimits(WGPUAdapter adapter);
     void BufferTest();
+
 
 #ifdef DEBUG
     void reloadShader();
@@ -102,6 +130,10 @@ private:
     WGPUBindGroup                  mBindGroup = nullptr;
     WGPUBuffer                     mBufferOne = nullptr;
     WGPUBuffer                     mBufferTwo = nullptr;
+    WGPUDepthStencilState          depthStencilState = {};
+    WGPUTexture                      mDepthTexture     = nullptr;
+    WGPUTextureView                 mDepthTextureView = nullptr;
+
     std::vector<WGPUVertexBufferLayout> mVertexBufferLayouts = {};
     std::array<WGPUVertexAttribute, 2> mVertexAttribs = {};
     //Index Buffers
