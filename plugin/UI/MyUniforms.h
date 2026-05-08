@@ -3,10 +3,12 @@
 #include <cstdint>
 
 struct MyUniforms {
-    float time      = 0.0f;
-    float frequency = 10.0f;
-    float amplitude = 0.5f;
-    float _pad      = 0.0f;
+    float time;
+    float frequency;
+    float amplitude;
+    float sliderValue;   // was _pad0 — now drives fill + indicator
+    float lightPos[3];
+    float _pad1;         // still 32 bytes ✓
 };
 
 static_assert(sizeof(MyUniforms) % 16 == 0);

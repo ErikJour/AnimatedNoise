@@ -189,6 +189,7 @@ bool WebGpuWindow::initialize()
     if (!createShader())        return false;
     configurePipeline();
     InitializeBuffers();
+    InitializeSlider();
     return true;
 }
 
@@ -209,6 +210,24 @@ bool WebGpuWindow::createPipeline()
     if (mUniformBuffer){ wgpuBufferRelease(mUniformBuffer);   mUniformBuffer = nullptr; }
     if (mPipeline)     { wgpuRenderPipelineRelease(mPipeline); mPipeline     = nullptr; }
 
+    // --- Explicit BGL (replaces GetBindGroupLayout) ---
+    WGPUBindGroupLayoutEntry bglEntry  = {};
+    bglEntry.binding                   = 0;
+    bglEntry.visibility                = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
+    bglEntry.buffer.type               = WGPUBufferBindingType_Uniform;
+    bglEntry.buffer.minBindingSize     = sizeof(MyUniforms);
+
+    WGPUBindGroupLayoutDescriptor bglDesc = {};
+    bglDesc.entryCount                    = 1;
+    bglDesc.entries                       = &bglEntry;
+    WGPUBindGroupLayout bgl = wgpuDeviceCreateBindGroupLayout(mDevice, &bglDesc);
+
+    WGPUPipelineLayoutDescriptor layoutDesc = {};
+    layoutDesc.bindGroupLayoutCount         = 1;
+    layoutDesc.bindGroupLayouts             = &bgl;
+    mPipelineDesc.layout = wgpuDeviceCreatePipelineLayout(mDevice, &layoutDesc);
+    // --------------------------------------------------
+
     mColorTarget.format        = mSurfaceFormat;
     mColorTarget.blend         = &mBlendState;
     mColorTarget.writeMask     = WGPUColorWriteMask_All;
@@ -218,7 +237,6 @@ bool WebGpuWindow::createPipeline()
     mFragmentState.targetCount = 1;
     mFragmentState.targets     = &mColorTarget;
     mFragmentState.constants   = nullptr;
-
     mPipelineDesc.fragment     = &mFragmentState;
 
     mPipeline = wgpuDeviceCreateRenderPipeline(mDevice, &mPipelineDesc);
@@ -238,13 +256,14 @@ bool WebGpuWindow::createPipeline()
     entry.offset                    = 0;
     entry.size                      = sizeof(MyUniforms);
     WGPUBindGroupDescriptor bgDesc  = {};
-    WGPUBindGroupLayout bgl         = wgpuRenderPipelineGetBindGroupLayout(mPipeline, 0);
+
+    // WGPUBindGroupLayout bgl         = wgpuRenderPipelineGetBindGroupLayout(mPipeline, 0);
     bgDesc.layout                   = bgl;
     bgDesc.entryCount               = 1;
     bgDesc.entries                  = &entry;
     mBindGroup                      = wgpuDeviceCreateBindGroup(mDevice, &bgDesc);
-    wgpuBindGroupLayoutRelease(bgl);
 
+    wgpuBindGroupLayoutRelease(bgl);
     return true;
 }
 
@@ -317,6 +336,13 @@ void WebGpuWindow::renderFrame(const float currentTime)
         wgpuRenderPassEncoderSetBindGroup(renderPass, 0, mBindGroup, 0, nullptr);
         wgpuRenderPassEncoderDrawIndexed(renderPass, indexCount, 1, 0, 0, 0);
 
+        // Slider draw
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mSliderVertexBuffer, 0,
+            wgpuBufferGetSize(mSliderVertexBuffer));
+        wgpuRenderPassEncoderSetIndexBuffer(renderPass, mSliderIndexBuffer,
+            WGPUIndexFormat_Uint16, 0, wgpuBufferGetSize(mSliderIndexBuffer));
+        wgpuRenderPassEncoderDrawIndexed(renderPass, mSliderIndexCount, 1, 0, 0, 0);
+
         // wgpuRenderPassEncoderDraw(renderPass, 3, 1, 0, 0); // 3 vertices for triangle
         wgpuRenderPassEncoderEnd(renderPass);
         wgpuRenderPassEncoderRelease(renderPass);
@@ -352,6 +378,8 @@ void WebGpuWindow::terminate()
     if (mDepthTexture)     { wgpuTextureDestroy(mDepthTexture); wgpuTextureRelease(mDepthTexture); mDepthTexture = nullptr; }
     if (mPointBuffer)   { wgpuBufferRelease(mPointBuffer); mPointBuffer = nullptr; }
     if (mIndexBuffer)   { wgpuBufferRelease(mIndexBuffer); mIndexBuffer = nullptr; }
+    if (mSliderVertexBuffer) { wgpuBufferRelease(mSliderVertexBuffer); mSliderVertexBuffer = nullptr; }
+    if (mSliderIndexBuffer)  { wgpuBufferRelease(mSliderIndexBuffer);  mSliderIndexBuffer  = nullptr; }
     if (mBufferOne)     { wgpuBufferRelease(mBufferOne); mBufferOne = nullptr; }
     if (mBufferTwo)     { wgpuBufferRelease(mBufferTwo); mBufferTwo = nullptr; }
     if (mBindGroup)     { wgpuBindGroupRelease(mBindGroup); mBindGroup = nullptr; }
@@ -403,7 +431,10 @@ void WebGpuWindow::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, 
     uData.time      = time;
     uData.frequency = 10.0f;
     uData.amplitude = 0.5f;
-    uData._pad      = 0.0f;
+    uData.sliderValue = mSliderValue;
+    uData.lightPos[0] =  0.0f;   // center x
+    uData.lightPos[1] =  0.10f;  // ceiling
+    uData.lightPos[2] =  0.35f;  // just past the entrance, above viewer
     wgpuQueueWriteBuffer(queue, uniformBuffer, 0, &uData, sizeof(MyUniforms));
 }
 
@@ -571,7 +602,7 @@ void WebGpuWindow::InitializeBuffers()
     //Index Chapter
 
 
-    bool success = ResourceManager::loadGeometry(RESOURCE_DIR "/pyramid.txt",
+    bool success = ResourceManager::loadGeometry(RESOURCE_DIR "/cave.txt",
                                                         pointData,
                                                         indexData,
                                                         3 /* dimensions */);
@@ -615,7 +646,46 @@ void WebGpuWindow::reloadShader()
 }
 #endif
 
+void WebGpuWindow::InitializeSlider()
+{
+    constexpr float X     =  0.50f;
+    constexpr float Z     = -0.05f;
+    constexpr float SW    =  0.002f;  // spine half-width
+    constexpr float MIN_Y = -0.15f;
+    constexpr float MAX_Y =  0.25f;
+    constexpr float IW    =  0.025f;  // indicator half-width/height
 
+    // Spine: color (0.28, 0.14, 0.07) — dim cave wood
+    // Indicator: color (1.0, 0.40, 0.10) — orange sentinel, detected in shader
+    const std::vector<float> verts = {
+        // Spine quad (y goes full height; fill handled in fragment)
+        X-SW, MIN_Y, Z,   0.28f, 0.14f, 0.07f,
+        X+SW, MIN_Y, Z,   0.28f, 0.14f, 0.07f,
+        X+SW, MAX_Y, Z,   0.28f, 0.14f, 0.07f,
+        X-SW, MAX_Y, Z,   0.28f, 0.14f, 0.07f,
+        // Indicator quad (y=±IW offset from 0; vertex shader repositions)
+        X-IW, -IW, Z-0.005f,  1.0f, 0.40f, 0.10f,
+        X+IW, -IW, Z-0.005f,  1.0f, 0.40f, 0.10f,
+        X+IW, +IW, Z-0.005f,  1.0f, 0.40f, 0.10f,
+        X-IW, +IW, Z-0.005f,  1.0f, 0.40f, 0.10f,
+    };
+    const std::vector<uint16_t> idx = {
+        0,1,2, 0,2,3,   // spine
+        4,5,6, 4,6,7,   // indicator
+    };
+    mSliderIndexCount = (uint32_t)idx.size();
+
+    WGPUBufferDescriptor bd{};
+    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
+    bd.size  = verts.size() * sizeof(float);
+    mSliderVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mSliderVertexBuffer, 0, verts.data(), bd.size);
+
+    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
+    bd.size  = (idx.size() * sizeof(uint16_t) + 3) & ~3ULL;
+    mSliderIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mSliderIndexBuffer, 0, idx.data(), bd.size);
+}
 
 
 

@@ -15,6 +15,10 @@ public:
 
     //==============================================================================
     void resized() override;
+    void mouseDown   (const juce::MouseEvent& e) override;
+    void mouseDrag   (const juce::MouseEvent& e) override;
+    void mouseUp     (const juce::MouseEvent& e) override;
+    void updateSliderFromMouse(int screenY);
 
 private:
     void parentHierarchyChanged() override;
@@ -22,6 +26,9 @@ private:
 
     AudioPluginAudioProcessor& processorRef;
     WebGpuWindow webGpuWindow;
+    bool mDragging   = false;
+    int  mDragOffset = 0;
+
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioPluginAudioProcessorEditor)
 };

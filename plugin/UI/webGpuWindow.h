@@ -47,6 +47,9 @@ public:
     void setUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer, float time) const;
     void wgpuPollEvents([[maybe_unused]] WGPUDevice device, [[maybe_unused]] bool yieldToWebBrowser);
     void InitializeBuffers();
+    void setSliderValue(float v) { mSliderValue = v; }
+    float getSliderValue() const { return mSliderValue; }
+
 private:
 
     void applySurfaceConfig(const uint32_t width, const uint32_t height)
@@ -101,8 +104,6 @@ private:
     static void setDefault(WGPUDepthStencilState& depthStencilState); // ADD
     static WGPURequiredLimits GetRequiredLimits(WGPUAdapter adapter);
     void BufferTest();
-
-
 #ifdef DEBUG
     void reloadShader();
 #endif
@@ -140,5 +141,14 @@ private:
     WGPUBuffer mPointBuffer  = nullptr;
     WGPUBuffer mIndexBuffer  = nullptr;
     uint32_t   indexCount    = 0;
+
+    //Slder
+    WGPUBuffer  mSliderVertexBuffer = nullptr;
+    WGPUBuffer  mSliderIndexBuffer  = nullptr;
+    uint32_t    mSliderIndexCount   = 0;
+
+    float       mSliderValue  = 0.5f;  // current normalized value [0,1]
+
+    void InitializeSlider();
 };
 

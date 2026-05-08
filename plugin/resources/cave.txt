@@ -34,53 +34,53 @@
 +0.00  +0.00  +0.50   0.05  0.04  0.10
 
 [indices]
-# P to Q — outer cave walls (14 triangles)
+# P to Q — outer cave walls
 # Floor
-  0   1   8
-  0   8   7
+  0   1   7
+  1   8   7
 # Right lower wall
-  1   2   9
-  1   9   8
+  1   2   8
+  2   9   8
 # Right upper wall
-  2   3  10
-  2  10   9
+  2   3   9
+  3  10   9
 # Ceiling right
-  3   4  11
-  3  11  10
+  3   4  10
+  4  11  10
 # Ceiling left
-  4   5  12
-  4  12  11
+  4   5  11
+  5  12  11
 # Left upper wall
-  5   6  13
-  5  13  12
+  5   6  12
+  6  13  12
 # Left lower wall
-  6   0   7
-  6   7  13
+  6   0  13
+  0   7  13
 
-# Q to R — inner cave walls (14 triangles)
+# Q to R — inner cave walls
 # Floor
-  7   8  15
-  7  15  14
+  7   8  14
+  8  15  14
 # Right lower wall
-  8   9  16
-  8  16  15
+  8   9  15
+  9  16  15
 # Right upper wall
-  9  10  17
-  9  17  16
+  9  10  16
+ 10  17  16
 # Ceiling right
- 10  11  18
- 10  18  17
+ 10  11  17
+ 11  18  17
 # Ceiling left
- 11  12  19
- 11  19  18
+ 11  12  18
+ 12  19  18
 # Left upper wall
- 12  13  20
- 12  20  19
+ 12  13  19
+ 13  20  19
 # Left lower wall
- 13   7  14
- 13  14  20
+ 13   7  20
+  7  14  20
 
-# Back wall — fan from center index 21 (7 triangles)
+# Back wall fan — unchanged
  21  14  15
  21  15  16
  21  16  17
