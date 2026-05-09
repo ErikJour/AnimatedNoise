@@ -156,26 +156,7 @@ void WebGpuWindow::configurePipeline()
     // 5 Describe multi-sampling state
     mPipelineDesc.multisample.count                  = 1;
     mPipelineDesc.multisample.mask                   = ~0u;
-    mPipelineDesc.multisample.alphaToCoverageEnabled = false;WGPUTextureFormat depthFormat = WGPUTextureFormat_Depth24Plus;
-
-    WGPUTextureDescriptor depthTexDesc   = {};
-    depthTexDesc.dimension               = WGPUTextureDimension_2D;
-    depthTexDesc.format                  = depthFormat;
-    depthTexDesc.mipLevelCount           = 1;
-    depthTexDesc.sampleCount             = 1;
-    depthTexDesc.size                    = { 800, 450, 1 };
-    depthTexDesc.usage                   = WGPUTextureUsage_RenderAttachment;
-    depthTexDesc.viewFormatCount         = 1;
-    depthTexDesc.viewFormats             = &depthFormat;
-    mDepthTexture = wgpuDeviceCreateTexture(mDevice, &depthTexDesc);
-
-    WGPUTextureViewDescriptor depthViewDesc = {};
-    depthViewDesc.format                    = depthFormat;
-    depthViewDesc.dimension                 = WGPUTextureViewDimension_2D;
-    depthViewDesc.aspect                    = WGPUTextureAspect_DepthOnly;
-    depthViewDesc.mipLevelCount             = 1;
-    depthViewDesc.arrayLayerCount           = 1;
-    mDepthTextureView = wgpuTextureCreateView(mDepthTexture, &depthViewDesc);
+    mPipelineDesc.multisample.alphaToCoverageEnabled = false;
 }
 
 
@@ -188,8 +169,9 @@ bool WebGpuWindow::initialize()
     if (!createQueue())         return false;
     if (!createShader())        return false;
     configurePipeline();
-    InitializeBuffers();
+    ConfigureVertexLayout();
     InitializeSlider();
+    InitializeCave();
     return true;
 }
 
@@ -300,7 +282,7 @@ void WebGpuWindow::renderFrame(const float currentTime)
         //Push into buffer / fill buffer
         //=====================================
         setUniforms(mQueue, mUniformBuffer, currentTime);
-        WGPUTextureView targetView = wgpuTextureCreateView(surfaceTexture.texture, &viewDesc);
+        const WGPUTextureView targetView = wgpuTextureCreateView(surfaceTexture.texture, &viewDesc);
         wgpuTextureRelease(surfaceTexture.texture);
 
         WGPUCommandEncoderDescriptor encoderDesc = {};
@@ -325,8 +307,6 @@ void WebGpuWindow::renderFrame(const float currentTime)
         depthStencilAttachment.depthLoadOp      = WGPULoadOp_Clear;
         depthStencilAttachment.depthStoreOp     = WGPUStoreOp_Store;
         depthStencilAttachment.depthReadOnly    = false;
-        // Dawn-specific:
-
         depthStencilAttachment.stencilLoadOp    = WGPULoadOp_Undefined;
         depthStencilAttachment.stencilStoreOp   = WGPUStoreOp_Undefined;
         depthStencilAttachment.stencilReadOnly  = true;
@@ -335,19 +315,18 @@ void WebGpuWindow::renderFrame(const float currentTime)
         const WGPURenderPassEncoder renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
 
         wgpuRenderPassEncoderSetPipeline(renderPass, mPipeline);
-        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mPointBuffer, 0, wgpuBufferGetSize(mPointBuffer));
-        wgpuRenderPassEncoderSetIndexBuffer(renderPass, mIndexBuffer, WGPUIndexFormat_Uint16, 0, wgpuBufferGetSize(mIndexBuffer));
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mCaveVertexBuffer, 0, wgpuBufferGetSize(mCaveVertexBuffer));
+        wgpuRenderPassEncoderSetIndexBuffer(renderPass, mCaveIndexBuffer, WGPUIndexFormat_Uint16, 0, wgpuBufferGetSize(mCaveIndexBuffer));
         wgpuRenderPassEncoderSetBindGroup(renderPass, 0, mBindGroup, 0, nullptr);
-        wgpuRenderPassEncoderDrawIndexed(renderPass, indexCount, 1, 0, 0, 0);
+        wgpuRenderPassEncoderDrawIndexed(renderPass, mCaveIndexCount, 1, 0, 0, 0);
 
         // Slider draw
         wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mSliderVertexBuffer, 0,
-            wgpuBufferGetSize(mSliderVertexBuffer));
+        wgpuBufferGetSize(mSliderVertexBuffer));
         wgpuRenderPassEncoderSetIndexBuffer(renderPass, mSliderIndexBuffer,
-            WGPUIndexFormat_Uint16, 0, wgpuBufferGetSize(mSliderIndexBuffer));
+        WGPUIndexFormat_Uint16, 0, wgpuBufferGetSize(mSliderIndexBuffer));
         wgpuRenderPassEncoderDrawIndexed(renderPass, mSliderIndexCount, 1, 0, 0, 0);
 
-        // wgpuRenderPassEncoderDraw(renderPass, 3, 1, 0, 0); // 3 vertices for triangle
         wgpuRenderPassEncoderEnd(renderPass);
         wgpuRenderPassEncoderRelease(renderPass);
 
@@ -377,12 +356,10 @@ void WebGpuWindow::terminate()
 {
     if (mDepthTextureView) { wgpuTextureViewRelease(mDepthTextureView); mDepthTextureView = nullptr; }
     if (mDepthTexture)     { wgpuTextureDestroy(mDepthTexture); wgpuTextureRelease(mDepthTexture); mDepthTexture = nullptr; }
-    if (mPointBuffer)   { wgpuBufferRelease(mPointBuffer); mPointBuffer = nullptr; }
-    if (mIndexBuffer)   { wgpuBufferRelease(mIndexBuffer); mIndexBuffer = nullptr; }
+    if (mCaveVertexBuffer)   { wgpuBufferRelease(mCaveVertexBuffer); mCaveVertexBuffer = nullptr; }
+    if (mCaveIndexBuffer)   { wgpuBufferRelease(mCaveIndexBuffer); mCaveIndexBuffer = nullptr; }
     if (mSliderVertexBuffer) { wgpuBufferRelease(mSliderVertexBuffer); mSliderVertexBuffer = nullptr; }
     if (mSliderIndexBuffer)  { wgpuBufferRelease(mSliderIndexBuffer);  mSliderIndexBuffer  = nullptr; }
-    if (mBufferOne)     { wgpuBufferRelease(mBufferOne); mBufferOne = nullptr; }
-    if (mBufferTwo)     { wgpuBufferRelease(mBufferTwo); mBufferTwo = nullptr; }
     if (mBindGroup)     { wgpuBindGroupRelease(mBindGroup); mBindGroup = nullptr; }
     if (mUniformBuffer) { wgpuBufferRelease(mUniformBuffer); mUniformBuffer = nullptr; }
     if (mPipeline)      { wgpuRenderPipelineRelease(mPipeline); mPipeline = nullptr; }
@@ -434,9 +411,12 @@ void WebGpuWindow::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, 
     uData.frequency = 10.0f;
     uData.amplitude = 0.5f;
     uData.sliderValue = mSliderValue;
-    uData.lightPos[0] =  0.0f;   // center x
-    uData.lightPos[1] =  0.10f;  // ceiling
-    uData.lightPos[2] =  0.35f;  // just past the entrance, above viewer
+    uData.lightPos[0] =  0.0f;
+    uData.lightPos[1] =  0.10f;
+    uData.lightPos[2] =  0.35f;
+    uData.sliderPos[0] = mSliderPos[0];
+    uData.sliderPos[1] = mSliderPos[1];
+    uData.sliderPos[2] = mSliderPos[2];
     wgpuQueueWriteBuffer(queue, uniformBuffer, 0, &uData, sizeof(MyUniforms));
 }
 
@@ -479,10 +459,8 @@ WGPURequiredLimits WebGpuWindow::GetRequiredLimits(WGPUAdapter adapter)
     WGPUSupportedLimits supportedLimits;
     supportedLimits.nextInChain = nullptr;
     wgpuAdapterGetLimits(adapter, &supportedLimits);
-
     WGPURequiredLimits requiredLimits{};
     setDefault(requiredLimits.limits);
-
     // We use at most 1 vertex attribute for now
     requiredLimits.limits.maxVertexAttributes = 2;
     // We should also tell that we use 1 vertex buffers
@@ -492,71 +470,28 @@ WGPURequiredLimits WebGpuWindow::GetRequiredLimits(WGPUAdapter adapter)
     // Maximum stride between 2 consecutive vertices in the vertex buffer
     requiredLimits.limits.maxVertexBufferArrayStride = 6 * sizeof(float);
     requiredLimits.limits.maxInterStageShaderComponents = 3;
-
-
-    // [...] Other device limits
-
     return requiredLimits;
 }
 
-void WebGpuWindow::InitializeBuffers()
+void WebGpuWindow::ConfigureVertexLayout()
 {
-    std::vector<float> pointData;
-    std::vector<uint16_t> indexData;
-
     //Attribute 0 — Position (location 0)
     mVertexAttribs[0].shaderLocation = 0;
     mVertexAttribs[0].format         = WGPUVertexFormat_Float32x3;
     mVertexAttribs[0].offset         = 0;
-
     //Attribute 1 — Color (location 1)
     mVertexAttribs[1].shaderLocation = 1;
     mVertexAttribs[1].format         = WGPUVertexFormat_Float32x3;
     mVertexAttribs[1].offset         = 3 * sizeof(float);
-
     // Vertex Buffer Layout
     mVertexBufferLayouts.resize(1);
     mVertexBufferLayouts[0].attributeCount = 2;
     mVertexBufferLayouts[0].attributes     = mVertexAttribs.data();
     mVertexBufferLayouts[0].arrayStride    = 6 * sizeof(float);
     mVertexBufferLayouts[0].stepMode       = WGPUVertexStepMode_Vertex;
-
     //Wiring Into the Pipeline Descriptor
     mPipelineDesc.vertex.bufferCount = 1;
     mPipelineDesc.vertex.buffers     = mVertexBufferLayouts.data();
-
-    WGPUBufferDescriptor bufferDesc{};
-    bufferDesc.mappedAtCreation = false;
-
-    //Index Chapter
-
-
-    bool success = ResourceManager::loadGeometry(RESOURCE_DIR "/cave.txt",
-                                                        pointData,
-                                                        indexData,
-                                                        3 /* dimensions */);
-    // Check for errors
-    if (!success) {
-        std::cerr << "Could not load geometry!" << std::endl;
-        exit(1);
-    }
-    indexCount = static_cast<uint32_t>(indexData.size());
-
-    // 1. Point buffer (interleaved x, y, r, g, b)
-    bufferDesc.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
-    bufferDesc.size  = pointData.size() * sizeof(float);
-    bufferDesc.label = WGPU_STR("Point Buffer");
-    mPointBuffer = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
-    wgpuQueueWriteBuffer(mQueue, mPointBuffer, 0, pointData.data(), bufferDesc.size);
-    // 2. Index buffer (reuse bufferDesc, per tutorial)
-    bufferDesc.size  = indexData.size() * sizeof(uint16_t);
-    bufferDesc.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
-    bufferDesc.size  = (bufferDesc.size + 3ULL) & ~3ULL;
-    indexData.resize((indexData.size() + 1ULL) & ~1ULL);
-    bufferDesc.label = WGPU_STR("Index Buffer");
-    mIndexBuffer     = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
-
-    wgpuQueueWriteBuffer(mQueue, mIndexBuffer, 0, indexData.data(), bufferDesc.size);
 }
 
 #ifdef DEBUG
@@ -575,46 +510,63 @@ void WebGpuWindow::reloadShader()
 }
 #endif
 
-void WebGpuWindow::InitializeSlider()
+void WebGpuWindow::InitializeCave()
 {
-    constexpr float X     =  0.50f;
-    constexpr float Z     = 0.2f;
-    constexpr float SW    =  0.002f;  // spine half-width
-    constexpr float MIN_Y = -0.15f;
-    constexpr float MAX_Y =  0.25f;
-    constexpr float IW    =  0.025f;  // indicator half-width/height
+    std::vector<float>    pointData;
+    std::vector<uint16_t> indexData;
 
-    // Spine: color (0.28, 0.14, 0.07) — dim cave wood
-    // Indicator: color (1.0, 0.40, 0.10) — orange sentinel, detected in shader
-    const std::vector<float> verts = {
-        // Spine quad (y goes full height; fill handled in fragment)
-        X-SW, MIN_Y, Z,   0.28f, 0.14f, 0.07f,
-        X+SW, MIN_Y, Z,   0.28f, 0.14f, 0.07f,
-        X+SW, MAX_Y, Z,   0.28f, 0.14f, 0.07f,
-        X-SW, MAX_Y, Z,   0.28f, 0.14f, 0.07f,
-        // Indicator quad (y=±IW offset from 0; vertex shader repositions)
-        X-IW, -IW, Z-0.005f,  1.0f, 0.40f, 0.10f,
-        X+IW, -IW, Z-0.005f,  1.0f, 0.40f, 0.10f,
-        X+IW, +IW, Z-0.005f,  1.0f, 0.40f, 0.10f,
-        X-IW, +IW, Z-0.005f,  1.0f, 0.40f, 0.10f,
-    };
-    const std::vector<uint16_t> idx = {
-        0,1,2, 0,2,3,   // spine
-        4,5,6, 4,6,7,   // indicator
-    };
-    mSliderIndexCount = static_cast<uint32_t>(idx.size());
+    const bool success = ResourceManager::loadGeometry(RESOURCE_DIR "/cave.txt",
+                                                        pointData,
+                                                        indexData,
+                                                        3 /* dimensions */);
+    if (!success) {
+        std::cerr << "Could not load geometry!" << std::endl;
+        exit(1);
+    }
+
+    mCaveIndexCount = static_cast<uint32_t>(indexData.size());
 
     WGPUBufferDescriptor bd{};
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
-    bd.size  = verts.size() * sizeof(float);
-    mSliderVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-    wgpuQueueWriteBuffer(mQueue, mSliderVertexBuffer, 0, verts.data(), bd.size);
+    bd.size  = pointData.size() * sizeof(float);
+    mCaveVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mCaveVertexBuffer, 0, pointData.data(), bd.size);
 
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
-    bd.size  = (idx.size() * sizeof(uint16_t) + 3) & ~3ULL;
-    mSliderIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-    wgpuQueueWriteBuffer(mQueue, mSliderIndexBuffer, 0, idx.data(), bd.size);
+    bd.size  = (indexData.size() * sizeof(uint16_t) + 3) & ~3ULL;
+    mCaveIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mCaveIndexBuffer, 0, indexData.data(), bd.size);
 }
 
+void WebGpuWindow::InitializeSlider()
+{
+    std::vector<float>    pointData;
+    std::vector<uint16_t> indexData;
 
+    const bool success = ResourceManager::loadGeometry(
+        RESOURCE_DIR "/slider.txt", pointData, indexData, 3);
+    if (!success) {
+        std::cerr << "Could not load slider geometry!" << std::endl;
+        return;
+    }
+    mSliderIndexCount = static_cast<uint32_t>(indexData.size());
+
+    WGPUBufferDescriptor bd{};
+    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
+    bd.size  = pointData.size() * sizeof(float);
+    mSliderVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mSliderVertexBuffer, 0, pointData.data(), bd.size);
+
+    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
+    bd.size  = (indexData.size() * sizeof(uint16_t) + 3) & ~3ULL;
+    mSliderIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mSliderIndexBuffer, 0, indexData.data(), bd.size);
+}
+
+void WebGpuWindow::setSliderPosition(const float x, const float y, const float z)
+{
+    mSliderPos[0] = x;
+    mSliderPos[1] = y;
+    mSliderPos[2] = z;
+}
 

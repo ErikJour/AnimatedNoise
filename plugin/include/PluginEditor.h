@@ -26,8 +26,8 @@ private:
 
     AudioPluginAudioProcessor& processorRef;
     WebGpuWindow webGpuWindow;
-    bool mDragging   = false;
-    int  mDragOffset = 0;
+    bool  mDragging    = false;
+    float mDragOffset  = 0.0f;
 
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioPluginAudioProcessorEditor)

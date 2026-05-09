@@ -38,17 +38,23 @@ public:
     void onResize(uint32_t width, uint32_t height);
     [[nodiscard]] bool hasSurface() const { return mSurface != nullptr; }
     void terminate();
-    //=====================================
-    // Diagnostic helpers
-    //=====================================
     static void setFeatures(WGPUAdapter adapter);
     void getAdapter(WGPUAdapter adapter, const WGPUAdapterInfo& properties);
     static void getLimits(WGPUAdapter adapter, WGPUSupportedLimits &limits);
     void setUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer, float time) const;
     void wgpuPollEvents([[maybe_unused]] WGPUDevice device, [[maybe_unused]] bool yieldToWebBrowser);
-    void InitializeBuffers();
+    void ConfigureVertexLayout();
     void setSliderValue(float v) { mSliderValue = v; }
     float getSliderValue() const { return mSliderValue; }
+    void setSliderPosition(float x, float y, float z);
+    void InitializeSlider();
+    void InitializeCave();
+
+    float sliderTopFraction()       const { return (1.0f - (kSpineMaxY + mSliderPos[1])) * 0.5f; }
+    float sliderBottomFraction()    const { return (1.0f - (kSpineMinY + mSliderPos[1])) * 0.5f; }
+    float sliderXFraction()         const { return (mSliderPos[0] + 1.0f) * 0.5f; }
+    float indicatorHalfFraction()   const { return kIndicatorHalfY * 0.5f; }
+
 
 private:
 
@@ -128,26 +134,27 @@ private:
     WGPUShaderModule               mShaderModule = {};
     WGPUBuffer                     mUniformBuffer = nullptr;
     WGPUBindGroup                  mBindGroup = nullptr;
-    WGPUBuffer                     mBufferOne = nullptr;
-    WGPUBuffer                     mBufferTwo = nullptr;
     WGPUDepthStencilState          depthStencilState = {};
-    WGPUTexture                      mDepthTexture     = nullptr;
-    WGPUTextureView                 mDepthTextureView = nullptr;
+    WGPUTexture                    mDepthTexture     = nullptr;
+    WGPUTextureView                mDepthTextureView = nullptr;
 
     std::vector<WGPUVertexBufferLayout> mVertexBufferLayouts = {};
     std::array<WGPUVertexAttribute, 2> mVertexAttribs = {};
-    //Index Buffers
-    WGPUBuffer mPointBuffer  = nullptr;
-    WGPUBuffer mIndexBuffer  = nullptr;
-    uint32_t   indexCount    = 0;
-
-    //Slder
+    //Cave
+    WGPUBuffer  mCaveVertexBuffer  = nullptr;
+    WGPUBuffer  mCaveIndexBuffer  = nullptr;
+    uint32_t    mCaveIndexCount    = 0;
+    //Slider
     WGPUBuffer  mSliderVertexBuffer = nullptr;
     WGPUBuffer  mSliderIndexBuffer  = nullptr;
     uint32_t    mSliderIndexCount   = 0;
+    float       mSliderValue     = 0.5f;
+    float       mSliderPos[3]   = { 0.5f, 0.0f, 0.2f };
 
-    float       mSliderValue  = 0.5f;  // current normalized value [0,1]
+    static constexpr float kSpineMinY      = -0.15f;
+    static constexpr float kSpineMaxY      =  0.25f;
+    static constexpr float kIndicatorHalfY =  0.025f;
 
-    void InitializeSlider();
+
 };
 

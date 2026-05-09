@@ -6,9 +6,11 @@ struct MyUniforms {
     float time;
     float frequency;
     float amplitude;
-    float sliderValue;   // was _pad0 — now drives fill + indicator
+    float sliderValue;
     float lightPos[3];
-    float _pad1;         // still 32 bytes ✓
+    float _pad1;
+    float sliderPos[3];
+    float _pad2;
 };
 
 static_assert(sizeof(MyUniforms) % 16 == 0);

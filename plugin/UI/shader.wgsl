@@ -2,9 +2,11 @@ struct Uniforms {
     time:        f32,
     frequency:   f32,
     amplitude:   f32,
-    sliderValue: f32,   // was _pad0
+    sliderValue: f32,
     lightPos:    vec3f,
     _pad1:       f32,
+    sliderPos:   vec3f,
+    _pad2:       f32,
 };
 
 @group(0) @binding(0) var<uniform> u: Uniforms;
@@ -29,7 +31,6 @@ fn vs_main(in: VertexInput) -> VertexOutput {
     var out: VertexOutput;
     var pos = in.position;
 
-    // Indicator sentinel: orange (r>0.9, g~0.4, b<0.15)
     let isIndicator = in.color.r > 0.9 && in.color.g > 0.35
                    && in.color.g < 0.45 && in.color.b < 0.15;
     if isIndicator {
@@ -37,11 +38,11 @@ fn vs_main(in: VertexInput) -> VertexOutput {
         pos.y = pos.y + centerY;
     }
 
-    // Spine sentinel: r in (0.24, 0.35) keeps this from matching dark cave geometry
     let isSpine = in.color.r > 0.24 && in.color.r < 0.35
                && in.color.g < 0.20 && in.color.b < 0.12;
 
     if isIndicator || isSpine {
+        pos = pos + u.sliderPos;
         out.clipPos = vec4f(pos.x, pos.y, pos.z * 0.5 + 0.5, 1.0);
 
     } else {
@@ -80,7 +81,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
                && in.color.g < 0.20 && in.color.b < 0.12;
 
     if isSpine {
-        let fillY  = SPINE_MIN_Y + u.sliderValue * (SPINE_MAX_Y - SPINE_MIN_Y);
+        let fillY  = SPINE_MIN_Y + u.sliderValue * (SPINE_MAX_Y - SPINE_MIN_Y) + u.sliderPos.y;
 
         // Background: Muted, dark clay-grey
         // Fill: Desaturated terracotta pink

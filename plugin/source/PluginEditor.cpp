@@ -48,16 +48,20 @@ void AudioPluginAudioProcessorEditor::resized()
 //==============================================================================
 void AudioPluginAudioProcessorEditor::mouseDown(const juce::MouseEvent& e)
 {
-    auto b = getLocalBounds();
-    const int top       = (int)(b.getHeight() * 0.375f);   // NDC  0.25 → screen
-    const int bottom    = (int)(b.getHeight() * 0.575f);   // NDC -0.15 → screen
-    const int sliderX   = (int)(b.getWidth()  * 0.75f);    // NDC  0.50 → screen
-    const int hitRadius = 20;                                // ≈ 2× indicator half-width in px
+    const float h       = (float)getHeight();
+    const float w       = (float)getWidth();
+    const float top     = webGpuWindow.sliderTopFraction()    * h;
+    const float bottom  = webGpuWindow.sliderBottomFraction() * h;
+    const float sliderX = webGpuWindow.sliderXFraction()      * w;
+    constexpr float hitRadius = 20.0f;
 
-    if (e.y >= top && e.y <= bottom &&
-        e.x >= sliderX - hitRadius && e.x <= sliderX + hitRadius)
+    const float halfIndicator = webGpuWindow.indicatorHalfFraction() * h;
+    if ((float)e.y >= top - halfIndicator && (float)e.y <= bottom + halfIndicator &&
+        std::abs((float)e.x - sliderX) <= hitRadius)
     {
-        mDragging = true;
+        const float indicatorY = bottom - webGpuWindow.getSliderValue() * (bottom - top);
+        mDragOffset = (float)e.y - indicatorY;
+        mDragging   = true;
         updateSliderFromMouse(e.y);
     }
 }
@@ -71,17 +75,17 @@ void AudioPluginAudioProcessorEditor::mouseDrag(const juce::MouseEvent& e)
 void AudioPluginAudioProcessorEditor::mouseUp(const juce::MouseEvent& e)
 {
     juce::ignoreUnused(e);
-    mDragging = false;
+    mDragging   = false;
+    mDragOffset = 0.0f;
 }
 
 void AudioPluginAudioProcessorEditor::updateSliderFromMouse(int screenY)
 {
-    auto b = getLocalBounds().toFloat();
-    const float top    = b.getHeight() * 0.375f;
-    const float bottom = b.getHeight() * 0.575f;
+    const float h      = (float)getHeight();
+    const float top    = webGpuWindow.sliderTopFraction()    * h;
+    const float bottom = webGpuWindow.sliderBottomFraction() * h;
 
-    float v = (bottom - (float)screenY) / (bottom - top);
+    float v = (bottom - ((float)screenY - mDragOffset)) / (bottom - top);
     v = juce::jlimit(0.0f, 1.0f, v);
-
     webGpuWindow.setSliderValue(v);
 }
