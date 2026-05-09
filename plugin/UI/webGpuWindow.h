@@ -103,7 +103,6 @@ private:
     static void setDefault(WGPUStencilFaceState& stencilFaceState);   // ADD
     static void setDefault(WGPUDepthStencilState& depthStencilState); // ADD
     static WGPURequiredLimits GetRequiredLimits(WGPUAdapter adapter);
-    void BufferTest();
 #ifdef DEBUG
     void reloadShader();
 #endif

@@ -1,74 +1,3 @@
-//struct Uniforms {
-//    time: f32,
-//    frequency: f32,
-//    amplitude: f32,
-//    _pad: f32
-//};
-//
-//struct VertexInput {
-//    @location(0) position: vec3f,
-//    @location(1) color: vec3f,
-//};
-//
-//struct VertexOutput {
-//    @builtin(position) position: vec4f,
-//    @location(0) color: vec3f,
-//};
-//
-//@group(0) @binding(0) var<uniform> u: Uniforms;
-//
-//const PI: f32 = 3.14159265359;
-//
-//@vertex
-//fn vs_main(in: VertexInput) -> VertexOutput {
-//    var out: VertexOutput;
-//    var position = in.position;
-//    let angle1 = u.time;
-//    let c1 = cos(angle1);
-//    let s1 = sin(angle1);
-//    let R1 = transpose(mat4x4f(
-//         c1,  s1, 0.0, 0.0,
-//        -s1,  c1, 0.0, 0.0,
-//        0.0, 0.0, 1.0, 0.0,
-//        0.0, 0.0, 0.0, 1.0,
-//    ));
-//    let angle2 = 3.0 * PI / 4.0;
-//    let c2 = cos(angle2);
-//    let s2 = sin(angle2);
-//    let R2 = transpose(mat4x4f(
-//        1.0, 0.0, 0.0, 0.0,
-//        0.0,  c2,  s2, 0.0,
-//        0.0, -s2,  c2, 0.0,
-//        0.0, 0.0, 0.0, 1.0,
-//    ));
-//    // Scale the object
-//    let S = transpose(mat4x4f(
-//        0.3,  0.0, 0.0, 0.0,
-//        0.0,  0.3, 0.0, 0.0,
-//        0.0,  0.0, 0.3, 0.0,
-//        0.0,  0.0, 0.0, 1.0,
-//    ));
-//
-//    // Translate the object
-//    let T = transpose(mat4x4f(
-//        1.0,  0.0, 0.0, 0.5,
-//        0.0,  1.0, 0.0, 0.0,
-//        0.0,  0.0, 1.0, 0.0,
-//        0.0,  0.0, 0.0, 1.0,
-//    ));
-//    let homogeneous_position = vec4f(position, 1.0);
-//    position = (R2 * R1 * T * S * homogeneous_position).xyz;
-//    out.position = vec4f(position.x, position.y, position.z * 0.5 + 0.5, 1.0);
-//    out.color = in.color;
-//    return out;
-//}
-//
-//@fragment
-//fn fs_main(in: VertexOutput) -> @location(0) vec4f {
-//    return vec4f(in.color, 1.0);
-//
-//}
-
 struct Uniforms {
     time:        f32,
     frequency:   f32,
@@ -113,8 +42,8 @@ fn vs_main(in: VertexInput) -> VertexOutput {
                && in.color.g < 0.20 && in.color.b < 0.12;
 
     if isIndicator || isSpine {
-        // Screen-space UI: treat vertex position as clip-space directly, render in front
-        out.clipPos = vec4f(pos.x, pos.y, 0.0, 1.0);
+        out.clipPos = vec4f(pos.x, pos.y, pos.z * 0.5 + 0.5, 1.0);
+
     } else {
         let depth   = pos.z + 0.3;
         let inv_d   = FOV_FACTOR / depth;
@@ -128,7 +57,7 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4f {
 
-    // ── Compute normal BEFORE any branching (uniform control flow required) ──
+    // ── Compute normal ──
     let dp_dx  = dpdx(in.worldPos);
     let dp_dy  = dpdy(in.worldPos);
     var normal = normalize(cross(dp_dx, dp_dy));
@@ -136,20 +65,28 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
         normal = -normal;
     }
 
-    // ── Slider indicator ─────────────────────────────────────────────────────
+    // ── Slider indicator (The "Fresco Pink" knob) ────────────────────────────
+    // Updated logic to match the new pink sentinel if you change vertex data,
+    // or just hard-override the output color here.
     let isIndicator = in.color.r > 0.9 && in.color.g > 0.35
                    && in.color.g < 0.45 && in.color.b < 0.15;
     if isIndicator {
-        return vec4f(1.0, 0.55, 0.15, 1.0);
+        // A soft, mineral Cinnabar Pink (chalky and warm)
+        return vec4f(0.88, 0.52, 0.55, 1.0);
     }
 
-    // ── Slider spine ──────────────────────────────────────────────────────────
-    let isSpine = in.color.r < 0.35 && in.color.g < 0.20 && in.color.b < 0.12;
+    // ── Slider spine (The "Madder Lake" fill) ──────────────────────────────────
+    let isSpine = in.color.r > 0.24 && in.color.r < 0.35
+               && in.color.g < 0.20 && in.color.b < 0.12;
+
     if isSpine {
         let fillY  = SPINE_MIN_Y + u.sliderValue * (SPINE_MAX_Y - SPINE_MIN_Y);
-        let col    = select(
-            vec3f(0.18, 0.09, 0.04),
-            vec3f(0.90, 0.45, 0.12) * 0.8,
+
+        // Background: Muted, dark clay-grey
+        // Fill: Desaturated terracotta pink
+        let col = select(
+            vec3f(0.22, 0.18, 0.18),         // Off-black with a hint of red-earth
+            vec3f(0.75, 0.40, 0.42) * 0.9,   // Muted Renaissance Pink
             in.worldPos.y < fillY
         );
         return vec4f(col, 1.0);
@@ -162,7 +99,9 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
     let attenuation = 1.0 / (1.0 + 4.0 * dist * dist);
     let diffuse     = max(dot(normal, lightDir), 0.0) * attenuation;
 
-    let lampColor = vec3f(1.0, 0.85, 0.55);
-    let ambient   = vec3f(0.06, 0.05, 0.10);
+    // Adjusted lamp to be slightly cooler (incense smoke/candlelight)
+    let lampColor = vec3f(1.0, 0.92, 0.80);
+    let ambient   = vec3f(0.08, 0.08, 0.12);
+
     return vec4f(in.color * (ambient + diffuse * lampColor), 1.0);
 }

@@ -8,7 +8,7 @@ WebGpuWindow::~WebGpuWindow()   = default;
 
 void WebGpuWindow::setWindowColor()
 {
-    mRed    = 0.3;
+    mRed    = 0.8;
     mGreen  = 0.25;
     mBlue   = 0.2;
 }
@@ -225,6 +225,10 @@ bool WebGpuWindow::createPipeline()
     WGPUPipelineLayoutDescriptor layoutDesc = {};
     layoutDesc.bindGroupLayoutCount         = 1;
     layoutDesc.bindGroupLayouts             = &bgl;
+    if (mPipelineDesc.layout) {
+        wgpuPipelineLayoutRelease(mPipelineDesc.layout);
+        mPipelineDesc.layout = nullptr;
+    }
     mPipelineDesc.layout = wgpuDeviceCreatePipelineLayout(mDevice, &layoutDesc);
     // --------------------------------------------------
 
@@ -359,10 +363,6 @@ void WebGpuWindow::renderFrame(const float currentTime)
         wgpuTextureViewRelease(targetView);
         wgpuSurfacePresent(mSurface);
         wgpuDeviceTick(mDevice);
-
-        static int frame = 0;
-        if (++frame % 60 == 0)
-            std::cout << "Frame " << frame << std::endl;
 }
 
 void WebGpuWindow::onResize (uint32_t width, uint32_t height)
@@ -370,6 +370,7 @@ void WebGpuWindow::onResize (uint32_t width, uint32_t height)
     if (!mSurface) return;
     wgpuSurfaceUnconfigure(mSurface);
     applySurfaceConfig(width, height);
+    // updateDepthTexture(width, height);
 }
 
 void WebGpuWindow::terminate()
@@ -385,6 +386,7 @@ void WebGpuWindow::terminate()
     if (mBindGroup)     { wgpuBindGroupRelease(mBindGroup); mBindGroup = nullptr; }
     if (mUniformBuffer) { wgpuBufferRelease(mUniformBuffer); mUniformBuffer = nullptr; }
     if (mPipeline)      { wgpuRenderPipelineRelease(mPipeline); mPipeline = nullptr; }
+    if (mPipelineDesc.layout) { wgpuPipelineLayoutRelease(mPipelineDesc.layout); mPipelineDesc.layout = nullptr; }
     if (mSurface)       { wgpuSurfaceUnconfigure(mSurface); wgpuSurfaceRelease(mSurface); mSurface = nullptr; }
     if (mQueue)         { wgpuQueueRelease(mQueue); mQueue = nullptr; }
     if (mDevice)        { wgpuDeviceRelease(mDevice); mDevice = nullptr; }
@@ -497,79 +499,6 @@ WGPURequiredLimits WebGpuWindow::GetRequiredLimits(WGPUAdapter adapter)
     return requiredLimits;
 }
 
-void WebGpuWindow::BufferTest()
-{
-    //========================================================
-    //Buffer Experimentation
-    //========================================================
-    // 1 Create a first buffer
-    WGPUBufferDescriptor  bufferDescriptor = {};
-    bufferDescriptor.nextInChain = nullptr;
-    bufferDescriptor.label = WGPU_STR("GPU-side buffer");
-    bufferDescriptor.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_CopySrc;
-    bufferDescriptor.size = 16;
-    bufferDescriptor.mappedAtCreation = false;
-    mBufferOne = wgpuDeviceCreateBuffer(mDevice, &bufferDescriptor);
-    // 2 Create a second buffer
-    bufferDescriptor.label = WGPU_STR("Output buffer");
-    bufferDescriptor.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead;
-    mBufferTwo = wgpuDeviceCreateBuffer(mDevice, &bufferDescriptor);
-    //3 Write input data -- Breaking Here
-    std::vector<uint8_t> numbers(16);
-    for (uint8_t i = 0; i < 16; ++i) numbers[i] = i;
-    wgpuQueueWriteBuffer(mQueue, mBufferOne, 0, numbers.data(), numbers.size());
-    //4 Encode and submit the buffer to buffer copy
-    WGPUCommandEncoder encoder = {};
-    encoder = wgpuDeviceCreateCommandEncoder(mDevice, nullptr);
-    wgpuCommandEncoderCopyBufferToBuffer(encoder,
-                                        mBufferOne,
-                                        0,
-                                        mBufferTwo,
-                                        0,
-                                        16);
-
-    WGPUCommandBuffer command = wgpuCommandEncoderFinish(encoder, nullptr);
-    wgpuCommandEncoderRelease(encoder);
-    wgpuQueueSubmit(mQueue, 1, &command);
-    wgpuCommandBufferRelease(command);
-
-    // Copy Data
-    struct MapContext {
-            bool ready;
-            WGPUBuffer buffer;
-    };
-    MapContext context = { false, mBufferTwo };
-
-    auto onBuffer2Mapped = [](WGPUMapAsyncStatus status, WGPUStringView /*message*/,
-                                   void* pUserData1, void* /*pUserData2*/) {
-    MapContext* ctx = static_cast<MapContext*>(pUserData1);
-    ctx->ready = true;
-    std::cout << "Buffer 2 mapped with status " << status << std::endl;
-    if (status != WGPUMapAsyncStatus_Success) return;
-
-    uint8_t* bufferData = (uint8_t*)wgpuBufferGetConstMappedRange(ctx->buffer, 0, 16);
-    for (int i = 0; i < 16; ++i) {
-        std::cout << "data[" << i << "] = " << (int)bufferData[i] << std::endl;
-    }
-    wgpuBufferUnmap(ctx->buffer);
-    };
-
-    WGPUBufferMapCallbackInfo2 callbackInfo{};
-    callbackInfo.nextInChain = nullptr;
-    callbackInfo.mode        = WGPUCallbackMode_AllowSpontaneous;callbackInfo.callback    = onBuffer2Mapped;
-    callbackInfo.userdata1   = (void*)&context;
-    callbackInfo.userdata2   = nullptr;
-
-    wgpuBufferMapAsync2(mBufferTwo, WGPUMapMode_Read, 0, 16, callbackInfo);
-
-    while (!context.ready) {
-        wgpuInstanceProcessEvents(mInstance);
-    }
-    // 6 Release buffers
-    wgpuBufferRelease(mBufferOne);  mBufferOne = nullptr;
-    wgpuBufferRelease(mBufferTwo);  mBufferTwo = nullptr;
-}
-
 void WebGpuWindow::InitializeBuffers()
 {
     std::vector<float> pointData;
@@ -649,7 +578,7 @@ void WebGpuWindow::reloadShader()
 void WebGpuWindow::InitializeSlider()
 {
     constexpr float X     =  0.50f;
-    constexpr float Z     = -0.05f;
+    constexpr float Z     = 0.2f;
     constexpr float SW    =  0.002f;  // spine half-width
     constexpr float MIN_Y = -0.15f;
     constexpr float MAX_Y =  0.25f;
@@ -673,7 +602,7 @@ void WebGpuWindow::InitializeSlider()
         0,1,2, 0,2,3,   // spine
         4,5,6, 4,6,7,   // indicator
     };
-    mSliderIndexCount = (uint32_t)idx.size();
+    mSliderIndexCount = static_cast<uint32_t>(idx.size());
 
     WGPUBufferDescriptor bd{};
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
