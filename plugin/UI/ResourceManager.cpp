@@ -51,7 +51,7 @@ bool ResourceManager::loadGeometry(const std::filesystem::path& path,
         else if (currentSection == Section::Points) {
             std::istringstream iss(line);
             // Get x, y, r, g, b
-            for (int i = 0; i < dimensions + 3; ++i) {
+            for (int i = 0; i < dimensions + 6; ++i) {
                 iss >> value;
                 pointData.push_back(value);
             }

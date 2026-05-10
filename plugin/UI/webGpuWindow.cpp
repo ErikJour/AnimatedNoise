@@ -141,7 +141,7 @@ void WebGpuWindow::configurePipeline()
     setDefault(depthStencilState);
     depthStencilState.format            = WGPUTextureFormat_Depth24Plus;
     depthStencilState.depthCompare      = WGPUCompareFunction_Less;
-    depthStencilState.depthWriteEnabled = true;
+    depthStencilState.depthWriteEnabled = WGPUOptionalBool_True;
     depthStencilState.stencilReadMask   = 0;
     depthStencilState.stencilWriteMask  = 0;
     mPipelineDesc.depthStencil          = &depthStencilState;
@@ -442,7 +442,7 @@ void WebGpuWindow::setDefault(WGPUStencilFaceState& stencilFaceState)
 void WebGpuWindow::setDefault(WGPUDepthStencilState& depthStencilState)
 {
     depthStencilState.format             = WGPUTextureFormat_Undefined;
-    depthStencilState.depthWriteEnabled  = false;
+    depthStencilState.depthWriteEnabled  = WGPUOptionalBool_False;
     depthStencilState.depthCompare       = WGPUCompareFunction_Always;
     depthStencilState.stencilReadMask    = 0xFFFFFFFF;
     depthStencilState.stencilWriteMask   = 0xFFFFFFFF;
@@ -468,28 +468,32 @@ WGPURequiredLimits WebGpuWindow::GetRequiredLimits(WGPUAdapter adapter)
     // Maximum size of a buffer is 6 vertices of 2 float each
     requiredLimits.limits.maxBufferSize = 15 * 5 * sizeof(float);
     // Maximum stride between 2 consecutive vertices in the vertex buffer
-    requiredLimits.limits.maxVertexBufferArrayStride = 6 * sizeof(float);
+    requiredLimits.limits.maxVertexBufferArrayStride = 9 * sizeof(float);
     requiredLimits.limits.maxInterStageShaderComponents = 3;
     return requiredLimits;
 }
 
 void WebGpuWindow::ConfigureVertexLayout()
 {
-    //Attribute 0 — Position (location 0)
+    // Attribute 0 — Position (location 0)
     mVertexAttribs[0].shaderLocation = 0;
     mVertexAttribs[0].format         = WGPUVertexFormat_Float32x3;
     mVertexAttribs[0].offset         = 0;
-    //Attribute 1 — Color (location 1)
-    mVertexAttribs[1].shaderLocation = 1;
+    // Attribute 1 — Normal (location 2)
+    mVertexAttribs[1].shaderLocation = 2;
     mVertexAttribs[1].format         = WGPUVertexFormat_Float32x3;
     mVertexAttribs[1].offset         = 3 * sizeof(float);
+    // Attribute 2 — Color (location 1)
+    mVertexAttribs[2].shaderLocation = 1;
+    mVertexAttribs[2].format         = WGPUVertexFormat_Float32x3;
+    mVertexAttribs[2].offset         = 6 * sizeof(float);
     // Vertex Buffer Layout
     mVertexBufferLayouts.resize(1);
-    mVertexBufferLayouts[0].attributeCount = 2;
+    mVertexBufferLayouts[0].attributeCount = 3;
     mVertexBufferLayouts[0].attributes     = mVertexAttribs.data();
-    mVertexBufferLayouts[0].arrayStride    = 6 * sizeof(float);
+    mVertexBufferLayouts[0].arrayStride    = 9 * sizeof(float);
     mVertexBufferLayouts[0].stepMode       = WGPUVertexStepMode_Vertex;
-    //Wiring Into the Pipeline Descriptor
+    // Wiring Into the Pipeline Descriptor
     mPipelineDesc.vertex.bufferCount = 1;
     mPipelineDesc.vertex.buffers     = mVertexBufferLayouts.data();
 }
@@ -512,55 +516,42 @@ void WebGpuWindow::reloadShader()
 
 void WebGpuWindow::InitializeCave()
 {
-    std::vector<float>    pointData;
-    std::vector<uint16_t> indexData;
+    std::vector<Vertex> verts;
+    std::vector<Index>  indices;
+    buildCaveGeometry(verts, indices);
 
-    const bool success = ResourceManager::loadGeometry(RESOURCE_DIR "/cave.txt",
-                                                        pointData,
-                                                        indexData,
-                                                        3 /* dimensions */);
-    if (!success) {
-        std::cerr << "Could not load geometry!" << std::endl;
-        exit(1);
-    }
-
-    mCaveIndexCount = static_cast<uint32_t>(indexData.size());
+    mCaveIndexCount = static_cast<uint32_t>(indices.size());
 
     WGPUBufferDescriptor bd{};
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
-    bd.size  = pointData.size() * sizeof(float);
+    bd.size  = verts.size() * sizeof(Vertex);
     mCaveVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-    wgpuQueueWriteBuffer(mQueue, mCaveVertexBuffer, 0, pointData.data(), bd.size);
+    wgpuQueueWriteBuffer(mQueue, mCaveVertexBuffer, 0, verts.data(), bd.size);
 
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
-    bd.size  = (indexData.size() * sizeof(uint16_t) + 3) & ~3ULL;
+    bd.size  = (indices.size() * sizeof(Index) + 3) & ~3ULL;
     mCaveIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-    wgpuQueueWriteBuffer(mQueue, mCaveIndexBuffer, 0, indexData.data(), bd.size);
+    wgpuQueueWriteBuffer(mQueue, mCaveIndexBuffer, 0, indices.data(), bd.size);
 }
 
 void WebGpuWindow::InitializeSlider()
 {
-    std::vector<float>    pointData;
-    std::vector<uint16_t> indexData;
+    std::vector<Vertex> verts;
+    std::vector<Index>  indices;
+    buildSliderGeometry(verts, indices);
 
-    const bool success = ResourceManager::loadGeometry(
-        RESOURCE_DIR "/slider.txt", pointData, indexData, 3);
-    if (!success) {
-        std::cerr << "Could not load slider geometry!" << std::endl;
-        return;
-    }
-    mSliderIndexCount = static_cast<uint32_t>(indexData.size());
+    mSliderIndexCount = static_cast<uint32_t>(indices.size());
 
     WGPUBufferDescriptor bd{};
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
-    bd.size  = pointData.size() * sizeof(float);
+    bd.size  = verts.size() * sizeof(Vertex);
     mSliderVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-    wgpuQueueWriteBuffer(mQueue, mSliderVertexBuffer, 0, pointData.data(), bd.size);
+    wgpuQueueWriteBuffer(mQueue, mSliderVertexBuffer, 0, verts.data(), bd.size);
 
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
-    bd.size  = (indexData.size() * sizeof(uint16_t) + 3) & ~3ULL;
+    bd.size  = (indices.size() * sizeof(Index) + 3) & ~3ULL;
     mSliderIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-    wgpuQueueWriteBuffer(mQueue, mSliderIndexBuffer, 0, indexData.data(), bd.size);
+    wgpuQueueWriteBuffer(mQueue, mSliderIndexBuffer, 0, indices.data(), bd.size);
 }
 
 void WebGpuWindow::setSliderPosition(const float x, const float y, const float z)

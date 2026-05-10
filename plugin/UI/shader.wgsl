@@ -14,12 +14,14 @@ struct Uniforms {
 struct VertexInput {
     @location(0) position: vec3f,
     @location(1) color:    vec3f,
+    @location(2) normal:   vec3f,   // ← add
 };
 
 struct VertexOutput {
     @builtin(position) clipPos:  vec4f,
     @location(0)       color:    vec3f,
     @location(1)       worldPos: vec3f,
+    @location(2)       normal:   vec3f,   // ← add
 };
 
 const FOV_FACTOR:  f32 = 1.5;
@@ -52,6 +54,7 @@ fn vs_main(in: VertexInput) -> VertexOutput {
     }
     out.color    = in.color;
     out.worldPos = pos;
+    out.normal = in.normal;   // ← add
     return out;
 }
 
@@ -86,7 +89,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
         // Background: Muted, dark clay-grey
         // Fill: Desaturated terracotta pink
         let col = select(
-            vec3f(0.22, 0.18, 0.18),         // Off-black with a hint of red-earth
+            vec3f(0.22, 0.18, 0.12),         // Off-black with a hint of red-earth
             vec3f(0.75, 0.40, 0.42) * 0.9,   // Muted Renaissance Pink
             in.worldPos.y < fillY
         );

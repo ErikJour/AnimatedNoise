@@ -13,7 +13,8 @@
 #include <filesystem>
 #include "MyUniforms.h"
 #include "ResourceManager.h"
-
+#include "proceduralCave.h"
+#include "proceduralSlider.h"
 
 #define WGPU_STR(s) WGPUStringView{s, sizeof(s) - 1}
 
@@ -139,7 +140,7 @@ private:
     WGPUTextureView                mDepthTextureView = nullptr;
 
     std::vector<WGPUVertexBufferLayout> mVertexBufferLayouts = {};
-    std::array<WGPUVertexAttribute, 2> mVertexAttribs = {};
+    std::array<WGPUVertexAttribute, 3> mVertexAttribs = {};
     //Cave
     WGPUBuffer  mCaveVertexBuffer  = nullptr;
     WGPUBuffer  mCaveIndexBuffer  = nullptr;

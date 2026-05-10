@@ -82,6 +82,7 @@ target_include_directories(AnimatedNoise
         include
         source
         UI
+        geometries
 )
 
 #==================================
@@ -112,14 +113,14 @@ option(DEV_MODE "Set up development helper settings" ON)
 
 if(DEV_MODE)
 target_compile_definitions(AnimatedNoise PRIVATE
-        RESOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/resources"
+        RESOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/geometries"
 )
 
 else()
-    # In release mode, we just load resources relatively to wherever the
+    # In release mode, we just load geometries relatively to wherever the
     # executable is launched from, so that the binary is portable
     target_compile_definitions(AnimatedNoise PRIVATE
-            RESOURCE_DIR="./resources"
+            RESOURCE_DIR="geometries"
     )
 endif()
 
