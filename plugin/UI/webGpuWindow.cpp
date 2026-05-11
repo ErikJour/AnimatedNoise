@@ -170,7 +170,7 @@ bool WebGpuWindow::initialize()
     if (!createShader())        return false;
     configurePipeline();
     ConfigureVertexLayout();
-    // InitializeSlider();
+    InitializeSlider();
     InitializeProceduralCave();
     return true;
 }
@@ -570,25 +570,25 @@ void WebGpuWindow::InitializeLoadedCave()
     wgpuQueueWriteBuffer(mQueue, mCaveIndexBuffer, 0, indexData.data(), bd.size);
 }
 
-// void WebGpuWindow::InitializeSlider()
-// {
-//     std::vector<Vertex> verts;
-//     std::vector<Index>  indices;
-//     buildSliderGeometry(verts, indices);
-//
-//     mSliderIndexCount = static_cast<uint32_t>(indices.size());
-//
-//     WGPUBufferDescriptor bd{};
-//     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
-//     bd.size  = verts.size() * sizeof(Vertex);
-//     mSliderVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-//     wgpuQueueWriteBuffer(mQueue, mSliderVertexBuffer, 0, verts.data(), bd.size);
-//
-//     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
-//     bd.size  = (indices.size() * sizeof(Index) + 3) & ~3ULL;
-//     mSliderIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-//     wgpuQueueWriteBuffer(mQueue, mSliderIndexBuffer, 0, indices.data(), bd.size);
-// }
+void WebGpuWindow::InitializeSlider()
+{
+    std::vector<Vertex> verts;
+    std::vector<Index>  indices;
+    buildSliderGeometry(verts, indices);
+
+    mSliderIndexCount = static_cast<uint32_t>(indices.size());
+
+    WGPUBufferDescriptor bd{};
+    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
+    bd.size  = verts.size() * sizeof(Vertex);
+    mSliderVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mSliderVertexBuffer, 0, verts.data(), bd.size);
+
+    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
+    bd.size  = (indices.size() * sizeof(Index) + 3) & ~3ULL;
+    mSliderIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mSliderIndexBuffer, 0, indices.data(), bd.size);
+}
 
 void WebGpuWindow::setSliderPosition(const float x, const float y, const float z)
 {

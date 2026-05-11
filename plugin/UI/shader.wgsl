@@ -48,13 +48,13 @@ fn vs_main(in: VertexInput) -> VertexOutput {
         out.clipPos = vec4f(pos.x, pos.y, pos.z * 0.5 + 0.5, 1.0);
 
     } else {
-        let depth   = pos.z + 0.3;
+        let depth   = pos.z + 0.45;
         let inv_d   = FOV_FACTOR / depth;
         out.clipPos = vec4f(pos.x * inv_d, pos.y * inv_d, pos.z * 0.5 + 0.5, 1.0);
     }
     out.color    = in.color;
     out.worldPos = pos;
-    out.normal = in.normal;   // ← add
+    out.normal = in.normal;
     return out;
 }
 

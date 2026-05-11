@@ -14,6 +14,7 @@
 #include "MyUniforms.h"
 #include "ResourceManager.h"
 #include "perlinCave.h"
+#include "proceduralSlider.h"
 
 #define WGPU_STR(s) WGPUStringView{s, sizeof(s) - 1}
 
@@ -47,7 +48,7 @@ public:
     void setSliderValue(float v) { mSliderValue = v; }
     float getSliderValue() const { return mSliderValue; }
     void setSliderPosition(float x, float y, float z);
-    // void InitializeSlider();
+    void InitializeSlider();
     void InitializeProceduralCave();
     void InitializeLoadedCave();
 
@@ -156,7 +157,5 @@ private:
     static constexpr float kSpineMinY      = -0.15f;
     static constexpr float kSpineMaxY      =  0.25f;
     static constexpr float kIndicatorHalfY =  0.025f;
-
-
 };
 
