@@ -13,8 +13,7 @@
 #include <filesystem>
 #include "MyUniforms.h"
 #include "ResourceManager.h"
-#include "proceduralCave.h"
-#include "proceduralSlider.h"
+#include "perlinCave.h"
 
 #define WGPU_STR(s) WGPUStringView{s, sizeof(s) - 1}
 
@@ -48,8 +47,9 @@ public:
     void setSliderValue(float v) { mSliderValue = v; }
     float getSliderValue() const { return mSliderValue; }
     void setSliderPosition(float x, float y, float z);
-    void InitializeSlider();
-    void InitializeCave();
+    // void InitializeSlider();
+    void InitializeProceduralCave();
+    void InitializeLoadedCave();
 
     float sliderTopFraction()       const { return (1.0f - (kSpineMaxY + mSliderPos[1])) * 0.5f; }
     float sliderBottomFraction()    const { return (1.0f - (kSpineMinY + mSliderPos[1])) * 0.5f; }
@@ -138,6 +138,7 @@ private:
     WGPUDepthStencilState          depthStencilState = {};
     WGPUTexture                    mDepthTexture     = nullptr;
     WGPUTextureView                mDepthTextureView = nullptr;
+    perlinCave                     mPerlinCave = {};
 
     std::vector<WGPUVertexBufferLayout> mVertexBufferLayouts = {};
     std::array<WGPUVertexAttribute, 3> mVertexAttribs = {};

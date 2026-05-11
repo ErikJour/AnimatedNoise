@@ -8,7 +8,7 @@ WebGpuWindow::~WebGpuWindow()   = default;
 
 void WebGpuWindow::setWindowColor()
 {
-    mRed    = 0.8;
+    mRed    = 0.2;
     mGreen  = 0.25;
     mBlue   = 0.2;
 }
@@ -170,8 +170,8 @@ bool WebGpuWindow::initialize()
     if (!createShader())        return false;
     configurePipeline();
     ConfigureVertexLayout();
-    InitializeSlider();
-    InitializeCave();
+    // InitializeSlider();
+    InitializeProceduralCave();
     return true;
 }
 
@@ -260,7 +260,7 @@ void WebGpuWindow::renderFrame(const float currentTime)
         if (writeTime != mLastShaderWriteTime) {
             mLastShaderWriteTime = writeTime;
             reloadShader();
-            return; // skip this frame, render cleanly next frame
+            return;
         }
     #endif
 
@@ -315,17 +315,25 @@ void WebGpuWindow::renderFrame(const float currentTime)
         const WGPURenderPassEncoder renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
 
         wgpuRenderPassEncoderSetPipeline(renderPass, mPipeline);
-        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mCaveVertexBuffer, 0, wgpuBufferGetSize(mCaveVertexBuffer));
-        wgpuRenderPassEncoderSetIndexBuffer(renderPass, mCaveIndexBuffer, WGPUIndexFormat_Uint16, 0, wgpuBufferGetSize(mCaveIndexBuffer));
-        wgpuRenderPassEncoderSetBindGroup(renderPass, 0, mBindGroup, 0, nullptr);
-        wgpuRenderPassEncoderDrawIndexed(renderPass, mCaveIndexCount, 1, 0, 0, 0);
 
-        // Slider draw
-        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mSliderVertexBuffer, 0,
-        wgpuBufferGetSize(mSliderVertexBuffer));
-        wgpuRenderPassEncoderSetIndexBuffer(renderPass, mSliderIndexBuffer,
-        WGPUIndexFormat_Uint16, 0, wgpuBufferGetSize(mSliderIndexBuffer));
-        wgpuRenderPassEncoderDrawIndexed(renderPass, mSliderIndexCount, 1, 0, 0, 0);
+        //Cave
+        if (mCaveVertexBuffer && mCaveIndexBuffer && mCaveIndexCount > 0)
+        {
+            wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mCaveVertexBuffer, 0, wgpuBufferGetSize(mCaveVertexBuffer));
+            wgpuRenderPassEncoderSetIndexBuffer(renderPass, mCaveIndexBuffer, WGPUIndexFormat_Uint16, 0, wgpuBufferGetSize(mCaveIndexBuffer));
+            wgpuRenderPassEncoderSetBindGroup(renderPass, 0, mBindGroup, 0, nullptr);
+            wgpuRenderPassEncoderDrawIndexed(renderPass, mCaveIndexCount, 1, 0, 0, 0);
+        }
+
+        // Slider
+        if (mSliderVertexBuffer && mSliderIndexBuffer && mSliderIndexCount > 0)
+        {
+            wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mSliderVertexBuffer, 0,
+            wgpuBufferGetSize(mSliderVertexBuffer));
+            wgpuRenderPassEncoderSetIndexBuffer(renderPass, mSliderIndexBuffer,
+            WGPUIndexFormat_Uint16, 0, wgpuBufferGetSize(mSliderIndexBuffer));
+            wgpuRenderPassEncoderDrawIndexed(renderPass, mSliderIndexCount, 1, 0, 0, 0);
+        }
 
         wgpuRenderPassEncoderEnd(renderPass);
         wgpuRenderPassEncoderRelease(renderPass);
@@ -514,11 +522,11 @@ void WebGpuWindow::reloadShader()
 }
 #endif
 
-void WebGpuWindow::InitializeCave()
+void WebGpuWindow::InitializeProceduralCave()
 {
     std::vector<Vertex> verts;
     std::vector<Index>  indices;
-    buildCaveGeometry(verts, indices);
+    mPerlinCave.buildCaveGeometry(verts, indices);
 
     mCaveIndexCount = static_cast<uint32_t>(indices.size());
 
@@ -534,25 +542,53 @@ void WebGpuWindow::InitializeCave()
     wgpuQueueWriteBuffer(mQueue, mCaveIndexBuffer, 0, indices.data(), bd.size);
 }
 
-void WebGpuWindow::InitializeSlider()
+void WebGpuWindow::InitializeLoadedCave()
 {
-    std::vector<Vertex> verts;
-    std::vector<Index>  indices;
-    buildSliderGeometry(verts, indices);
+    std::vector<float>    pointData;
+    std::vector<uint16_t> indexData;
 
-    mSliderIndexCount = static_cast<uint32_t>(indices.size());
+    const bool success = ResourceManager::loadGeometry(RESOURCE_DIR "/cave.txt",
+                                                        pointData,
+                                                        indexData,
+                                                        3);
+    if (!success) {
+        std::cerr << "Could not load geometry!" << std::endl;
+        return;
+    }
+
+    mCaveIndexCount = static_cast<uint32_t>(indexData.size());
 
     WGPUBufferDescriptor bd{};
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
-    bd.size  = verts.size() * sizeof(Vertex);
-    mSliderVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-    wgpuQueueWriteBuffer(mQueue, mSliderVertexBuffer, 0, verts.data(), bd.size);
+    bd.size  = pointData.size() * sizeof(float);
+    mCaveVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mCaveVertexBuffer, 0, pointData.data(), bd.size);
 
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
-    bd.size  = (indices.size() * sizeof(Index) + 3) & ~3ULL;
-    mSliderIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-    wgpuQueueWriteBuffer(mQueue, mSliderIndexBuffer, 0, indices.data(), bd.size);
+    bd.size  = (indexData.size() * sizeof(uint16_t) + 3) & ~3ULL;
+    mCaveIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mCaveIndexBuffer, 0, indexData.data(), bd.size);
 }
+
+// void WebGpuWindow::InitializeSlider()
+// {
+//     std::vector<Vertex> verts;
+//     std::vector<Index>  indices;
+//     buildSliderGeometry(verts, indices);
+//
+//     mSliderIndexCount = static_cast<uint32_t>(indices.size());
+//
+//     WGPUBufferDescriptor bd{};
+//     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
+//     bd.size  = verts.size() * sizeof(Vertex);
+//     mSliderVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+//     wgpuQueueWriteBuffer(mQueue, mSliderVertexBuffer, 0, verts.data(), bd.size);
+//
+//     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
+//     bd.size  = (indices.size() * sizeof(Index) + 3) & ~3ULL;
+//     mSliderIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+//     wgpuQueueWriteBuffer(mQueue, mSliderIndexBuffer, 0, indices.data(), bd.size);
+// }
 
 void WebGpuWindow::setSliderPosition(const float x, const float y, const float z)
 {

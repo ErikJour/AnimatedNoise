@@ -67,6 +67,7 @@ target_sources(AnimatedNoise
         source/PluginProcessor.cpp
         UI/webGpuWindow.cpp
         UI/ResourceManager.cpp
+        procedural/perlinCave.cpp
 )
 
 if (APPLE)
@@ -83,6 +84,7 @@ target_include_directories(AnimatedNoise
         source
         UI
         geometries
+        procedural
 )
 
 #==================================
