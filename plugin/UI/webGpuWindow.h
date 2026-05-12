@@ -15,6 +15,7 @@
 #include "ResourceManager.h"
 #include "perlinCave.h"
 #include "proceduralSlider.h"
+#include "plane.h"
 
 #define WGPU_STR(s) WGPUStringView{s, sizeof(s) - 1}
 
@@ -51,6 +52,8 @@ public:
     void InitializeSlider();
     void InitializeProceduralCave();
     void InitializeLoadedCave();
+    void initializePlane();
+
 
     float sliderTopFraction()       const { return (1.0f - (kSpineMaxY + mSliderPos[1])) * 0.5f; }
     float sliderBottomFraction()    const { return (1.0f - (kSpineMinY + mSliderPos[1])) * 0.5f; }
@@ -114,7 +117,9 @@ private:
 #ifdef DEBUG
     void reloadShader();
 #endif
-
+    //====================================
+    //Variables
+    //====================================
     std::filesystem::path mShaderPath;
     std::filesystem::file_time_type mLastShaderWriteTime;
     mutable double mRed = {};
@@ -153,9 +158,15 @@ private:
     uint32_t    mSliderIndexCount   = 0;
     float       mSliderValue     = 0.5f;
     float       mSliderPos[3]   = { 0.5f, 0.0f, 0.2f };
-
     static constexpr float kSpineMinY      = -0.15f;
     static constexpr float kSpineMaxY      =  0.25f;
     static constexpr float kIndicatorHalfY =  0.025f;
+    //Plane
+    Plane       mPlane;
+    WGPUBuffer  mPlaneVertexBuffer  = nullptr;
+    WGPUBuffer  mPlaneIndexBuffer  = nullptr;
+    uint32_t    mPlaneIndexCount    = 0;
+
+
 };
 

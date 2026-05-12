@@ -85,6 +85,7 @@ target_include_directories(AnimatedNoise
         UI
         geometries
         procedural
+        shaders
 )
 
 #==================================
