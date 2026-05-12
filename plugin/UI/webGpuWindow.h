@@ -148,6 +148,9 @@ private:
 
     std::vector<WGPUVertexBufferLayout> mVertexBufferLayouts = {};
     std::array<WGPUVertexAttribute, 3> mVertexAttribs = {};
+    uint32_t mUniformStride = 0;
+    std::vector<std::filesystem::path> mShaderPaths;
+
     //Cave
     WGPUBuffer  mCaveVertexBuffer  = nullptr;
     WGPUBuffer  mCaveIndexBuffer  = nullptr;

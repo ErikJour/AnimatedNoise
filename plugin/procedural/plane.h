@@ -55,8 +55,7 @@ public:
                 PlaneVertex vert{};
                 vert.x  = px;   vert.y  = py;   vert.z  = 0.0f;
                 vert.nx = 0.0f; vert.ny = 0.0f; vert.nz = 1.0f;
-                vert.r  = 0.25f;    vert.g  = 0.25f;  // flip V to match UV convention
-                vert.b = 0.3f;
+                vert.r  = 0.0f;    vert.g  = 0.0f;  vert.b = 0.0f;
 
                 verts.push_back(vert);
             }

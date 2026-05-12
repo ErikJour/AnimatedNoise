@@ -26,6 +26,8 @@ public:
         const std::filesystem::path& path,
         WGPUDevice device
     );
+    static WGPUShaderModule loadShaderModules(const std::vector<std::filesystem::path>& paths,
+                                                    WGPUDevice device);
 
 private:
     std::string                    mShaderSource;

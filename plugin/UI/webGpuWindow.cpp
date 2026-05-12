@@ -95,12 +95,31 @@ bool WebGpuWindow::createQueue()
     return true;
 }
 
+#ifdef DEBUG
+static std::filesystem::file_time_type latestWriteTime(const std::vector<std::filesystem::path>& paths)
+{
+    std::filesystem::file_time_type latest{};
+    for (const auto& p : paths)
+        latest = std::max(latest, std::filesystem::last_write_time(p));
+    return latest;
+}
+#endif
+
 bool WebGpuWindow::createShader()
 {
 #ifdef DEBUG
-    mShaderPath          = DEBUG_SHADER_PATH;
-    mLastShaderWriteTime = std::filesystem::last_write_time(mShaderPath);
-    mShaderModule        = ResourceManager::loadShaderModule(mShaderPath, mDevice);
+    const std::string dir = DEBUG_SHADER_DIR;
+    mShaderPaths = {
+        dir + "/common.wgsl",
+        dir + "/lighting.wgsl",
+        dir + "/mat_cave.wgsl",
+        dir + "/mat_slider.wgsl",
+        dir + "/mat_plane.wgsl",
+        dir + "/vs_main.wgsl",
+        dir + "/fs_main.wgsl",
+    };
+    mLastShaderWriteTime = latestWriteTime(mShaderPaths);
+    mShaderModule        = ResourceManager::loadShaderModules(mShaderPaths, mDevice);
 #else
     WGPUShaderModuleWGSLDescriptor shaderCodeDesc{};
     shaderCodeDesc.chain.next  = nullptr;
@@ -171,7 +190,7 @@ bool WebGpuWindow::initialize()
     configurePipeline();
     ConfigureVertexLayout();
     initializePlane();
-    // InitializeSlider();
+    InitializeSlider();
     // InitializeProceduralCave();
     return true;
 }
@@ -193,11 +212,14 @@ bool WebGpuWindow::createPipeline()
     if (mUniformBuffer){ wgpuBufferRelease(mUniformBuffer);   mUniformBuffer = nullptr; }
     if (mPipeline)     { wgpuRenderPipelineRelease(mPipeline); mPipeline     = nullptr; }
 
-    // --- Explicit BGL (replaces GetBindGroupLayout) ---
+    static constexpr uint32_t kAlignment = 256; // minUniformBufferOffsetAlignment
+    mUniformStride = (sizeof(MyUniforms) + kAlignment - 1) & ~(kAlignment - 1);
+
     WGPUBindGroupLayoutEntry bglEntry  = {};
     bglEntry.binding                   = 0;
     bglEntry.visibility                = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
     bglEntry.buffer.type               = WGPUBufferBindingType_Uniform;
+    bglEntry.buffer.hasDynamicOffset   = true;
     bglEntry.buffer.minBindingSize     = sizeof(MyUniforms);
 
     WGPUBindGroupLayoutDescriptor bglDesc = {};
@@ -213,7 +235,6 @@ bool WebGpuWindow::createPipeline()
         mPipelineDesc.layout = nullptr;
     }
     mPipelineDesc.layout = wgpuDeviceCreatePipelineLayout(mDevice, &layoutDesc);
-    // --------------------------------------------------
 
     mColorTarget.format        = mSurfaceFormat;
     mColorTarget.blend         = &mBlendState;
@@ -231,24 +252,23 @@ bool WebGpuWindow::createPipeline()
         std::cerr << "Failed to create render pipeline." << std::endl;
         return false;
     }
-    // 1. Create the Buffer
+
     WGPUBufferDescriptor bufferDesc = {};
-    bufferDesc.size                 = sizeof(MyUniforms);
+    bufferDesc.size                 = 3 * mUniformStride;  // one slot per material
     bufferDesc.usage                = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
     mUniformBuffer                  = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
-    // 2. Create the Bind Group (This connects the buffer to @binding(0))
-    WGPUBindGroupEntry entry        = {};
-    entry.binding                   = 0;
-    entry.buffer                    = mUniformBuffer;
-    entry.offset                    = 0;
-    entry.size                      = sizeof(MyUniforms);
-    WGPUBindGroupDescriptor bgDesc  = {};
 
-    // WGPUBindGroupLayout bgl         = wgpuRenderPipelineGetBindGroupLayout(mPipeline, 0);
-    bgDesc.layout                   = bgl;
-    bgDesc.entryCount               = 1;
-    bgDesc.entries                  = &entry;
-    mBindGroup                      = wgpuDeviceCreateBindGroup(mDevice, &bgDesc);
+    WGPUBindGroupEntry entry = {};
+    entry.binding            = 0;
+    entry.buffer             = mUniformBuffer;
+    entry.offset             = 0;
+    entry.size               = sizeof(MyUniforms);
+
+    WGPUBindGroupDescriptor bgDesc = {};
+    bgDesc.layout                  = bgl;
+    bgDesc.entryCount              = 1;
+    bgDesc.entries                 = &entry;
+    mBindGroup                     = wgpuDeviceCreateBindGroup(mDevice, &bgDesc);
 
     wgpuBindGroupLayoutRelease(bgl);
     return true;
@@ -257,7 +277,7 @@ bool WebGpuWindow::createPipeline()
 void WebGpuWindow::renderFrame(const float currentTime)
 {
     #ifdef DEBUG
-        auto writeTime = std::filesystem::last_write_time(mShaderPath);
+        auto writeTime = latestWriteTime(mShaderPaths);
         if (writeTime != mLastShaderWriteTime) {
             mLastShaderWriteTime = writeTime;
             reloadShader();
@@ -316,36 +336,38 @@ void WebGpuWindow::renderFrame(const float currentTime)
         const WGPURenderPassEncoder renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
 
         wgpuRenderPassEncoderSetPipeline(renderPass, mPipeline);
-        wgpuRenderPassEncoderSetBindGroup(renderPass, 0, mBindGroup, 0, nullptr);
+        // wgpuRenderPassEncoderSetBindGroup(renderPass, 0, mBindGroup, 0, nullptr);
 
 
-        //Cave
-        if (mCaveVertexBuffer && mCaveIndexBuffer && mCaveIndexCount > 0)
-        {
-            wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mCaveVertexBuffer, 0, wgpuBufferGetSize(mCaveVertexBuffer));
-            wgpuRenderPassEncoderSetIndexBuffer(renderPass, mCaveIndexBuffer, WGPUIndexFormat_Uint16, 0, wgpuBufferGetSize(mCaveIndexBuffer));
-            wgpuRenderPassEncoderDrawIndexed(renderPass, mCaveIndexCount, 1, 0, 0, 0);
-        }
+    // Cave
+    if (mCaveVertexBuffer && mCaveIndexBuffer && mCaveIndexCount > 0)
+    {
+        const uint32_t offset = MAT_CAVE * mUniformStride;
+        wgpuRenderPassEncoderSetBindGroup(renderPass, 0, mBindGroup, 1, &offset);
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mCaveVertexBuffer, 0, wgpuBufferGetSize(mCaveVertexBuffer));
+        wgpuRenderPassEncoderSetIndexBuffer(renderPass, mCaveIndexBuffer, WGPUIndexFormat_Uint16, 0, wgpuBufferGetSize(mCaveIndexBuffer));
+        wgpuRenderPassEncoderDrawIndexed(renderPass, mCaveIndexCount, 1, 0, 0, 0);
+    }
 
-        // Slider
-        if (mSliderVertexBuffer && mSliderIndexBuffer && mSliderIndexCount > 0)
-        {
-            wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mSliderVertexBuffer, 0,
-            wgpuBufferGetSize(mSliderVertexBuffer));
-            wgpuRenderPassEncoderSetIndexBuffer(renderPass, mSliderIndexBuffer,
-            WGPUIndexFormat_Uint16, 0, wgpuBufferGetSize(mSliderIndexBuffer));
-            wgpuRenderPassEncoderDrawIndexed(renderPass, mSliderIndexCount, 1, 0, 0, 0);
-        }
+    // Slider
+    if (mSliderVertexBuffer && mSliderIndexBuffer && mSliderIndexCount > 0)
+    {
+        const uint32_t offset = MAT_SLIDER * mUniformStride;
+        wgpuRenderPassEncoderSetBindGroup(renderPass, 0, mBindGroup, 1, &offset);
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mSliderVertexBuffer, 0, wgpuBufferGetSize(mSliderVertexBuffer));
+        wgpuRenderPassEncoderSetIndexBuffer(renderPass, mSliderIndexBuffer, WGPUIndexFormat_Uint16, 0, wgpuBufferGetSize(mSliderIndexBuffer));
+        wgpuRenderPassEncoderDrawIndexed(renderPass, mSliderIndexCount, 1, 0, 0, 0);
+    }
 
-        // Plane
-        if (mPlaneVertexBuffer && mPlaneIndexBuffer && mPlaneIndexCount > 0)
-        {
-            wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mPlaneVertexBuffer, 0,
-            wgpuBufferGetSize(mPlaneVertexBuffer));
-            wgpuRenderPassEncoderSetIndexBuffer(renderPass, mPlaneIndexBuffer,
-            WGPUIndexFormat_Uint16, 0, wgpuBufferGetSize(mPlaneIndexBuffer));
-            wgpuRenderPassEncoderDrawIndexed(renderPass, mPlaneIndexCount, 1, 0, 0, 0);
-        }
+    // Plane
+    if (mPlaneVertexBuffer && mPlaneIndexBuffer && mPlaneIndexCount > 0)
+    {
+        const uint32_t offset = MAT_PLANE * mUniformStride;
+        wgpuRenderPassEncoderSetBindGroup(renderPass, 0, mBindGroup, 1, &offset);
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mPlaneVertexBuffer, 0, wgpuBufferGetSize(mPlaneVertexBuffer));
+        wgpuRenderPassEncoderSetIndexBuffer(renderPass, mPlaneIndexBuffer, WGPUIndexFormat_Uint16, 0, wgpuBufferGetSize(mPlaneIndexBuffer));
+        wgpuRenderPassEncoderDrawIndexed(renderPass, mPlaneIndexCount, 1, 0, 0, 0);
+    }
 
         wgpuRenderPassEncoderEnd(renderPass);
         wgpuRenderPassEncoderRelease(renderPass);
@@ -428,18 +450,23 @@ void WebGpuWindow::getLimits(WGPUAdapter adapter, WGPUSupportedLimits &limits)
 
 void WebGpuWindow::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const float time) const
 {
-    MyUniforms      uData;
-    uData.time      = time;
-    uData.frequency = 10.0f;
-    uData.amplitude = 0.5f;
-    uData.sliderValue = mSliderValue;
-    uData.lightPos[0] =  0.0f;
-    uData.lightPos[1] =  0.10f;
-    uData.lightPos[2] =  0.35f;
-    uData.sliderPos[0] = mSliderPos[0];
-    uData.sliderPos[1] = mSliderPos[1];
-    uData.sliderPos[2] = mSliderPos[2];
-    wgpuQueueWriteBuffer(queue, uniformBuffer, 0, &uData, sizeof(MyUniforms));
+    MyUniforms base{};
+    base.time        = time;
+    base.frequency   = 10.0f;
+    base.amplitude   = 0.5f;
+    base.sliderValue  = mSliderValue;
+    base.lightPos[0]  = 0.0f;
+    base.lightPos[1]  = 0.10f;
+    base.lightPos[2]  = 0.35f;
+    base.sliderPos[0] = mSliderPos[0];
+    base.sliderPos[1] = mSliderPos[1];
+    base.sliderPos[2] = mSliderPos[2];
+
+    const uint32_t ids[3] = { MAT_CAVE, MAT_SLIDER, MAT_PLANE };
+    for (uint32_t i = 0; i < 3; ++i) {
+        base.materialId = ids[i];
+        wgpuQueueWriteBuffer(queue, uniformBuffer, i * mUniformStride, &base, sizeof(MyUniforms));
+    }
 }
 
 void WebGpuWindow::wgpuPollEvents([[maybe_unused]] WGPUDevice device, [[maybe_unused]] bool yieldToWebBrowser)
@@ -523,7 +550,7 @@ void WebGpuWindow::ConfigureVertexLayout()
 #ifdef DEBUG
 void WebGpuWindow::reloadShader()
 {
-    const WGPUShaderModule newModule = ResourceManager::loadShaderModule(mShaderPath, mDevice);
+    const WGPUShaderModule newModule = ResourceManager::loadShaderModules(mShaderPaths, mDevice);
     if (!newModule) {
         std::cerr << "Shader compile failed — keeping old pipeline." << std::endl;
         return;
@@ -610,7 +637,7 @@ void WebGpuWindow::initializePlane()
     std::vector<PlaneVertex> vertices;
     std::vector<PlaneIndex>  indices;
 
-    mPlane.buildPlane(vertices, indices, 0.25f, 0.25f, 32, 32);
+    mPlane.buildPlane(vertices, indices, 0.15f, 0.25f, 32, 32);
 
     mPlaneIndexCount = static_cast<uint32_t>(indices.size());
 

@@ -7,6 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <iostream>
 
 bool ResourceManager::loadGeometry(const std::filesystem::path& path,
                                           std::vector<float>& pointData,
@@ -83,6 +84,35 @@ WGPUShaderModule ResourceManager::loadShaderModule(const std::filesystem::path& 
     shaderCodeDesc.chain.next  = nullptr;
     shaderCodeDesc.chain.sType = WGPUSType_ShaderSourceWGSL;
     shaderCodeDesc.code        = { shaderSource.c_str(), shaderSource.size() };
+
+    WGPUShaderModuleDescriptor shaderDesc{};
+    shaderDesc.nextInChain = &shaderCodeDesc.chain;
+    return wgpuDeviceCreateShaderModule(device, &shaderDesc);
+}
+
+WGPUShaderModule ResourceManager::loadShaderModules(const std::vector<std::filesystem::path>& paths,
+                                                     WGPUDevice device)
+{
+    std::string combined;
+    for (const auto& path : paths) {
+        std::ifstream file(path);
+        if (!file.is_open()) {
+            std::cerr << "Could not open shader: " << path << std::endl;
+            return nullptr;
+        }
+        file.seekg(0, std::ios::end);
+        const auto size = static_cast<size_t>(file.tellg());
+        std::string src(size, ' ');
+        file.seekg(0);
+        file.read(src.data(), static_cast<std::streamsize>(size));
+        combined += src;
+        combined += '\n';
+    }
+
+    WGPUShaderModuleWGSLDescriptor shaderCodeDesc{};
+    shaderCodeDesc.chain.next  = nullptr;
+    shaderCodeDesc.chain.sType = WGPUSType_ShaderSourceWGSL;
+    shaderCodeDesc.code        = { combined.c_str(), combined.size() };
 
     WGPUShaderModuleDescriptor shaderDesc{};
     shaderDesc.nextInChain = &shaderCodeDesc.chain;

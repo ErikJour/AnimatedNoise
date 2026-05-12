@@ -128,14 +128,31 @@ else()
 endif()
 
 #==================================
-# Shader file
+# Shader files (concatenated in order)
 #==================================
-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/UI/shader.wgsl" SHADER_SOURCE)
+set(SHADER_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/common.wgsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/lighting.wgsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/mat_cave.wgsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/mat_slider.wgsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/mat_plane.wgsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/vs_main.wgsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/fs_main.wgsl"
+)
+
+set(SHADER_SOURCE "")
+foreach(SHADER_FILE ${SHADER_FILES})
+    file(READ "${SHADER_FILE}" SHADER_CHUNK)
+    string(APPEND SHADER_SOURCE "${SHADER_CHUNK}\n")
+endforeach()
+
 configure_file(
         "${CMAKE_CURRENT_SOURCE_DIR}/UI/shader.wgsl.h.in"
         "${CMAKE_CURRENT_BINARY_DIR}/shader.wgsl.h"
 )
-target_compile_definitions(${PROJECT_NAME} PRIVATE
-        DEBUG_SHADER_PATH="${CMAKE_CURRENT_SOURCE_DIR}/UI/shader.wgsl"
+
+target_compile_definitions(AnimatedNoise PRIVATE
+        DEBUG_SHADER_DIR="${CMAKE_CURRENT_SOURCE_DIR}/shaders"
 )
+
 target_include_directories(AnimatedNoise PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
