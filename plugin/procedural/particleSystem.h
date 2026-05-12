@@ -1,0 +1,141 @@
+// particleSystem.h
+// Created by Erik Jourgensen on 5/12/26.
+
+#ifndef ANIMATEDNOISE_PARTICLESYSTEM_H
+#define ANIMATEDNOISE_PARTICLESYSTEM_H
+
+#include <vector>
+#include <cstdint>
+#include <cmath>
+#include <cstdlib>
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BUFFER 1 — QuadVertex  (vertex buffer, step mode: per-vertex)
+//
+// A single unit quad shared by every particle instance.
+// The vertex shader offsets each corner in view space to achieve billboarding.
+//
+// WGSL vertex layout:
+//   @location(0) cornerOffset : vec2f   -- offset  0, stride 16
+//   @location(1) uv           : vec2f   -- offset  8
+//
+// Topology: triangle-list, 6 vertices (two CCW triangles, no index buffer needed)
+// ─────────────────────────────────────────────────────────────────────────────
+struct QuadVertex {
+    float cx, cy;   // corner offset in local space: ±0.5
+    float u, v;     // UV coords: 0..1
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BUFFER 2 — ParticleData  (storage buffer, step mode: per-instance)
+//
+// One entry per particle. Grouped into vec4f-sized chunks to satisfy
+// WGSL 16-byte struct alignment without hidden padding surprises.
+//
+// WGSL storage struct:
+//   struct Particle {
+//       pos_size  : vec4f,   // xyz = world position, w = billboard size
+//       color     : vec4f,   // rgba
+//       life_vel  : vec4f,   // x = normalized lifetime 0..1,
+//   }                        // yzw = velocity (for compute shader animation)
+//
+// Total: 48 bytes per particle
+// ─────────────────────────────────────────────────────────────────────────────
+struct ParticleData {
+    // --- pos_size (vec4f) ---
+    float x, y, z;      // world position
+    float size;          // billboard scale in world units
+
+    // --- color (vec4f) ---
+    float r, g, b, a;   // RGBA color
+
+    // --- life_vel (vec4f) ---
+    float life;          // normalized lifetime: 1.0 = just born, 0.0 = dead
+    float vx, vy, vz;   // velocity (consumed by compute shader, ignored in render-only mode)
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ParticleSystem
+//
+// Responsibilities:
+//   buildQuad()     — generate the shared unit billboard quad (called once)
+//   initParticles() — scatter N particles into a ParticleData array (CPU init)
+//
+// GPU buffer creation and bind group wiring happen in the renderer, not here.
+// ─────────────────────────────────────────────────────────────────────────────
+class ParticleSystem
+{
+public:
+    // Produces 6 QuadVertex entries describing a unit quad in CCW winding.
+    // All particles share this single quad via instanced draw.
+    //
+    // Equivalent to: draw(6, particleCount) in the render pass.
+    //
+    //   3──2
+    //   │ /│
+    //   │/ │
+    //   0──1
+    //
+    //   Triangle 0: 0, 1, 2  (bottom-left, bottom-right, top-right)
+    //   Triangle 1: 0, 2, 3  (bottom-left, top-right,  top-left)
+    static void buildQuad(std::vector<QuadVertex>& verts)
+    {
+        verts.clear();
+        verts.reserve(6);
+
+        // corner offsets and matching UVs
+        // cx, cy,   u, v
+        verts.push_back({ -0.5f, -0.5f,  0.0f, 0.0f }); // 0 bottom-left
+        verts.push_back({  0.5f, -0.5f,  1.0f, 0.0f }); // 1 bottom-right
+        verts.push_back({  0.5f,  0.5f,  1.0f, 1.0f }); // 2 top-right
+
+        verts.push_back({ -0.5f, -0.5f,  0.0f, 0.0f }); // 0 bottom-left (repeated)
+        verts.push_back({  0.5f,  0.5f,  1.0f, 1.0f }); // 2 top-right   (repeated)
+        verts.push_back({ -0.5f,  0.5f,  0.0f, 1.0f }); // 3 top-left
+    }
+
+    // Scatter `count` particles randomly within a cube of side `spread`,
+    // centered at the origin.
+    //
+    // Equivalent to the Three.js loop:
+    //   for(let i = 0; i < count * 3; i++)
+    //       positions[i] = (Math.random() - 0.5) * spread;
+    //
+    // size, color, and life are set to sensible defaults; override after the call
+    // if you need per-particle variation.
+    static void initParticles(std::vector<ParticleData>& particles,
+                              int   count  = 500,
+                              float spread = 10.0f,
+                              float size   = 0.01f)
+    {
+        particles.clear();
+        particles.reserve(static_cast<size_t>(count));
+
+        for (int i = 0; i < count; ++i)
+        {
+            ParticleData p{};
+
+            // Random position in [-spread/2, +spread/2]
+            p.x = (randomFloat() - 0.5f) * spread;
+            p.y = (randomFloat() - 0.25f) * spread;
+            p.z = (randomFloat() - 0.45f) * spread;
+
+            p.size = size;
+
+            p.r = 1.0f; p.g = 1.0f; p.b = 1.0f; p.a = 1.0f;
+
+            p.life = randomFloat(); // stagger lifetimes so they don't all die at once
+            p.vx = 0.0f; p.vy = 0.0f; p.vz = 0.0f;
+
+            particles.push_back(p);
+        }
+    }
+
+private:
+    static float randomFloat()
+    {
+        return static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+    }
+};
+
+#endif // ANIMATEDNOISE_PARTICLESYSTEM_H

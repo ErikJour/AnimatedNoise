@@ -1,6 +1,6 @@
 // ── Material IDs ──────────────────────────────────────────────────────────────
 const MAT_CAVE:             u32 = 0u;
-const MAT_SLIDER:     u32 = 1u;
+const MAT_SLIDER:           u32 = 1u;
 const MAT_PLANE:            u32 = 2u;
 
 // ── Scene constants ───────────────────────────────────────────────────────────

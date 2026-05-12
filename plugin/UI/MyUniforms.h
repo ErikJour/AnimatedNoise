@@ -6,6 +6,7 @@
 static constexpr uint32_t MAT_CAVE             = 0;
 static constexpr uint32_t MAT_SLIDER           = 1;
 static constexpr uint32_t MAT_PLANE            = 2;
+static constexpr uint32_t MAT_PARTICLES        = 3;
 
 struct MyUniforms {
     float    time;

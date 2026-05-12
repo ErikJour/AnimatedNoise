@@ -115,6 +115,7 @@ bool WebGpuWindow::createShader()
         dir + "/mat_cave.wgsl",
         dir + "/mat_slider.wgsl",
         dir + "/mat_plane.wgsl",
+        dir + "/mat_particle.wgsl",
         dir + "/vs_main.wgsl",
         dir + "/fs_main.wgsl",
     };
@@ -189,9 +190,10 @@ bool WebGpuWindow::initialize()
     if (!createShader())        return false;
     configurePipeline();
     ConfigureVertexLayout();
-    initializePlane();
+    // initializePlane();
     InitializeSlider();
     InitializeProceduralCave();
+    initializeParticles();
     return true;
 }
 
@@ -254,7 +256,7 @@ bool WebGpuWindow::createPipeline()
     }
 
     WGPUBufferDescriptor bufferDesc = {};
-    bufferDesc.size                 = 3 * mUniformStride;  // one slot per material
+    bufferDesc.size                 = 4 * mUniformStride;  // one slot per material
     bufferDesc.usage                = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
     mUniformBuffer                  = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
 
@@ -271,6 +273,7 @@ bool WebGpuWindow::createPipeline()
     mBindGroup                     = wgpuDeviceCreateBindGroup(mDevice, &bgDesc);
 
     wgpuBindGroupLayoutRelease(bgl);
+    if (!createParticlePipeline()) return false;
     return true;
 }
 
@@ -369,6 +372,18 @@ void WebGpuWindow::renderFrame(const float currentTime)
         wgpuRenderPassEncoderDrawIndexed(renderPass, mPlaneIndexCount, 1, 0, 0, 0);
     }
 
+    // Particles
+    if (mParticleQuadBuffer && mParticleDataBuffer && mParticleCount > 0)
+    {
+        wgpuRenderPassEncoderSetPipeline(renderPass, mParticlePipeline);  // ← swap pipeline
+        const uint32_t offset = MAT_PARTICLES * mUniformStride;
+        wgpuRenderPassEncoderSetBindGroup(renderPass, 0, mBindGroup, 1, &offset);
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mParticleQuadBuffer, 0, wgpuBufferGetSize(mParticleQuadBuffer));
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 1, mParticleDataBuffer, 0, wgpuBufferGetSize(mParticleDataBuffer));
+        wgpuRenderPassEncoderDraw(renderPass, 6, mParticleDrawCount, 0, 0);
+        wgpuRenderPassEncoderSetPipeline(renderPass, mPipeline);          // ← restore main pipeline
+    }
+
         wgpuRenderPassEncoderEnd(renderPass);
         wgpuRenderPassEncoderRelease(renderPass);
 
@@ -396,6 +411,8 @@ void WebGpuWindow::onResize (uint32_t width, uint32_t height)
 
 void WebGpuWindow::terminate()
 {
+    if (mParticleQuadBuffer)  { wgpuBufferRelease(mParticleQuadBuffer);  mParticleQuadBuffer  = nullptr; }
+    if (mParticleDataBuffer)  { wgpuBufferRelease(mParticleDataBuffer);  mParticleDataBuffer  = nullptr; }
     if (mDepthTextureView) { wgpuTextureViewRelease(mDepthTextureView); mDepthTextureView = nullptr; }
     if (mDepthTexture)     { wgpuTextureDestroy(mDepthTexture); wgpuTextureRelease(mDepthTexture); mDepthTexture = nullptr; }
     if (mPlaneVertexBuffer) { wgpuBufferRelease(mPlaneVertexBuffer); mPlaneVertexBuffer = nullptr; }
@@ -406,6 +423,7 @@ void WebGpuWindow::terminate()
     if (mSliderIndexBuffer)  { wgpuBufferRelease(mSliderIndexBuffer);  mSliderIndexBuffer  = nullptr; }
     if (mBindGroup)     { wgpuBindGroupRelease(mBindGroup); mBindGroup = nullptr; }
     if (mUniformBuffer) { wgpuBufferRelease(mUniformBuffer); mUniformBuffer = nullptr; }
+    if (mParticlePipeline) { wgpuRenderPipelineRelease(mParticlePipeline); mParticlePipeline = nullptr; }
     if (mPipeline)      { wgpuRenderPipelineRelease(mPipeline); mPipeline = nullptr; }
     if (mPipelineDesc.layout) { wgpuPipelineLayoutRelease(mPipelineDesc.layout); mPipelineDesc.layout = nullptr; }
     if (mSurface)       { wgpuSurfaceUnconfigure(mSurface); wgpuSurfaceRelease(mSurface); mSurface = nullptr; }
@@ -455,15 +473,15 @@ void WebGpuWindow::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, 
     base.frequency   = 10.0f;
     base.amplitude   = 0.5f;
     base.sliderValue  = mSliderValue;
-    base.lightPos[0]  = 0.0f;
+    base.lightPos[0]  = 0.25f;
     base.lightPos[1]  = 0.10f;
     base.lightPos[2]  = 0.35f;
     base.sliderPos[0] = mSliderPos[0];
     base.sliderPos[1] = mSliderPos[1];
     base.sliderPos[2] = mSliderPos[2];
 
-    const uint32_t ids[3] = { MAT_CAVE, MAT_SLIDER, MAT_PLANE };
-    for (uint32_t i = 0; i < 3; ++i) {
+    const uint32_t ids[4] = { MAT_CAVE, MAT_SLIDER, MAT_PLANE, MAT_PARTICLES };
+    for (uint32_t i = 0; i < 4; ++i) {
         base.materialId = ids[i];
         wgpuQueueWriteBuffer(queue, uniformBuffer, i * mUniformStride, &base, sizeof(MyUniforms));
     }
@@ -536,14 +554,14 @@ void WebGpuWindow::ConfigureVertexLayout()
     mVertexAttribs[2].shaderLocation = 1;
     mVertexAttribs[2].format         = WGPUVertexFormat_Float32x3;
     mVertexAttribs[2].offset         = 6 * sizeof(float);
-    // Vertex Buffer Layout
+
     mVertexBufferLayouts.resize(1);
     mVertexBufferLayouts[0].attributeCount = 3;
     mVertexBufferLayouts[0].attributes     = mVertexAttribs.data();
-    mVertexBufferLayouts[0].arrayStride    = 9 * sizeof(float);
+    mVertexBufferLayouts[0].arrayStride    = 9 * sizeof(float);   // ← restored
     mVertexBufferLayouts[0].stepMode       = WGPUVertexStepMode_Vertex;
-    // Wiring Into the Pipeline Descriptor
-    mPipelineDesc.vertex.bufferCount = 1;
+
+    mPipelineDesc.vertex.bufferCount = 1;                         // ← restored
     mPipelineDesc.vertex.buffers     = mVertexBufferLayouts.data();
 }
 
@@ -631,6 +649,21 @@ void WebGpuWindow::InitializeSlider()
     wgpuQueueWriteBuffer(mQueue, mSliderIndexBuffer, 0, indices.data(), bd.size);
 }
 
+void WebGpuWindow::setSliderPosition(const float x, const float y, const float z)
+{
+    mSliderPos[0] = x;
+    mSliderPos[1] = y;
+    mSliderPos[2] = z;
+    mParticleDrawCount = static_cast<uint32_t>(mSliderValue * MAX_PARTICLES);
+}
+
+void WebGpuWindow::setSliderValue(float v)
+{
+    mSliderValue = v;
+    mParticleDrawCount = static_cast<uint32_t>(mSliderValue * MAX_PARTICLES);
+}
+
+
 void WebGpuWindow::initializePlane()
 {
     std::cout << "Initialize plane" << std::endl;
@@ -653,10 +686,100 @@ void WebGpuWindow::initializePlane()
     wgpuQueueWriteBuffer(mQueue, mPlaneIndexBuffer, 0, indices.data(), bd.size);
 }
 
-void WebGpuWindow::setSliderPosition(const float x, const float y, const float z)
+void WebGpuWindow::initializeParticles()
 {
-    mSliderPos[0] = x;
-    mSliderPos[1] = y;
-    mSliderPos[2] = z;
+    std::vector<QuadVertex>   quadVerts;
+    std::vector<ParticleData> particles;
+
+    mParticleSystem.buildQuad(quadVerts);
+    mParticleSystem.initParticles(particles, MAX_PARTICLES, 0.35f);
+
+    // Quad vertex buffer — identical pattern to plane/slider
+    WGPUBufferDescriptor bd{};
+    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
+    bd.size  = quadVerts.size() * sizeof(QuadVertex);
+    mParticleQuadBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mParticleQuadBuffer, 0, quadVerts.data(), bd.size);
+
+    // Particle data buffer — same pattern, different usage flag
+    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
+    bd.size  = particles.size() * sizeof(ParticleData);
+    mParticleDataBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mParticleDataBuffer, 0, particles.data(), bd.size);
+
+    mParticleCount = static_cast<uint32_t>(particles.size());
+    mParticleDrawCount = mParticleCount;  // start with all visible
+
 }
+
+bool WebGpuWindow::createParticlePipeline()
+{
+    if (mParticlePipeline) { wgpuRenderPipelineRelease(mParticlePipeline); mParticlePipeline = nullptr; }
+
+    // ── Slot 0: QuadVertex, per-vertex ──────────────────────────
+    // @location(0) cornerOffset : vec2f   offset 0
+    // @location(1) uv           : vec2f   offset 8
+    mParticleVertexAttribs[0].shaderLocation = 0;
+    mParticleVertexAttribs[0].format         = WGPUVertexFormat_Float32x2;
+    mParticleVertexAttribs[0].offset         = 0;
+
+    mParticleVertexAttribs[1].shaderLocation = 1;
+    mParticleVertexAttribs[1].format         = WGPUVertexFormat_Float32x2;
+    mParticleVertexAttribs[1].offset         = 2 * sizeof(float);
+
+    // ── Slot 1: ParticleData, per-instance ──────────────────────
+    // @location(2) pos_size  : vec4f   offset  0  (xyz = world pos, w = size)
+    // @location(3) color     : vec4f   offset 16
+    // @location(4) life_vel  : vec4f   offset 32
+    mParticleVertexAttribs[2].shaderLocation = 2;
+    mParticleVertexAttribs[2].format         = WGPUVertexFormat_Float32x4;
+    mParticleVertexAttribs[2].offset         = 0;
+
+    mParticleVertexAttribs[3].shaderLocation = 3;
+    mParticleVertexAttribs[3].format         = WGPUVertexFormat_Float32x4;
+    mParticleVertexAttribs[3].offset         = 4 * sizeof(float);
+
+    mParticleVertexAttribs[4].shaderLocation = 4;
+    mParticleVertexAttribs[4].format         = WGPUVertexFormat_Float32x4;
+    mParticleVertexAttribs[4].offset         = 8 * sizeof(float);
+
+    mParticleVertexBufferLayouts.resize(2);
+
+    mParticleVertexBufferLayouts[0].attributeCount = 2;
+    mParticleVertexBufferLayouts[0].attributes     = &mParticleVertexAttribs[0];
+    mParticleVertexBufferLayouts[0].arrayStride    = sizeof(QuadVertex);
+    mParticleVertexBufferLayouts[0].stepMode       = WGPUVertexStepMode_Vertex;
+
+    mParticleVertexBufferLayouts[1].attributeCount = 3;
+    mParticleVertexBufferLayouts[1].attributes     = &mParticleVertexAttribs[2];
+    mParticleVertexBufferLayouts[1].arrayStride    = sizeof(ParticleData);
+    mParticleVertexBufferLayouts[1].stepMode       = WGPUVertexStepMode_Instance;
+
+    // ── Pipeline descriptor ─────────────────────────────────────
+    // Copy the main desc as a base — shares layout, blend, depth, multisample
+    mParticlePipelineDesc                              = mPipelineDesc;
+    mParticlePipelineDesc.vertex.module                = mShaderModule;
+    mParticlePipelineDesc.vertex.entryPoint            = WGPU_STR("vs_particle");
+    mParticlePipelineDesc.vertex.bufferCount           = 2;
+    mParticlePipelineDesc.vertex.buffers               = mParticleVertexBufferLayouts.data();
+    mParticlePipelineDesc.vertex.constantCount         = 0;
+    mParticlePipelineDesc.vertex.constants             = nullptr;
+    mParticleFragmentState.module      = mShaderModule;
+    mParticleFragmentState.entryPoint  = WGPU_STR("fs_particle");
+    mParticleFragmentState.targetCount = 1;
+    mParticleFragmentState.targets     = &mColorTarget;   // same color target as main pipeline
+    mParticleFragmentState.constants   = nullptr;
+
+    // Reuse the same fragment state — swap entry point if you want a dedicated one
+    mParticlePipelineDesc.fragment = &mParticleFragmentState;  // separate state
+
+    mParticlePipeline = wgpuDeviceCreateRenderPipeline(mDevice, &mParticlePipelineDesc);
+    if (!mParticlePipeline) {
+        std::cerr << "Failed to create particle render pipeline." << std::endl;
+        return false;
+    }
+    return true;
+}
+
+
 

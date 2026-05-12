@@ -15,8 +15,11 @@
 #include "ResourceManager.h"
 #include "perlinCave.h"
 #include "proceduralSlider.h"
-#include "plane.h"
 
+#include "plane.h"
+#include "particleSystem.h"
+
+static constexpr uint32_t MAX_PARTICLES = 1000;
 #define WGPU_STR(s) WGPUStringView{s, sizeof(s) - 1}
 
 class WebGpuWindow
@@ -46,13 +49,15 @@ public:
     void setUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer, float time) const;
     void wgpuPollEvents([[maybe_unused]] WGPUDevice device, [[maybe_unused]] bool yieldToWebBrowser);
     void ConfigureVertexLayout();
-    void setSliderValue(float v) { mSliderValue = v; }
+    void setSliderValue(float v);
     float getSliderValue() const { return mSliderValue; }
     void setSliderPosition(float x, float y, float z);
     void InitializeSlider();
     void InitializeProceduralCave();
     void InitializeLoadedCave();
     void initializePlane();
+    void initializeParticles();
+
 
 
     float sliderTopFraction()       const { return (1.0f - (kSpineMaxY + mSliderPos[1])) * 0.5f; }
@@ -170,6 +175,20 @@ private:
     WGPUBuffer  mPlaneIndexBuffer  = nullptr;
     uint32_t    mPlaneIndexCount    = 0;
 
+    ParticleSystem      mParticleSystem;
+    WGPUBuffer  mParticleQuadBuffer  = nullptr;
+    WGPUBuffer  mParticleDataBuffer  = nullptr;
+    uint32_t    mParticleCount    = 0;
+    // Particle pipeline
+    WGPURenderPipeline           mParticlePipeline     = nullptr;
+    WGPURenderPipelineDescriptor mParticlePipelineDesc {};
+    std::array<WGPUVertexAttribute, 5>      mParticleVertexAttribs {};
+    std::vector<WGPUVertexBufferLayout>     mParticleVertexBufferLayouts;
+    WGPUFragmentState             mParticleFragmentState     {};   // ← needed for fs_particle
+    uint32_t                        mParticleDrawCount = 500;        // current visible count
+
+
+    bool createParticlePipeline();
 
 };
 
