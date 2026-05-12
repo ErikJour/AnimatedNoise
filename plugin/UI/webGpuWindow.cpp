@@ -191,7 +191,7 @@ bool WebGpuWindow::initialize()
     ConfigureVertexLayout();
     initializePlane();
     InitializeSlider();
-    // InitializeProceduralCave();
+    InitializeProceduralCave();
     return true;
 }
 
@@ -567,7 +567,7 @@ void WebGpuWindow::InitializeProceduralCave()
 {
     std::vector<Vertex> verts;
     std::vector<Index>  indices;
-    // mPerlinCave.buildCaveGeometry(verts, indices);
+    mPerlinCave.buildCaveGeometry(verts, indices);
 
     mCaveIndexCount = static_cast<uint32_t>(indices.size());
 

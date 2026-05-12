@@ -6,6 +6,6 @@ fn shadePlane(in: VertexOutput) -> vec4f {
 }
 
 fn vsPlane(pos: ptr<function, vec3f>) -> vec4f {
-    (*pos).z += sin((*pos).x * u.frequency * 0.7 + u.time) * 0.1;
+    (*pos).z += (sin((*pos).x * u.frequency * 0.7 + u.time) * 0.1) + 0.25;
     return projectPerspective(*pos);
 }
