@@ -1,81 +1,73 @@
-// perlinPlane.h
-// Created by Erik Jourgensen on 5/11/26.
-
-#ifndef ANIMATEDNOISE_PERLINPLANE_H
-#define ANIMATEDNOISE_PERLINPLANE_H
+#ifndef CIRCULARFLOOR_H
+#define CIRCULARFLOOR_H
 
 #include <vector>
 #include <cstdint>
 #include <cmath>
-#include <cstdlib>
 
 // Vertex layout: position (xyz), normal (xyz), color (rgb)
-// @location(0) position : vec3f   -- offset  0, stride 36
-// @location(2) normal   : vec3f   -- offset 12
-// @location(1) color    : vec3f   -- offset 24
-struct CircleVertex {
-    float x, y, z;     // position
-    float nx, ny, nz;  // normal  (always 0,0,1 for a flat plane)
-    float r, g, b;        // uv      (0..1 across width/height)
+struct FloorVertex {
+    float x, y, z;
+    float nx, ny, nz;
+    float r, g, b;
 };
 
-using CircleIndex = uint16_t;
+using FloorIndex = uint16_t;
 
 class CircularFloor
 {
 public:
-    // Equivalent to: new THREE.PlaneGeometry(width, height, widthSegs, heightSegs)
-    // Plane lies in XY, normal points +Z.
-    static void buildPlane(std::vector<CircleVertex>& verts,
-                      std::vector<CircleIndex>&  indices,
-                      float width       = 1.0f,
-                      float height      = 1.0f,
-                      int   widthSegs   = 32,
-                      int   heightSegs  = 32)
+    // Generates a simple, flat circular mesh using a triangle fan.
+    static void buildCircle(std::vector<FloorVertex>& verts,
+                            std::vector<FloorIndex>&  indices,
+                            const float radius   = 1.0f,
+                            int   segments = 32)
     {
         verts.clear();
         indices.clear();
 
-        const int cols = widthSegs + 1;
-        const int rows = heightSegs + 1;
+        // A circle needs at least 3 segments (a triangle)
+        if (segments < 3) segments = 3;
 
-        verts.reserve  (static_cast<size_t>(cols * rows));
-        indices.reserve(static_cast<size_t>(widthSegs * heightSegs * 6));
+        verts.reserve(1 + static_cast<size_t>(segments));
+        indices.reserve(static_cast<size_t>(segments) * 3);
 
-        for (int row = 0; row < rows; ++row)
+        const float PI = 3.14159265358979323846f;
+
+        // 1. Center vertex (Index 0)
+        verts.push_back({
+            0.0f, 0.0f, 0.0f, // position
+            0.0f, 1.0f, 0.0f, // normal (+Y, facing up)
+            1.0f, 1.0f, 1.0f
+        });
+
+        // 2. Outer ring vertices
+        for (int s = 0; s < segments; ++s)
         {
-            const float t  = static_cast<float>(row) / static_cast<float>(heightSegs);
-            const float py = (t - 0.5f) * height;
+            float theta = (static_cast<float>(s) / static_cast<float>(segments)) * 2.0f * PI;
 
-            for (int col = 0; col < cols; ++col)
-            {
-                const float s  = static_cast<float>(col) / static_cast<float>(widthSegs);
-                const float px = (s - 0.5f) * width;
+            const float px = std::cos(theta) * radius;
+            const float pz = std::sin(theta) * radius; // ← renamed from py
 
-                PlaneVertex vert{};
-                vert.x  = px;   vert.y  = py;   vert.z  = 0.0f;
-                vert.nx = 0.0f; vert.ny = 0.0f; vert.nz = 1.0f;
-                vert.r  = 0.0f;    vert.g  = 0.0f;  vert.b = 0.0f;
-
-                verts.push_back(vert);
-            }
+            verts.push_back({
+                px,   0.0f, pz,   // ← y=0, z gets the sin value
+                0.0f, 1.0f, 0.0f, // ← normal +Y
+                1.0f, 1.0f, 1.0f
+            });
         }
 
-        for (int row = 0; row < heightSegs; ++row)
+        // 3. Indices (Triangle Fan)
+        for (int s = 0; s < segments; ++s)
         {
-            for (int col = 0; col < widthSegs; ++col)
-            {
-                const auto tl = static_cast<PlaneIndex>( row      * cols + col);
-                const auto tr = static_cast<PlaneIndex>( row      * cols + col + 1);
-                const auto bl = static_cast<PlaneIndex>((row + 1) * cols + col);
-                const auto br = static_cast<PlaneIndex>((row + 1) * cols + col + 1);
+            // Wrap the last segment back to the first segment (index 1)
+            const int next_s = (s + 1) % segments;
 
-                // Two CCW triangles per quad
-                indices.push_back(tl); indices.push_back(bl); indices.push_back(tr);
-                indices.push_back(tr); indices.push_back(bl); indices.push_back(br);
-            }
+            // CCW Winding: Center (0) -> Current Outer -> Next Outer
+            indices.push_back(0);
+            indices.push_back(static_cast<FloorIndex>(1 + s));
+            indices.push_back(static_cast<FloorIndex>(1 + next_s));
         }
     }
 };
 
-#endif // ANIMATEDNOISE_PERLINPLANE_H
+#endif // CIRCULARFLOOR_H

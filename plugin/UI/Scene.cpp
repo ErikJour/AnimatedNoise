@@ -4,6 +4,7 @@
 
 #include "Scene.h"
 
+
 Scene::Scene() = default;
 
 Scene::~Scene() = default;
@@ -20,12 +21,7 @@ void Scene::setShaderModule(const WGPUShaderModule shaderModule) { mShaderModule
 
 void Scene::setPipelineDesc(WGPURenderPipelineDescriptor pipelineDesc) { mPipelineDesc = pipelineDesc; }
 
-void Scene::setWindowColor()
-{
-    mRed    = 0.2;
-    mGreen  = 0.25;
-    mBlue   = 0.2;
-}
+void Scene::setWindowColor() { mRed    = 0.2; mGreen  = 0.25; mBlue   = 0.2; }
 
 bool Scene::createShader()
 {
@@ -38,6 +34,7 @@ bool Scene::createShader()
         dir + "/mat_slider.wgsl",
         dir + "/mat_plane.wgsl",
         dir + "/mat_particle.wgsl",
+        dir + "/mat_floor.wgsl",
         dir + "/vs_main.wgsl",
         dir + "/fs_main.wgsl",
     };
@@ -82,8 +79,8 @@ void Scene::terminate()
 {
     if (mDepthTextureView) { wgpuTextureViewRelease(mDepthTextureView); mDepthTextureView = nullptr; }
     if (mDepthTexture)     { wgpuTextureDestroy(mDepthTexture); wgpuTextureRelease(mDepthTexture); mDepthTexture = nullptr; }
-    if (mCaveVertexBuffer)   { wgpuBufferRelease(mCaveVertexBuffer); mCaveVertexBuffer = nullptr; }
-    if (mCaveIndexBuffer)    { wgpuBufferRelease(mCaveIndexBuffer); mCaveIndexBuffer = nullptr; }
+    if (mFloorVertexBuffer)   { wgpuBufferRelease(mFloorVertexBuffer); mFloorVertexBuffer = nullptr; }
+    if (mFloorIndexBuffer)    { wgpuBufferRelease(mFloorIndexBuffer); mFloorIndexBuffer = nullptr; }
     if (mBindGroup)          { wgpuBindGroupRelease(mBindGroup); mBindGroup = nullptr; }
     if (mUniformBuffer)      { wgpuBufferRelease(mUniformBuffer); mUniformBuffer = nullptr; }
     if (mPipeline)           { wgpuRenderPipelineRelease(mPipeline); mPipeline = nullptr; }
@@ -152,8 +149,16 @@ void Scene::renderFrame(const float currentTime)
         const WGPURenderPassEncoder renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
 
         wgpuRenderPassEncoderSetPipeline(renderPass, mPipeline);
-        // wgpuRenderPassEncoderSetBindGroup(renderPass, 0, mBindGroup, 0, nullptr);
 
+    //Floor
+    if (mFloorVertexBuffer && mFloorIndexBuffer && mFloorIndexCount > 0)
+    {
+        const uint32_t offset = MAT_FLOOR * mUniformStride;
+        wgpuRenderPassEncoderSetBindGroup(renderPass, 0, mBindGroup, 1, &offset);
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mFloorVertexBuffer, 0, wgpuBufferGetSize(mFloorVertexBuffer));
+        wgpuRenderPassEncoderSetIndexBuffer(renderPass, mFloorIndexBuffer, WGPUIndexFormat_Uint16, 0, wgpuBufferGetSize(mFloorIndexBuffer));
+        wgpuRenderPassEncoderDrawIndexed(renderPass, mFloorIndexCount, 1, 0, 0, 0);
+    }
 
     // Cave
     if (mCaveVertexBuffer && mCaveIndexBuffer && mCaveIndexCount > 0)
@@ -228,13 +233,25 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
     base.sliderPos[1] = mSliderPos[1];
     base.sliderPos[2] = mSliderPos[2];
 
-    constexpr uint32_t ids[4] = { MAT_CAVE, MAT_SLIDER, MAT_PLANE, MAT_PARTICLES };
+    constexpr uint32_t ids[5] = { MAT_CAVE, MAT_SLIDER, MAT_PLANE, MAT_PARTICLES, MAT_FLOOR };
     std::memcpy(base.modelMatrix, kIdentity, sizeof(kIdentity));
 
-    for (uint32_t i = 0; i < 4; ++i) {
+    for (uint32_t i = 0; i < 5; ++i) {
         base.materialId = ids[i];
         wgpuQueueWriteBuffer(queue, uniformBuffer, i * mUniformStride, &base, sizeof(MyUniforms));
     }
+
+    static constexpr float kFloorMatrix[16] = {
+        1.0f,  0.0f,   0.0f,  0.0f,   // col 0
+        0.0f,  0.866f, 0.5f,  0.0f,   // col 1  (cos30, sin30)
+        0.0f, -0.5f,   0.866f,0.0f,   // col 2  (-sin30, cos30)
+        0.0f, -0.3f,   0.5f,  1.0f    // col 3  (translate: y=-0.3, z=+0.5)
+    };
+    MyUniforms floorUniforms = base;
+    floorUniforms.materialId = MAT_FLOOR;
+    std::memcpy(floorUniforms.modelMatrix, kFloorMatrix, sizeof(kFloorMatrix));
+    wgpuQueueWriteBuffer(queue, uniformBuffer, MAT_FLOOR * mUniformStride,
+                         &floorUniforms, sizeof(MyUniforms));
 }
 
 void Scene::ConfigureVertexLayout()
@@ -349,10 +366,11 @@ bool Scene::createParticlePipeline()
 
 void Scene::initializeScene()
 {
-    initializePlane();
-    InitializeSlider();
-    InitializeProceduralCave();
-    initializeParticles();
+    initializeFloor();
+    // initializePlane();
+    // InitializeSlider();
+    // InitializeProceduralCave();
+    // initializeParticles();
 }
 
 bool Scene::createPipeline()
@@ -403,7 +421,7 @@ bool Scene::createPipeline()
     }
 
     WGPUBufferDescriptor bufferDesc = {};
-    bufferDesc.size                 = 4 * mUniformStride;  // one slot per material
+    bufferDesc.size                 = 5 * mUniformStride;  // one slot per material
     bufferDesc.usage                = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
     mUniformBuffer                  = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
 
@@ -445,6 +463,28 @@ bool Scene::createPipeline()
     return true;
 }
 
+void Scene::initializeFloor()
+{
+    std::cout << "Initialize Floor" << std::endl;
+    std::vector<FloorVertex> vertices;
+    std::vector<FloorIndex>  indices;
+
+    CircularFloor::buildCircle(vertices, indices, 0.5f, 64);  // was 1.0f
+
+    mFloorIndexCount = static_cast<uint32_t>(indices.size());
+
+    WGPUBufferDescriptor bd{};
+    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
+    bd.size  = vertices.size() * sizeof(FloorVertex);
+    mFloorVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mFloorVertexBuffer, 0, vertices.data(), bd.size);
+
+    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
+    bd.size  = (indices.size() * sizeof(FloorIndex) + 3) & ~3ULL;
+    mFloorIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mFloorIndexBuffer, 0, indices.data(), bd.size);
+}
+
 void Scene::InitializeSlider()
 {
     std::vector<Vertex> verts;
@@ -470,8 +510,8 @@ void Scene::initializeParticles()
     std::vector<QuadVertex>   quadVerts;
     std::vector<ParticleData> particles;
 
-    mParticleSystem.buildQuad(quadVerts);
-    mParticleSystem.initParticles(particles, MAX_PARTICLES, 0.35f);
+    ParticleSystem::buildQuad(quadVerts);
+    ParticleSystem::initParticles(particles, MAX_PARTICLES, 0.35f);
 
     // Quad vertex buffer — identical pattern to plane/slider
     WGPUBufferDescriptor bd{};

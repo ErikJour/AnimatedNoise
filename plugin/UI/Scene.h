@@ -13,6 +13,7 @@
 #include "particleSystem.h"
 #include "MyUniforms.h"
 #include "proceduralSlider.h"
+#include "circularFloor.h"
 
 
 
@@ -40,6 +41,7 @@ class Scene
         bool createParticlePipeline();
         void initializeScene();
         bool createPipeline();
+        void initializeFloor();
         void InitializeSlider();
         void initializeParticles();
         void setSliderPosition(const float x, const float y, const float z);
@@ -93,12 +95,16 @@ class Scene
         static constexpr float kSpineMinY      = -0.15f;
         static constexpr float kSpineMaxY      =  0.25f;
         static constexpr float kIndicatorHalfY =  0.025f;
+        //Floor
+        WGPUBuffer  mFloorVertexBuffer  = nullptr;
+        WGPUBuffer  mFloorIndexBuffer  = nullptr;
+        uint32_t    mFloorIndexCount    = 0;
         //Plane
         WGPUBuffer  mPlaneVertexBuffer  = nullptr;
         WGPUBuffer  mPlaneIndexBuffer  = nullptr;
         uint32_t    mPlaneIndexCount    = 0;
         //Particle System
-        ParticleSystem      mParticleSystem;
+        // ParticleSystem      mParticleSystem;
         WGPUBuffer  mParticleQuadBuffer  = nullptr;
         WGPUBuffer  mParticleDataBuffer  = nullptr;
         uint32_t    mParticleCount    = 0;
