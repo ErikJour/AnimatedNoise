@@ -4,6 +4,8 @@
 #include <cassert>
 #include <iostream>
 #include <webgpu/webgpu.h>
+#include <filesystem>
+
 
 inline WGPUAdapter requestAdapterSync(WGPUInstance instance, WGPURequestAdapterOptions const* options) {
     struct UserData {
@@ -82,5 +84,15 @@ inline void inspectDevice(WGPUDevice device) {
         std::cout << " - maxTextureArrayLayers: " << limits.limits.maxTextureArrayLayers << std::endl;
     }
 }
+
+#ifdef DEBUG
+inline std::filesystem::file_time_type latestWriteTime(const std::vector<std::filesystem::path>& paths)
+{
+    std::filesystem::file_time_type latest{};
+    for (const auto& p : paths)
+        latest = std::max(latest, std::filesystem::last_write_time(p));
+    return latest;
+}
+#endif
 
 #endif //LEARNWEBGPU_UTILITYHELPER_H

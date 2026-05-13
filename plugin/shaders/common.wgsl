@@ -18,6 +18,7 @@ struct Uniforms {
     _pad1:       f32,
     sliderPos:   vec3f,
     materialId:  u32,
+    modelMatrix : mat4x4f,
 };
 
 @group(0) @binding(0) var<uniform> u: Uniforms;
@@ -35,3 +36,5 @@ struct VertexOutput {
     @location(1)       worldPos: vec3f,
     @location(2)       normal:   vec3f,
 };
+
+

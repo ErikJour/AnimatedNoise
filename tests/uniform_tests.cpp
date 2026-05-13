@@ -9,5 +9,5 @@ TEST_CASE("MyUniforms field offsets match WGSL struct layout") {
     STATIC_REQUIRE(offsetof(MyUniforms, time)      == 0);
     STATIC_REQUIRE(offsetof(MyUniforms, frequency) == 4);
     STATIC_REQUIRE(offsetof(MyUniforms, amplitude) == 8);
-    STATIC_REQUIRE(offsetof(MyUniforms, _pad)      == 12);
+    STATIC_REQUIRE(offsetof(MyUniforms, sliderValue) == 12);
 }

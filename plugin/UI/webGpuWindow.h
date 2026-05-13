@@ -13,14 +13,8 @@
 #include <filesystem>
 #include "MyUniforms.h"
 #include "ResourceManager.h"
-#include "perlinCave.h"
-#include "proceduralSlider.h"
+#include "Scene.h"
 
-#include "plane.h"
-#include "particleSystem.h"
-
-static constexpr uint32_t MAX_PARTICLES = 1000;
-#define WGPU_STR(s) WGPUStringView{s, sizeof(s) - 1}
 
 class WebGpuWindow
 {
@@ -33,43 +27,25 @@ public:
     bool createAdapter();
     bool createDevice();
     bool createQueue();
-    bool createShader();
     void configurePipeline();
 
     bool initialize();
     bool initSurface(void* nativeHandle, uint32_t width, uint32_t height);
-    bool createPipeline();
-    void renderFrame(float currentTime);
     void onResize(uint32_t width, uint32_t height);
     [[nodiscard]] bool hasSurface() const { return mSurface != nullptr; }
     void terminate();
     static void setFeatures(WGPUAdapter adapter);
     void getAdapter(WGPUAdapter adapter, const WGPUAdapterInfo& properties);
     static void getLimits(WGPUAdapter adapter, WGPUSupportedLimits &limits);
-    void setUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer, float time) const;
-    void wgpuPollEvents([[maybe_unused]] WGPUDevice device, [[maybe_unused]] bool yieldToWebBrowser);
-    void ConfigureVertexLayout();
-    void setSliderValue(float v);
-    float getSliderValue() const { return mSliderValue; }
-    void setSliderPosition(float x, float y, float z);
-    void InitializeSlider();
-    void InitializeProceduralCave();
-    void InitializeLoadedCave();
-    void initializePlane();
-    void initializeParticles();
-
-
-
-    float sliderTopFraction()       const { return (1.0f - (kSpineMaxY + mSliderPos[1])) * 0.5f; }
-    float sliderBottomFraction()    const { return (1.0f - (kSpineMinY + mSliderPos[1])) * 0.5f; }
-    float sliderXFraction()         const { return (mSliderPos[0] + 1.0f) * 0.5f; }
-    float indicatorHalfFraction()   const { return kIndicatorHalfY * 0.5f; }
+    Scene& getScene() { return mScene; }
 
 
 private:
 
     void applySurfaceConfig(const uint32_t width, const uint32_t height)
     {
+        mDepthTextureView = mScene.getDepthTextureView();
+
         if (mSurfaceFormat == WGPUTextureFormat_Undefined) {
             WGPUSurfaceCapabilities caps = {};
             wgpuSurfaceGetCapabilities(mSurface, mAdapter, &caps);
@@ -85,7 +61,7 @@ private:
         config.usage        = WGPUTextureUsage_RenderAttachment;
         config.width        = width;
         config.height       = height;
-        config.presentMode  = WGPUPresentMode_Fifo;
+        config.presentMode  = WGPUPresentMode_Immediate;
         config.alphaMode    = WGPUCompositeAlphaMode_Auto;
 
         if (mDepthTextureView) { wgpuTextureViewRelease(mDepthTextureView); mDepthTextureView = nullptr; }
@@ -119,14 +95,10 @@ private:
     static void setDefault(WGPUStencilFaceState& stencilFaceState);   // ADD
     static void setDefault(WGPUDepthStencilState& depthStencilState); // ADD
     static WGPURequiredLimits GetRequiredLimits(WGPUAdapter adapter);
-#ifdef DEBUG
-    void reloadShader();
-#endif
+
     //====================================
     //Variables
     //====================================
-    std::filesystem::path mShaderPath;
-    std::filesystem::file_time_type mLastShaderWriteTime;
     mutable double mRed = {};
     double mGreen = {};
     double mBlue = {};
@@ -139,56 +111,17 @@ private:
     WGPUTextureFormat              mSurfaceFormat = WGPUTextureFormat_Undefined;
     WGPUSupportedLimits            mSupportedLimits = {};
     WGPURenderPipelineDescriptor   mPipelineDesc = {};
-    WGPURenderPipeline             mPipeline = {};
+    // WGPURenderPipeline             mPipeline = {};
     WGPUFragmentState              mFragmentState = {};
     WGPUBlendState                 mBlendState = {};
     WGPUColorTargetState           mColorTarget = {};
-    WGPUShaderModule               mShaderModule = {};
-    WGPUBuffer                     mUniformBuffer = nullptr;
-    WGPUBindGroup                  mBindGroup = nullptr;
+    // WGPUShaderModule               mShaderModule = {};
     WGPUDepthStencilState          depthStencilState = {};
     WGPUTexture                    mDepthTexture     = nullptr;
     WGPUTextureView                mDepthTextureView = nullptr;
-    perlinCave                     mPerlinCave = {};
-
-    std::vector<WGPUVertexBufferLayout> mVertexBufferLayouts = {};
-    std::array<WGPUVertexAttribute, 3> mVertexAttribs = {};
-    uint32_t mUniformStride = 0;
-    std::vector<std::filesystem::path> mShaderPaths;
-
-    //Cave
-    WGPUBuffer  mCaveVertexBuffer  = nullptr;
-    WGPUBuffer  mCaveIndexBuffer  = nullptr;
-    uint32_t    mCaveIndexCount    = 0;
-    //Slider
-    WGPUBuffer  mSliderVertexBuffer = nullptr;
-    WGPUBuffer  mSliderIndexBuffer  = nullptr;
-    uint32_t    mSliderIndexCount   = 0;
-    float       mSliderValue     = 0.5f;
-    float       mSliderPos[3]   = { 0.5f, 0.0f, 0.2f };
-    static constexpr float kSpineMinY      = -0.15f;
-    static constexpr float kSpineMaxY      =  0.25f;
-    static constexpr float kIndicatorHalfY =  0.025f;
-    //Plane
-    Plane       mPlane;
-    WGPUBuffer  mPlaneVertexBuffer  = nullptr;
-    WGPUBuffer  mPlaneIndexBuffer  = nullptr;
-    uint32_t    mPlaneIndexCount    = 0;
-
-    ParticleSystem      mParticleSystem;
-    WGPUBuffer  mParticleQuadBuffer  = nullptr;
-    WGPUBuffer  mParticleDataBuffer  = nullptr;
-    uint32_t    mParticleCount    = 0;
-    // Particle pipeline
-    WGPURenderPipeline           mParticlePipeline     = nullptr;
-    WGPURenderPipelineDescriptor mParticlePipelineDesc {};
-    std::array<WGPUVertexAttribute, 5>      mParticleVertexAttribs {};
-    std::vector<WGPUVertexBufferLayout>     mParticleVertexBufferLayouts;
-    WGPUFragmentState             mParticleFragmentState     {};   // ← needed for fs_particle
-    uint32_t                        mParticleDrawCount = 500;        // current visible count
 
 
-    bool createParticlePipeline();
+    Scene mScene;
 
 };
 

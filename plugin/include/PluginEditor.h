@@ -4,6 +4,7 @@
 #include "PluginProcessor.h"
 #include "utilityHelper.h"
 #include "webGpuWindow.h"
+#include "Scene.h"
 
 //==============================================================================
 class AudioPluginAudioProcessorEditor final : public juce::AudioProcessorEditor,
@@ -19,7 +20,7 @@ public:
     void mouseDrag   (const juce::MouseEvent& e) override;
     void mouseUp     (const juce::MouseEvent& e) override;
     void updateSliderFromMouse(int screenY);
-
+    void paint(juce::Graphics&) override {}
 private:
     void parentHierarchyChanged() override;
     void timerCallback() override;
