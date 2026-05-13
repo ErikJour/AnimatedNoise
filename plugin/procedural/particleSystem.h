@@ -94,19 +94,10 @@ public:
         verts.push_back({ -0.5f,  0.5f,  0.0f, 1.0f }); // 3 top-left
     }
 
-    // Scatter `count` particles randomly within a cube of side `spread`,
-    // centered at the origin.
-    //
-    // Equivalent to the Three.js loop:
-    //   for(let i = 0; i < count * 3; i++)
-    //       positions[i] = (Math.random() - 0.5) * spread;
-    //
-    // size, color, and life are set to sensible defaults; override after the call
-    // if you need per-particle variation.
     static void initParticles(std::vector<ParticleData>& particles,
-                          int   count  = 500,
-                          float spread = 0.35f,
-                          float size   = 0.0075f)
+                          const int   count  = 500,
+                          const float spread = 0.35f,
+                          const float size   = 0.0075f)
     {
         particles.clear();
         particles.reserve(static_cast<size_t>(count));

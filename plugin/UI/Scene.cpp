@@ -4,6 +4,8 @@
 
 #include "Scene.h"
 
+#include "skylight.h"
+
 
 Scene::Scene() = default;
 
@@ -79,6 +81,8 @@ void Scene::terminate()
 {
     if (mDepthTextureView) { wgpuTextureViewRelease(mDepthTextureView); mDepthTextureView = nullptr; }
     if (mDepthTexture)     { wgpuTextureDestroy(mDepthTexture); wgpuTextureRelease(mDepthTexture); mDepthTexture = nullptr; }
+    if (mSkylightVertexBuffer)   { wgpuBufferRelease(mSkylightVertexBuffer); mSkylightVertexBuffer = nullptr; }
+    if (mSkylightIndexBuffer)    { wgpuBufferRelease(mSkylightIndexBuffer); mSkylightIndexBuffer = nullptr; }
     if (mFloorVertexBuffer)   { wgpuBufferRelease(mFloorVertexBuffer); mFloorVertexBuffer = nullptr; }
     if (mFloorIndexBuffer)    { wgpuBufferRelease(mFloorIndexBuffer); mFloorIndexBuffer = nullptr; }
     if (mBindGroup)          { wgpuBindGroupRelease(mBindGroup); mBindGroup = nullptr; }
@@ -158,6 +162,16 @@ void Scene::renderFrame(const float currentTime)
         wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mFloorVertexBuffer, 0, wgpuBufferGetSize(mFloorVertexBuffer));
         wgpuRenderPassEncoderSetIndexBuffer(renderPass, mFloorIndexBuffer, WGPUIndexFormat_Uint16, 0, wgpuBufferGetSize(mFloorIndexBuffer));
         wgpuRenderPassEncoderDrawIndexed(renderPass, mFloorIndexCount, 1, 0, 0, 0);
+    }
+
+    //Skylight
+    if (mSkylightVertexBuffer && mSkylightIndexBuffer && mSkylightIndexCount > 0)
+    {
+        const uint32_t offset = MAT_FLOOR * mUniformStride;
+        wgpuRenderPassEncoderSetBindGroup(renderPass, 0, mBindGroup, 1, &offset);
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mSkylightVertexBuffer, 0, wgpuBufferGetSize(mSkylightVertexBuffer));
+        wgpuRenderPassEncoderSetIndexBuffer(renderPass, mSkylightIndexBuffer, WGPUIndexFormat_Uint16, 0, wgpuBufferGetSize(mSkylightIndexBuffer));
+        wgpuRenderPassEncoderDrawIndexed(renderPass, mSkylightIndexCount, 1, 0, 0, 0);
     }
 
     // Cave
@@ -367,10 +381,11 @@ bool Scene::createParticlePipeline()
 void Scene::initializeScene()
 {
     initializeFloor();
+    initializeSkylight();
     // initializePlane();
-    InitializeSlider();
+    // InitializeSlider();
     // InitializeProceduralCave();
-    initializeParticles();
+    // initializeParticles();
 }
 
 bool Scene::createPipeline()
@@ -483,6 +498,28 @@ void Scene::initializeFloor()
     bd.size  = (indices.size() * sizeof(FloorIndex) + 3) & ~3ULL;
     mFloorIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
     wgpuQueueWriteBuffer(mQueue, mFloorIndexBuffer, 0, indices.data(), bd.size);
+}
+
+void Scene::initializeSkylight()
+{
+    std::cout << "Initialize Skylight" << std::endl;
+    std::vector<SkylightVertex> vertices;
+    std::vector<SkylightIndex>  indices;
+
+    Skylight::buildSkylight(vertices, indices, 0.15f, 64);  // was 1.0f
+
+    mSkylightIndexCount = static_cast<uint32_t>(indices.size());
+
+    WGPUBufferDescriptor bd{};
+    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
+    bd.size  = vertices.size() * sizeof(FloorVertex);
+    mSkylightVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mSkylightVertexBuffer, 0, vertices.data(), bd.size);
+
+    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
+    bd.size  = (indices.size() * sizeof(SkylightIndex) + 3) & ~3ULL;
+    mSkylightIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mSkylightIndexBuffer, 0, indices.data(), bd.size);
 }
 
 void Scene::InitializeSlider()

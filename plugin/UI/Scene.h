@@ -42,6 +42,7 @@ class Scene
         void initializeScene();
         bool createPipeline();
         void initializeFloor();
+        void initializeSkylight();
         void InitializeSlider();
         void initializeParticles();
         void setSliderPosition(const float x, const float y, const float z);
@@ -99,12 +100,15 @@ class Scene
         WGPUBuffer  mFloorVertexBuffer  = nullptr;
         WGPUBuffer  mFloorIndexBuffer  = nullptr;
         uint32_t    mFloorIndexCount    = 0;
+        //Skylight
+        WGPUBuffer  mSkylightVertexBuffer  = nullptr;
+        WGPUBuffer  mSkylightIndexBuffer  = nullptr;
+        uint32_t    mSkylightIndexCount    = 0;
         //Plane
         WGPUBuffer  mPlaneVertexBuffer  = nullptr;
         WGPUBuffer  mPlaneIndexBuffer  = nullptr;
         uint32_t    mPlaneIndexCount    = 0;
         //Particle System
-        // ParticleSystem      mParticleSystem;
         WGPUBuffer  mParticleQuadBuffer  = nullptr;
         WGPUBuffer  mParticleDataBuffer  = nullptr;
         uint32_t    mParticleCount    = 0;
