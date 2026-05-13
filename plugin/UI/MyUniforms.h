@@ -8,7 +8,7 @@ static constexpr uint32_t MAT_SLIDER           = 1;
 static constexpr uint32_t MAT_PLANE            = 2;
 static constexpr uint32_t MAT_PARTICLES        = 3;
 static constexpr uint32_t MAT_FLOOR            = 4;
-
+static constexpr uint32_t MAT_SKYLIGHT         = 5;
 
 struct MyUniforms {
     float    time;
@@ -20,7 +20,6 @@ struct MyUniforms {
     float    sliderPos[3];
     uint32_t materialId;
     float    modelMatrix[16];
-
 };
 
 static_assert(sizeof(MyUniforms) % 16 == 0);

@@ -14,6 +14,6 @@ fn pointLight(worldPos: vec3f, normal: vec3f) -> vec3f {
     let attenuation = 1.0 / (1.0 + 4.0 * dist * dist);
     let diffuse     = max(dot(normal, lightDir), 0.0) * attenuation;
     let lampColor   = vec3f(1.0, 0.92, 0.80);  // candlelight/incense smoke
-    let ambient     = vec3f(0.08, 0.08, 0.12);
+    let ambient     = vec3f(0.38, 0.28, 0.12);
     return ambient + diffuse * lampColor;
 }

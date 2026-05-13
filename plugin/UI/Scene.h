@@ -60,6 +60,17 @@ class Scene
         WGPUBlendState getBlendState() const { return mBlendState; }
 
     private:
+        void setItemBuffers(WGPUBuffer vertexBuffer, WGPUBuffer indexBuffer, uint32_t indexCount, uint32_t material, WGPURenderPassEncoder renderPass) const
+        {
+            if (vertexBuffer && indexBuffer && indexCount > 0)
+            {
+                const uint32_t offset = material * mUniformStride;
+                wgpuRenderPassEncoderSetBindGroup(renderPass, 0, mBindGroup, 1, &offset);
+                wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpuBufferGetSize(vertexBuffer));
+                wgpuRenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat_Uint16, 0, wgpuBufferGetSize(indexBuffer));
+                wgpuRenderPassEncoderDrawIndexed(renderPass, indexCount, 1, 0, 0, 0);
+            }
+        }
         uint32_t mWidth{};
         uint32_t mHeight{};
         WGPUDevice                          mDevice       = nullptr;

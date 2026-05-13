@@ -17,12 +17,12 @@ void Scene::init(const WGPUDevice device, WGPUQueue queue)
     mQueue  = queue;
 }
 
+//==============================================
+//Setters
+//==============================================
 void Scene::setSurface(WGPUSurface surface) { mSurface = surface; }
-
 void Scene::setShaderModule(const WGPUShaderModule shaderModule) { mShaderModule = shaderModule; }
-
 void Scene::setPipelineDesc(WGPURenderPipelineDescriptor pipelineDesc) { mPipelineDesc = pipelineDesc; }
-
 void Scene::setWindowColor() { mRed    = 0.2; mGreen  = 0.25; mBlue   = 0.2; }
 
 bool Scene::createShader()
@@ -37,6 +37,7 @@ bool Scene::createShader()
         dir + "/mat_plane.wgsl",
         dir + "/mat_particle.wgsl",
         dir + "/mat_floor.wgsl",
+        dir + "/mat_skylight.wgsl",
         dir + "/vs_main.wgsl",
         dir + "/fs_main.wgsl",
     };
@@ -60,35 +61,19 @@ bool Scene::createShader()
     return true;
 }
 
-void Scene::InitializeProceduralCave()
-{
-    std::vector<Vertex> verts;
-    std::vector<Index>  indices;
-    perlinCave::buildCaveGeometry(verts, indices);
-    mCaveIndexCount = static_cast<uint32_t>(indices.size());
-    WGPUBufferDescriptor bd{};
-    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
-    bd.size  = verts.size() * sizeof(Vertex);
-    mCaveVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-    wgpuQueueWriteBuffer(mQueue, mCaveVertexBuffer, 0, verts.data(), bd.size);
-    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
-    bd.size  = (indices.size() * sizeof(Index) + 3) & ~3ULL;
-    mCaveIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-    wgpuQueueWriteBuffer(mQueue, mCaveIndexBuffer, 0, indices.data(), bd.size);
-}
 
 void Scene::terminate()
 {
-    if (mDepthTextureView) { wgpuTextureViewRelease(mDepthTextureView); mDepthTextureView = nullptr; }
-    if (mDepthTexture)     { wgpuTextureDestroy(mDepthTexture); wgpuTextureRelease(mDepthTexture); mDepthTexture = nullptr; }
+    if (mDepthTextureView)       { wgpuTextureViewRelease(mDepthTextureView); mDepthTextureView = nullptr; }
+    if (mDepthTexture)           { wgpuTextureDestroy(mDepthTexture); wgpuTextureRelease(mDepthTexture); mDepthTexture = nullptr; }
     if (mSkylightVertexBuffer)   { wgpuBufferRelease(mSkylightVertexBuffer); mSkylightVertexBuffer = nullptr; }
     if (mSkylightIndexBuffer)    { wgpuBufferRelease(mSkylightIndexBuffer); mSkylightIndexBuffer = nullptr; }
-    if (mFloorVertexBuffer)   { wgpuBufferRelease(mFloorVertexBuffer); mFloorVertexBuffer = nullptr; }
-    if (mFloorIndexBuffer)    { wgpuBufferRelease(mFloorIndexBuffer); mFloorIndexBuffer = nullptr; }
-    if (mBindGroup)          { wgpuBindGroupRelease(mBindGroup); mBindGroup = nullptr; }
-    if (mUniformBuffer)      { wgpuBufferRelease(mUniformBuffer); mUniformBuffer = nullptr; }
-    if (mPipeline)           { wgpuRenderPipelineRelease(mPipeline); mPipeline = nullptr; }
-    if (mSurface)            { wgpuSurfaceUnconfigure(mSurface); wgpuSurfaceRelease(mSurface); mSurface = nullptr; }
+    if (mFloorVertexBuffer)      { wgpuBufferRelease(mFloorVertexBuffer); mFloorVertexBuffer = nullptr; }
+    if (mFloorIndexBuffer)       { wgpuBufferRelease(mFloorIndexBuffer); mFloorIndexBuffer = nullptr; }
+    if (mBindGroup)              { wgpuBindGroupRelease(mBindGroup); mBindGroup = nullptr; }
+    if (mUniformBuffer)          { wgpuBufferRelease(mUniformBuffer); mUniformBuffer = nullptr; }
+    if (mPipeline)               { wgpuRenderPipelineRelease(mPipeline); mPipeline = nullptr; }
+    if (mSurface)                { wgpuSurfaceUnconfigure(mSurface); wgpuSurfaceRelease(mSurface); mSurface = nullptr; }
 }
 
 void Scene::renderFrame(const float currentTime)
@@ -103,7 +88,6 @@ void Scene::renderFrame(const float currentTime)
     #endif
 
         if (!mPipeline) return;
-
         if (!mSurface) return;
 
         WGPUSurfaceTexture surfaceTexture = {};
@@ -151,70 +135,29 @@ void Scene::renderFrame(const float currentTime)
         renderPassDesc.depthStencilAttachment = &depthStencilAttachment; // was nullptr
 
         const WGPURenderPassEncoder renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
-
         wgpuRenderPassEncoderSetPipeline(renderPass, mPipeline);
+        //Floor
+        setItemBuffers(mFloorVertexBuffer, mFloorIndexBuffer, mFloorIndexCount, MAT_FLOOR, renderPass);
+        //Skylight
+        setItemBuffers(mSkylightVertexBuffer, mSkylightIndexBuffer, mSkylightIndexCount, MAT_SKYLIGHT, renderPass);
+        //Cave
+        setItemBuffers(mCaveVertexBuffer, mCaveIndexBuffer, mCaveIndexCount, MAT_CAVE, renderPass);
+        // Slider
+        setItemBuffers(mSliderVertexBuffer, mSliderIndexBuffer, mSliderIndexCount, MAT_SLIDER, renderPass);
+        //Plane
+        setItemBuffers(mPlaneVertexBuffer, mPlaneIndexBuffer, mPlaneIndexCount, MAT_PLANE, renderPass);
 
-    //Floor
-    if (mFloorVertexBuffer && mFloorIndexBuffer && mFloorIndexCount > 0)
-    {
-        const uint32_t offset = MAT_FLOOR * mUniformStride;
-        wgpuRenderPassEncoderSetBindGroup(renderPass, 0, mBindGroup, 1, &offset);
-        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mFloorVertexBuffer, 0, wgpuBufferGetSize(mFloorVertexBuffer));
-        wgpuRenderPassEncoderSetIndexBuffer(renderPass, mFloorIndexBuffer, WGPUIndexFormat_Uint16, 0, wgpuBufferGetSize(mFloorIndexBuffer));
-        wgpuRenderPassEncoderDrawIndexed(renderPass, mFloorIndexCount, 1, 0, 0, 0);
-    }
-
-    //Skylight
-    if (mSkylightVertexBuffer && mSkylightIndexBuffer && mSkylightIndexCount > 0)
-    {
-        const uint32_t offset = MAT_FLOOR * mUniformStride;
-        wgpuRenderPassEncoderSetBindGroup(renderPass, 0, mBindGroup, 1, &offset);
-        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mSkylightVertexBuffer, 0, wgpuBufferGetSize(mSkylightVertexBuffer));
-        wgpuRenderPassEncoderSetIndexBuffer(renderPass, mSkylightIndexBuffer, WGPUIndexFormat_Uint16, 0, wgpuBufferGetSize(mSkylightIndexBuffer));
-        wgpuRenderPassEncoderDrawIndexed(renderPass, mSkylightIndexCount, 1, 0, 0, 0);
-    }
-
-    // Cave
-    if (mCaveVertexBuffer && mCaveIndexBuffer && mCaveIndexCount > 0)
-    {
-        const uint32_t offset = MAT_CAVE * mUniformStride;
-        wgpuRenderPassEncoderSetBindGroup(renderPass, 0, mBindGroup, 1, &offset);
-        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mCaveVertexBuffer, 0, wgpuBufferGetSize(mCaveVertexBuffer));
-        wgpuRenderPassEncoderSetIndexBuffer(renderPass, mCaveIndexBuffer, WGPUIndexFormat_Uint16, 0, wgpuBufferGetSize(mCaveIndexBuffer));
-        wgpuRenderPassEncoderDrawIndexed(renderPass, mCaveIndexCount, 1, 0, 0, 0);
-    }
-
-    // Slider
-    if (mSliderVertexBuffer && mSliderIndexBuffer && mSliderIndexCount > 0)
-    {
-        const uint32_t offset = MAT_SLIDER * mUniformStride;
-        wgpuRenderPassEncoderSetBindGroup(renderPass, 0, mBindGroup, 1, &offset);
-        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mSliderVertexBuffer, 0, wgpuBufferGetSize(mSliderVertexBuffer));
-        wgpuRenderPassEncoderSetIndexBuffer(renderPass, mSliderIndexBuffer, WGPUIndexFormat_Uint16, 0, wgpuBufferGetSize(mSliderIndexBuffer));
-        wgpuRenderPassEncoderDrawIndexed(renderPass, mSliderIndexCount, 1, 0, 0, 0);
-    }
-
-    // Plane
-    if (mPlaneVertexBuffer && mPlaneIndexBuffer && mPlaneIndexCount > 0)
-    {
-        const uint32_t offset = MAT_PLANE * mUniformStride;
-        wgpuRenderPassEncoderSetBindGroup(renderPass, 0, mBindGroup, 1, &offset);
-        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mPlaneVertexBuffer, 0, wgpuBufferGetSize(mPlaneVertexBuffer));
-        wgpuRenderPassEncoderSetIndexBuffer(renderPass, mPlaneIndexBuffer, WGPUIndexFormat_Uint16, 0, wgpuBufferGetSize(mPlaneIndexBuffer));
-        wgpuRenderPassEncoderDrawIndexed(renderPass, mPlaneIndexCount, 1, 0, 0, 0);
-    }
-
-    // Particles
-    if (mParticleQuadBuffer && mParticleDataBuffer && mParticleCount > 0)
-    {
-        wgpuRenderPassEncoderSetPipeline(renderPass, mParticlePipeline);  // ← swap pipeline
-        const uint32_t offset = MAT_PARTICLES * mUniformStride;
-        wgpuRenderPassEncoderSetBindGroup(renderPass, 0, mBindGroup, 1, &offset);
-        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mParticleQuadBuffer, 0, wgpuBufferGetSize(mParticleQuadBuffer));
-        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 1, mParticleDataBuffer, 0, wgpuBufferGetSize(mParticleDataBuffer));
-        wgpuRenderPassEncoderDraw(renderPass, 6, mParticleDrawCount, 0, 0);
-        wgpuRenderPassEncoderSetPipeline(renderPass, mPipeline);          // ← restore main pipeline
-    }
+        // Particles
+        if (mParticleQuadBuffer && mParticleDataBuffer && mParticleCount > 0)
+        {
+            wgpuRenderPassEncoderSetPipeline(renderPass, mParticlePipeline);
+            const uint32_t offset = MAT_PARTICLES * mUniformStride;
+            wgpuRenderPassEncoderSetBindGroup(renderPass, 0, mBindGroup, 1, &offset);
+            wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, mParticleQuadBuffer, 0, wgpuBufferGetSize(mParticleQuadBuffer));
+            wgpuRenderPassEncoderSetVertexBuffer(renderPass, 1, mParticleDataBuffer, 0, wgpuBufferGetSize(mParticleDataBuffer));
+            wgpuRenderPassEncoderDraw(renderPass, 6, mParticleDrawCount, 0, 0);
+            wgpuRenderPassEncoderSetPipeline(renderPass, mPipeline);
+        }
 
         wgpuRenderPassEncoderEnd(renderPass);
         wgpuRenderPassEncoderRelease(renderPass);
@@ -240,32 +183,44 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
     base.frequency   = 10.0f;
     base.amplitude   = 0.5f;
     base.sliderValue  = mSliderValue;
-    base.lightPos[0]  = 0.25f;
-    base.lightPos[1]  = 0.10f;
+    base.lightPos[0]  = 0.0f;
+    base.lightPos[1]  = 0.75f;
     base.lightPos[2]  = 0.35f;
     base.sliderPos[0] = mSliderPos[0];
     base.sliderPos[1] = mSliderPos[1];
     base.sliderPos[2] = mSliderPos[2];
 
-    constexpr uint32_t ids[5] = { MAT_CAVE, MAT_SLIDER, MAT_PLANE, MAT_PARTICLES, MAT_FLOOR };
+    constexpr uint32_t ids[6] = { MAT_CAVE, MAT_SLIDER, MAT_PLANE, MAT_PARTICLES, MAT_FLOOR, MAT_SKYLIGHT };
     std::memcpy(base.modelMatrix, kIdentity, sizeof(kIdentity));
 
-    for (uint32_t i = 0; i < 5; ++i) {
+    for (uint32_t i = 0; i < 6; ++i) {
         base.materialId = ids[i];
-        wgpuQueueWriteBuffer(queue, uniformBuffer, i * mUniformStride, &base, sizeof(MyUniforms));
+        wgpuQueueWriteBuffer(queue, uniformBuffer, ids[i] * mUniformStride, &base, sizeof(MyUniforms));
     }
 
     static constexpr float kFloorMatrix[16] = {
-        1.0f,  0.0f,   0.0f,  0.0f,   // col 0
-        0.0f,  0.866f, 0.5f,  0.0f,   // col 1  (cos30, sin30)
-        0.0f, -0.5f,   0.866f,0.0f,   // col 2  (-sin30, cos30)
-        0.0f, -0.3f,   0.5f,  1.0f    // col 3  (translate: y=-0.3, z=+0.5)
+        1.0f,  0.0f,   0.0f,  0.0f,
+        0.0f,  0.866f, 0.5f,  0.0f,
+        0.0f, -0.5f,   0.966f,0.0f,
+        0.0f, -0.3f,   0.5f,  1.0f
+    };
+    static constexpr float kSkylightMatrix[16] = {
+        1.0f,  0.0f,   0.0f,  0.0f,
+        0.0f,  0.366f, 0.5f,  0.0f,
+        0.0f, -0.5f,   0.366f,0.0f,
+        0.0f,  0.3f,   0.5f,  1.0f
     };
     MyUniforms floorUniforms = base;
     floorUniforms.materialId = MAT_FLOOR;
     std::memcpy(floorUniforms.modelMatrix, kFloorMatrix, sizeof(kFloorMatrix));
     wgpuQueueWriteBuffer(queue, uniformBuffer, MAT_FLOOR * mUniformStride,
                          &floorUniforms, sizeof(MyUniforms));
+
+    MyUniforms skylightUniforms = base;
+    skylightUniforms.materialId = MAT_SKYLIGHT;
+    std::memcpy(skylightUniforms.modelMatrix, kSkylightMatrix, sizeof(kSkylightMatrix));
+    wgpuQueueWriteBuffer(queue, uniformBuffer, MAT_SKYLIGHT * mUniformStride,
+                         &skylightUniforms, sizeof(MyUniforms));
 }
 
 void Scene::ConfigureVertexLayout()
@@ -286,10 +241,10 @@ void Scene::ConfigureVertexLayout()
     mVertexBufferLayouts.resize(1);
     mVertexBufferLayouts[0].attributeCount = 3;
     mVertexBufferLayouts[0].attributes     = mVertexAttribs.data();
-    mVertexBufferLayouts[0].arrayStride    = 9 * sizeof(float);   // ← restored
+    mVertexBufferLayouts[0].arrayStride    = 9 * sizeof(float);
     mVertexBufferLayouts[0].stepMode       = WGPUVertexStepMode_Vertex;
 
-    mPipelineDesc.vertex.bufferCount = 1;                         // ← restored
+    mPipelineDesc.vertex.bufferCount = 1;
     mPipelineDesc.vertex.buffers     = mVertexBufferLayouts.data();
 }
 
@@ -361,11 +316,11 @@ bool Scene::createParticlePipeline()
     mParticlePipelineDesc.vertex.buffers               = mParticleVertexBufferLayouts.data();
     mParticlePipelineDesc.vertex.constantCount         = 0;
     mParticlePipelineDesc.vertex.constants             = nullptr;
-    mParticleFragmentState.module      = mShaderModule;
-    mParticleFragmentState.entryPoint  = WGPU_STR("fs_particle");
-    mParticleFragmentState.targetCount = 1;
-    mParticleFragmentState.targets     = &mColorTarget;
-    mParticleFragmentState.constants   = nullptr;
+    mParticleFragmentState.module                      = mShaderModule;
+    mParticleFragmentState.entryPoint                  = WGPU_STR("fs_particle");
+    mParticleFragmentState.targetCount                 = 1;
+    mParticleFragmentState.targets                     = &mColorTarget;
+    mParticleFragmentState.constants                   = nullptr;
 
     // Reuse the same fragment state — swap entry point if you want a dedicated one
     mParticlePipelineDesc.fragment = &mParticleFragmentState;  // separate state
@@ -380,12 +335,14 @@ bool Scene::createParticlePipeline()
 
 void Scene::initializeScene()
 {
+
     initializeFloor();
     initializeSkylight();
     // initializePlane();
     // InitializeSlider();
-    // InitializeProceduralCave();
     // initializeParticles();
+    // InitializeProceduralCave();
+
 }
 
 bool Scene::createPipeline()
@@ -436,7 +393,7 @@ bool Scene::createPipeline()
     }
 
     WGPUBufferDescriptor bufferDesc = {};
-    bufferDesc.size                 = 5 * mUniformStride;  // one slot per material
+    bufferDesc.size                 = 6 * mUniformStride;  // one slot per material
     bufferDesc.usage                = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
     mUniformBuffer                  = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
 
@@ -478,6 +435,23 @@ bool Scene::createPipeline()
     return true;
 }
 
+void Scene::InitializeProceduralCave()
+{
+    std::vector<Vertex> verts;
+    std::vector<Index>  indices;
+    perlinCave::buildCaveGeometry(verts, indices);
+    mCaveIndexCount = static_cast<uint32_t>(indices.size());
+    WGPUBufferDescriptor bd{};
+    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
+    bd.size  = verts.size() * sizeof(Vertex);
+    mCaveVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mCaveVertexBuffer, 0, verts.data(), bd.size);
+    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
+    bd.size  = (indices.size() * sizeof(Index) + 3) & ~3ULL;
+    mCaveIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mCaveIndexBuffer, 0, indices.data(), bd.size);
+}
+
 void Scene::initializeFloor()
 {
     std::cout << "Initialize Floor" << std::endl;
@@ -512,7 +486,7 @@ void Scene::initializeSkylight()
 
     WGPUBufferDescriptor bd{};
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
-    bd.size  = vertices.size() * sizeof(FloorVertex);
+    bd.size  = vertices.size() * sizeof(SkylightVertex);
     mSkylightVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
     wgpuQueueWriteBuffer(mQueue, mSkylightVertexBuffer, 0, vertices.data(), bd.size);
 
@@ -603,32 +577,3 @@ void Scene::initializePlane()
     mPlaneIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
     wgpuQueueWriteBuffer(mQueue, mPlaneIndexBuffer, 0, indices.data(), bd.size);
 }
-
-//Geometry Loading
-// void WebGpuWindow::InitializeLoadedCave()
-// {
-//     std::vector<float>    pointData;
-//     std::vector<uint16_t> indexData;
-//
-//     const bool success = ResourceManager::loadGeometry(RESOURCE_DIR "/cave.txt",
-//                                                         pointData,
-//                                                         indexData,
-//                                                         3);
-//     if (!success) {
-//         std::cerr << "Could not load geometry!" << std::endl;
-//         return;
-//     }
-//
-//     mCaveIndexCount = static_cast<uint32_t>(indexData.size());
-//
-//     WGPUBufferDescriptor bd{};
-//     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
-//     bd.size  = pointData.size() * sizeof(float);
-//     mCaveVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-//     wgpuQueueWriteBuffer(mQueue, mCaveVertexBuffer, 0, pointData.data(), bd.size);
-//
-//     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
-//     bd.size  = (indexData.size() * sizeof(uint16_t) + 3) & ~3ULL;
-//     mCaveIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-//     wgpuQueueWriteBuffer(mQueue, mCaveIndexBuffer, 0, indexData.data(), bd.size);
-// }
