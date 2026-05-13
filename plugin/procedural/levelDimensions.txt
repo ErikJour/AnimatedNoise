@@ -1,0 +1,6 @@
+const FLOOR_RADIUS: f32 = 1.0;
+const MAX_RADIUS: f32 = 1.118;  // √5/2, pentagram ratio
+const ROOM_HEIGHT: f32 = 2.0;   // inscribed sphere
+const ENTASIS_HEIGHT: f32 = 0.764; // 2.0 × φ⁻¹ lower section
+const OCULUS_RADIUS: f32 = 0.25;   // 1/4, double octave
+
