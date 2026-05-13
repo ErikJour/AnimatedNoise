@@ -104,30 +104,36 @@ public:
     // size, color, and life are set to sensible defaults; override after the call
     // if you need per-particle variation.
     static void initParticles(std::vector<ParticleData>& particles,
-                              int   count  = 500,
-                              float spread = 10.0f,
-                              float size   = 0.01f)
+                          int   count  = 500,
+                          float spread = 0.35f,
+                          float size   = 0.0075f)
     {
         particles.clear();
         particles.reserve(static_cast<size_t>(count));
 
-        for (int i = 0; i < count; ++i)
+        const float radius = spread * 0.35f;
+
+        int spawned = 0;
+        while (spawned < count)
         {
+            float x = (randomFloat() - 0.5f) * spread;
+            float y = (randomFloat() - 0.5f) * spread;
+            float z = (randomFloat() - 0.5f) * spread;
+
+            // Reject if outside sphere
+            if (x*x + y*y + z*z > radius * radius) continue;
+
             ParticleData p{};
-
-            // Random position in [-spread/2, +spread/2]
-            p.x = (randomFloat() - 0.5f) * spread;
-            p.y = (randomFloat() - 0.25f) * spread;
-            p.z = (randomFloat() - 0.45f) * spread;
-
+            p.x = x;
+            p.y = y;
+            p.z = z;
             p.size = size;
-
             p.r = 1.0f; p.g = 1.0f; p.b = 1.0f; p.a = 1.0f;
-
-            p.life = randomFloat(); // stagger lifetimes so they don't all die at once
+            p.life = randomFloat();
             p.vx = 0.0f; p.vy = 0.0f; p.vz = 0.0f;
 
             particles.push_back(p);
+            ++spawned;
         }
     }
 

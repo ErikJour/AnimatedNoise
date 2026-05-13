@@ -368,9 +368,9 @@ void Scene::initializeScene()
 {
     initializeFloor();
     // initializePlane();
-    // InitializeSlider();
+    InitializeSlider();
     // InitializeProceduralCave();
-    // initializeParticles();
+    initializeParticles();
 }
 
 bool Scene::createPipeline()
