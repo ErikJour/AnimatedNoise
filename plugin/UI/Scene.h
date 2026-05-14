@@ -14,8 +14,9 @@
 #include "MyUniforms.h"
 #include "proceduralSlider.h"
 #include "circularFloor.h"
+#include "cameraState.h"
 
-
+struct vec3 { float x,y,z; };
 
 static constexpr uint32_t MAX_PARTICLES = 1000;
 #define WGPU_STR(s) WGPUStringView{s, sizeof(s) - 1}
@@ -35,8 +36,8 @@ class Scene
         void InitializeProceduralCave();
         void terminate();
         void reloadShader();
-        void setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const float time) const;
-        void renderFrame(const float currentTime);
+        void setUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer, float time) const;
+        void renderFrame(float currentTime);
         void ConfigureVertexLayout();
         bool createParticlePipeline();
         void initializeScene();
@@ -45,7 +46,7 @@ class Scene
         void initializeSkylight();
         void InitializeSlider();
         void initializeParticles();
-        void setSliderPosition(const float x, const float y, const float z);
+        void setSliderPosition(float x, float y, float z);
         void setSliderValue(float v);
         void initializePlane();
         float getSliderValue() const { return mSliderValue; }
@@ -131,6 +132,8 @@ class Scene
         WGPUFragmentState             mParticleFragmentState     {};   // ← needed for fs_particle
         uint32_t                        mParticleDrawCount = 500;        // current visible count
 
+        //Camera
+        CameraState mCameraState;
 
         mutable double mRed = {};
         double mGreen = {};

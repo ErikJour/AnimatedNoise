@@ -577,3 +577,19 @@ void Scene::initializePlane()
     mPlaneIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
     wgpuQueueWriteBuffer(mQueue, mPlaneIndexBuffer, 0, indices.data(), bd.size);
 }
+
+// void Scene::updateViewMatrix() {
+//     float cx = cos(mCameraState.angles.x);
+//     float sx = sin(mCameraState.angles.x);
+//     float cy = cos(mCameraState.angles.y);
+//     float sy = sin(mCameraState.angles.y);
+//     vec3 position = vec3(cx * cy, sx * cy, sy) * std::exp(-mCameraState.zoom);
+//     m_uniforms.viewMatrix = glm::lookAt(position, vec3(0.0f), vec3(0, 0, 1));
+//     wgpuQueueWriteBuffer(
+//         mQueue,
+//         mUniformBuffer,
+//         offsetof(MyUniforms, viewMatrix),
+//         &m_uniforms.viewMatrix,
+//         sizeof(MyUniforms::viewMatrix)
+//     );
+// }

@@ -20,6 +20,9 @@ public:
     void mouseDrag   (const juce::MouseEvent& e) override;
     void mouseUp     (const juce::MouseEvent& e) override;
     void updateSliderFromMouse(int screenY);
+    void onMouseMove(double xpos, double ypos);
+    void onMouseButton(int button, int action, int mods);
+    void onScroll(double xoffset, double yoffset);
     void paint(juce::Graphics&) override {}
 private:
     void parentHierarchyChanged() override;

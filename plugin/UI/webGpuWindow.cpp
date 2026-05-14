@@ -2,6 +2,7 @@
 // Created by Erik Jourgensen on 4/29/26.
 //
 #include "webGpuWindow.h"
+#include "GpuSurface.h"
 
 WebGpuWindow::WebGpuWindow()    = default;
 WebGpuWindow::~WebGpuWindow()   = default;
@@ -105,7 +106,6 @@ void WebGpuWindow::configurePipeline()
     mPipelineDesc.layout                             = nullptr;
     mPipelineDesc.vertex.bufferCount                 = 0;
     mPipelineDesc.vertex.buffers                     = nullptr;
-    // mPipelineDesc.vertex.module                      = mShaderModule;
     mPipelineDesc.vertex.entryPoint                  = WGPU_STR("vs_main");
     mPipelineDesc.vertex.constantCount               = 0;
     mPipelineDesc.vertex.constants                   = nullptr;
@@ -133,7 +133,6 @@ void WebGpuWindow::configurePipeline()
     mPipelineDesc.multisample.mask                   = ~0u;
     mPipelineDesc.multisample.alphaToCoverageEnabled = false;
     mScene.setPipelineDesc(mPipelineDesc);
-    // mScene.setShaderModule(mShaderModule);
 }
 
 bool WebGpuWindow::initialize()
@@ -161,13 +160,13 @@ bool WebGpuWindow::initSurface(void* nativeHandle, const uint32_t width, const u
     mScene.setSurface(mSurface);
     mScene.setSurfaceFormat(mSurfaceFormat);
     mScene.setSurfaceSize(width, height);
-    bool result = mScene.createPipeline();
+    const bool result = mScene.createPipeline();
     std::cout << "createPipeline: " << result << std::endl;
     return result;
 }
 
 
-void WebGpuWindow::onResize (uint32_t width, uint32_t height)
+void WebGpuWindow::onResize (const uint32_t width, const uint32_t height)
 {
     if (!mSurface) return;
     wgpuSurfaceUnconfigure(mSurface);
@@ -248,19 +247,14 @@ void WebGpuWindow::setDefault(WGPUDepthStencilState& depthStencilState)
 
 WGPURequiredLimits WebGpuWindow::GetRequiredLimits(WGPUAdapter adapter)
 {
-    // Get adapter supported limits, in case we need them
     WGPUSupportedLimits supportedLimits;
     supportedLimits.nextInChain = nullptr;
     wgpuAdapterGetLimits(adapter, &supportedLimits);
     WGPURequiredLimits requiredLimits{};
     setDefault(requiredLimits.limits);
-    // We use at most 1 vertex attribute for now
     requiredLimits.limits.maxVertexAttributes = 2;
-    // We should also tell that we use 1 vertex buffers
     requiredLimits.limits.maxVertexBuffers = 1;
-    // Maximum size of a buffer is 6 vertices of 2 float each
     requiredLimits.limits.maxBufferSize = 15 * 5 * sizeof(float);
-    // Maximum stride between 2 consecutive vertices in the vertex buffer
     requiredLimits.limits.maxVertexBufferArrayStride = 9 * sizeof(float);
     requiredLimits.limits.maxInterStageShaderComponents = 3;
     return requiredLimits;

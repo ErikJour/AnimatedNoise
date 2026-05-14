@@ -3,16 +3,8 @@
 //
 
 #pragma once
-#include <iostream>
 #include <webgpu/webgpu.h>
-#include <Shader.h>
-#include "utilityHelper.h"
-#include "GpuSurface.h"
 #include "shaderLoader.h"
-#include "shader.wgsl.h"
-#include <filesystem>
-#include "MyUniforms.h"
-#include "ResourceManager.h"
 #include "Scene.h"
 
 
@@ -111,11 +103,9 @@ private:
     WGPUTextureFormat              mSurfaceFormat = WGPUTextureFormat_Undefined;
     WGPUSupportedLimits            mSupportedLimits = {};
     WGPURenderPipelineDescriptor   mPipelineDesc = {};
-    // WGPURenderPipeline             mPipeline = {};
     WGPUFragmentState              mFragmentState = {};
     WGPUBlendState                 mBlendState = {};
     WGPUColorTargetState           mColorTarget = {};
-    // WGPUShaderModule               mShaderModule = {};
     WGPUDepthStencilState          depthStencilState = {};
     WGPUTexture                    mDepthTexture     = nullptr;
     WGPUTextureView                mDepthTextureView = nullptr;
