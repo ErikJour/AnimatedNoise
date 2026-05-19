@@ -176,26 +176,26 @@ void Scene::renderFrame(const float currentTime)
         wgpuDeviceTick(mDevice);
 }
 
-void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const float time) const
+void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const float time)
 {
-    MyUniforms base{};
-    base.time        = time;
-    base.frequency   = 10.0f;
-    base.amplitude   = 0.5f;
-    base.sliderValue  = mSliderValue;
-    base.lightPos[0]  = 0.0f;
-    base.lightPos[1]  = 0.75f;
-    base.lightPos[2]  = 0.35f;
-    base.sliderPos[0] = mSliderPos[0];
-    base.sliderPos[1] = mSliderPos[1];
-    base.sliderPos[2] = mSliderPos[2];
+
+    mUniforms.time        = time;
+    mUniforms.frequency   = 10.0f;
+    mUniforms.amplitude   = 0.5f;
+    mUniforms.sliderValue  = mSliderValue;
+    mUniforms.lightPos[0]  = 0.0f;
+    mUniforms.lightPos[1]  = 0.75f;
+    mUniforms.lightPos[2]  = 0.35f;
+    mUniforms.sliderPos[0] = mSliderPos[0];
+    mUniforms.sliderPos[1] = mSliderPos[1];
+    mUniforms.sliderPos[2] = mSliderPos[2];
 
     constexpr uint32_t ids[6] = { MAT_CAVE, MAT_SLIDER, MAT_PLANE, MAT_PARTICLES, MAT_FLOOR, MAT_SKYLIGHT };
-    std::memcpy(base.modelMatrix, kIdentity, sizeof(kIdentity));
+    std::memcpy(mUniforms.modelMatrix, kIdentity, sizeof(kIdentity));
 
     for (uint32_t i = 0; i < 6; ++i) {
-        base.materialId = ids[i];
-        wgpuQueueWriteBuffer(queue, uniformBuffer, ids[i] * mUniformStride, &base, sizeof(MyUniforms));
+        mUniforms.materialId = ids[i];
+        wgpuQueueWriteBuffer(queue, uniformBuffer, ids[i] * mUniformStride, &mUniforms, sizeof(MyUniforms));
     }
 
     static constexpr float kFloorMatrix[16] = {
@@ -210,13 +210,13 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
         0.0f, -0.5f,   0.366f,0.0f,
         0.0f,  0.3f,   0.5f,  1.0f
     };
-    MyUniforms floorUniforms = base;
+    MyUniforms floorUniforms = mUniforms;
     floorUniforms.materialId = MAT_FLOOR;
     std::memcpy(floorUniforms.modelMatrix, kFloorMatrix, sizeof(kFloorMatrix));
     wgpuQueueWriteBuffer(queue, uniformBuffer, MAT_FLOOR * mUniformStride,
                          &floorUniforms, sizeof(MyUniforms));
 
-    MyUniforms skylightUniforms = base;
+    MyUniforms skylightUniforms = mUniforms;
     skylightUniforms.materialId = MAT_SKYLIGHT;
     std::memcpy(skylightUniforms.modelMatrix, kSkylightMatrix, sizeof(kSkylightMatrix));
     wgpuQueueWriteBuffer(queue, uniformBuffer, MAT_SKYLIGHT * mUniformStride,
@@ -344,6 +344,18 @@ void Scene::initializeScene()
     // InitializeProceduralCave();
 
 }
+
+void Scene::onResize()
+{
+    // Terminate in reverse order
+    // terminateDepthBuffer();
+    // terminateSwapChain();
+    //
+    // Re-init
+    // initSwapChain();
+    // initDepthBuffer();
+}
+
 
 bool Scene::createPipeline()
 {

@@ -27,6 +27,7 @@ class Scene
         Scene();
         ~Scene();
         void init(WGPUDevice device, WGPUQueue queue);
+        void onResize();
         void setSurface(WGPUSurface surface);
         void setSurfaceSize(uint32_t width, uint32_t height) { mWidth = width; mHeight = height; }
         void setShaderModule(WGPUShaderModule shaderModule);
@@ -36,7 +37,7 @@ class Scene
         void InitializeProceduralCave();
         void terminate();
         void reloadShader();
-        void setUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer, float time) const;
+        void setUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer, float time);
         void renderFrame(float currentTime);
         void ConfigureVertexLayout();
         bool createParticlePipeline();
@@ -95,6 +96,7 @@ class Scene
         WGPUColorTargetState                mColorTarget = {};
         WGPUFragmentState                   mFragmentState = {};
         WGPUBlendState                      mBlendState = {};
+        MyUniforms                          mUniforms = {};
         //Cave
         WGPUBuffer                          mCaveVertexBuffer  = nullptr;
         WGPUBuffer                          mCaveIndexBuffer  = nullptr;

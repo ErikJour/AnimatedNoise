@@ -69,6 +69,8 @@ target_sources(AnimatedNoise
         UI/ResourceManager.cpp
         UI/Scene.cpp
         procedural/perlinCave.cpp
+        dsp/NoiseSynth.cpp
+        dsp/NoiseGenerator.cpp
 )
 
 if (APPLE)
@@ -87,6 +89,7 @@ target_include_directories(AnimatedNoise
         geometries
         procedural
         shaders
+        dsp
 )
 
 #==================================
