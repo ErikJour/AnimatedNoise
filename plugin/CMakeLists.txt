@@ -71,6 +71,7 @@ target_sources(AnimatedNoise
         procedural/perlinCave.cpp
         dsp/NoiseSynth.cpp
         dsp/NoiseGenerator.cpp
+        dsp/CombFilter.cpp
 )
 
 if (APPLE)
