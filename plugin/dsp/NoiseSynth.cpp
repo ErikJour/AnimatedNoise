@@ -4,7 +4,7 @@
 
 #include "NoiseSynth.h"
 
-NoiseSynth::NoiseSynth() : voice()
+NoiseSynth::NoiseSynth()
 {
     mSampleRate = 44100.0;
     gainSmoothed.reset(mSampleRate, 0.01f);
@@ -18,9 +18,10 @@ void NoiseSynth::distributeResources(const double sampleRate, int samplesPerBloc
 
 void NoiseSynth::releaseResources() {}
 
-void NoiseSynth::reset()
+void NoiseSynth::reset(const double sampleRate, const int numChannels)
 {
-    voice.reset();
+    mSampleRate = sampleRate;
+    voice.reset(mSampleRate, numChannels);
     gainSmoothed.reset(mSampleRate, 0.01f);
 }
 

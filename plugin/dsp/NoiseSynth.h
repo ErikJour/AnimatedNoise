@@ -4,8 +4,8 @@
 
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
-#include "Utils.h"
 #include "NoiseVoice.h"
+#include "Utils.h"
 
 class NoiseSynth
 {
@@ -14,7 +14,7 @@ public:
 
     void distributeResources(double sampleRate, int samplesPerBlock);
     static void releaseResources();
-    void reset();
+    void reset(double sampleRate, int numChannels);
     void render(float** outputBuffers, int sampleCount);
     void midiMessages(uint8_t data0, uint8_t data1, uint8_t data2);
     void startVoice(int note, int velocity);

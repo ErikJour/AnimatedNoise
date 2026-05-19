@@ -85,15 +85,11 @@ void AudioPluginAudioProcessor::changeProgramName (int index, const juce::String
 void AudioPluginAudioProcessor::prepareToPlay (const double sampleRate, const int samplesPerBlock)
 {
     noiseSynth.distributeResources(sampleRate, samplesPerBlock);
+    noiseSynth.reset(sampleRate, getTotalNumOutputChannels());
 }
 
 void AudioPluginAudioProcessor::releaseResources()
 {
-}
-
-void AudioPluginAudioProcessor::reset()
-{
-    noiseSynth.reset();
 }
 
 bool AudioPluginAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const

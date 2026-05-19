@@ -72,6 +72,7 @@ target_sources(AnimatedNoise
         dsp/NoiseSynth.cpp
         dsp/NoiseGenerator.cpp
         dsp/CombFilter.cpp
+        dsp/NoiseVoice.cpp
 )
 
 if (APPLE)

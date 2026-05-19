@@ -5,25 +5,25 @@
 
 #pragma once
 #include "NoiseGenerator.h"
+#include "CombFilter.h"
+#include <juce_audio_processors/juce_audio_processors.h>
 
-struct NoiseVoice
-{
+class NoiseVoice {
+
+    public:
+
+    NoiseVoice();
+    ~NoiseVoice() = default;
+
+    void reset(double sampleRate, int numChannels);
+    float render();
+
     NoiseGenerator noise;
-    int note;
-    int noiseType;
+    int note = 0;
+    int noiseType = 0;
+    CombFilter combFilter;
+    juce::AudioBuffer<float> mAudioBuffer;
+    double mSampleRate;
 
-
-void reset()
-{
-    note = 0;
-    noise.setLevel(0.8f);
-}
-
-float render()
-{
-    const float whiteNoiseSample = noise.getNextSample();
-    const float output = whiteNoiseSample;
-    return output;
-}
 
 };

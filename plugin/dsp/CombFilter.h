@@ -2,13 +2,27 @@
 // Created by Erik Jourgensen on 5/19/26.
 //
 
-#ifndef ANIMATEDNOISE_COMBFILTER_H
-#define ANIMATEDNOISE_COMBFILTER_H
+#pragma once
 
+#include <juce_audio_processors/juce_audio_processors.h>
 
 class CombFilter
 {
+public:
+    CombFilter();
+    ~CombFilter();
+
+    void reset(double sampleRate, int numChannels);
+    void processRingBuffer(int numSamples, int channel, const float* channelData);
+    void advanceWritePosition(int numSamples);
+
+
+private:
+    juce::AudioBuffer<float> mRingBuffer;
+    int mWritePosition;
+    double mSampleRate;
+    int mRingBufferSize = 0.0;
+
 };
 
 
-#endif //ANIMATEDNOISE_COMBFILTER_H
