@@ -171,7 +171,8 @@ void WebGpuWindow::onResize (const uint32_t width, const uint32_t height)
     if (!mSurface) return;
     wgpuSurfaceUnconfigure(mSurface);
     applySurfaceConfig(width, height);
-    // updateDepthTexture(width, height);
+    mScene.setSurfaceSize(width, height);
+    mScene.updateDepthTexture(width, height);
 }
 
 void WebGpuWindow::terminate()

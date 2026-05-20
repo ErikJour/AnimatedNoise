@@ -18,7 +18,7 @@ struct Uniforms {
     amplitude:   f32,
     sliderValue: f32,
     lightPos:    vec3f,
-    _pad1:       f32,
+    aspectRatio: f32,
     sliderPos:   vec3f,
     materialId:  u32,
     modelMatrix : mat4x4f,

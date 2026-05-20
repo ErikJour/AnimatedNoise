@@ -189,6 +189,7 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
     mUniforms.sliderPos[0] = mSliderPos[0];
     mUniforms.sliderPos[1] = mSliderPos[1];
     mUniforms.sliderPos[2] = mSliderPos[2];
+    mUniforms.aspectRatio = static_cast<float>(mWidth) / static_cast<float>(mHeight);
 
     constexpr uint32_t ids[6] = { MAT_CAVE, MAT_SLIDER, MAT_PLANE, MAT_PARTICLES, MAT_FLOOR, MAT_SKYLIGHT };
     std::memcpy(mUniforms.modelMatrix, kIdentity, sizeof(kIdentity));
@@ -422,6 +423,17 @@ bool Scene::createPipeline()
     mBindGroup                     = wgpuDeviceCreateBindGroup(mDevice, &bgDesc);
 
     // Depth texture
+    updateDepthTexture(mWidth, mHeight);
+
+    wgpuBindGroupLayoutRelease(bgl);
+    if (!createParticlePipeline()) return false;
+    return true;
+}
+
+void Scene::updateDepthTexture(const uint32_t width, const uint32_t height)
+{
+    mWidth = width;
+    mHeight = height;
     if (mDepthTextureView) { wgpuTextureViewRelease(mDepthTextureView); mDepthTextureView = nullptr; }
     if (mDepthTexture)     { wgpuTextureDestroy(mDepthTexture); wgpuTextureRelease(mDepthTexture); mDepthTexture = nullptr; }
 
@@ -441,11 +453,8 @@ bool Scene::createPipeline()
     dvDesc.arrayLayerCount = 1;
     dvDesc.aspect          = WGPUTextureAspect_DepthOnly;
     mDepthTextureView      = wgpuTextureCreateView(mDepthTexture, &dvDesc);
-
-    wgpuBindGroupLayoutRelease(bgl);
-    if (!createParticlePipeline()) return false;
-    return true;
 }
+
 
 void Scene::InitializeProceduralCave()
 {

@@ -16,7 +16,7 @@ struct MyUniforms {
     float    amplitude;
     float    sliderValue;
     float    lightPos[3];
-    float    _pad1;
+    float    aspectRatio;
     float    sliderPos[3];
     uint32_t materialId;
     float    modelMatrix[16];

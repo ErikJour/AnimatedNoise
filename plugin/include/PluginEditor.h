@@ -27,11 +27,19 @@ public:
 private:
     void parentHierarchyChanged() override;
     void timerCallback() override;
+    void setResizeReady();
+
 
     AudioPluginAudioProcessor& processorRef;
     WebGpuWindow webGpuWindow;
     bool  mDragging    = false;
     float mDragOffset  = 0.0f;
+    bool timerReady = false;
+    bool     mResizePending = false;
+    uint32_t mPendingW    = 0;
+    uint32_t mPendingH    = 0;
+    uint32_t mConfiguredW = 0;
+    uint32_t mConfiguredH = 0;
 
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioPluginAudioProcessorEditor)

@@ -23,26 +23,47 @@ void AudioPluginAudioProcessorEditor::parentHierarchyChanged()
 
     if (!webGpuWindow.hasSurface() && getPeer() != nullptr) {
         if (void* handle = getWindowHandle()) {
-            webGpuWindow.initSurface(handle,
-                                     static_cast<uint32_t>(getWidth()),
-                                     static_cast<uint32_t>(getHeight()));
+            const auto w = static_cast<uint32_t>(getWidth());
+            const auto h = static_cast<uint32_t>(getHeight());
+            webGpuWindow.initSurface(handle, w, h);
+            mConfiguredW = w;
+            mConfiguredH = h;
             startTimerHz(60);
+            juce::MessageManager::callAsync([this]() {
+                setResizable(true, true);
+            });
         }
     }
 }
 
 void AudioPluginAudioProcessorEditor::timerCallback()
 {
+    if (mResizePending) {
+        if (mPendingW != mConfiguredW || mPendingH != mConfiguredH) {
+            webGpuWindow.onResize(mPendingW, mPendingH);
+            mConfiguredW = mPendingW;
+            mConfiguredH = mPendingH;
+        }
+        mResizePending = false;
+    }
+
     static auto startTime = juce::Time::getMillisecondCounterHiRes();
     const double elapsed  = (juce::Time::getMillisecondCounterHiRes() - startTime) * 0.001;
     webGpuWindow.getScene().renderFrame(static_cast<float>(elapsed));
 }
 
+void AudioPluginAudioProcessorEditor::setResizeReady()
+{
+    setResizable(true, true);
+}
+
 //==============================================================================
 void AudioPluginAudioProcessorEditor::resized()
 {
-    webGpuWindow.onResize(static_cast<uint32_t>(getWidth()),
-                          static_cast<uint32_t>(getHeight()));
+    if (!webGpuWindow.hasSurface()) return;
+    mPendingW = static_cast<uint32_t>(getWidth());
+    mPendingH = static_cast<uint32_t>(getHeight());
+    mResizePending = true;
 }
 
 //==============================================================================

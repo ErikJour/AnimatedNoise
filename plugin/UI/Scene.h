@@ -60,6 +60,7 @@ class Scene
         WGPUColorTargetState getColorTarget() const { return mColorTarget; }
         WGPUFragmentState getFragmentState() const { return mFragmentState; }
         WGPUBlendState getBlendState() const { return mBlendState; }
+        void updateDepthTexture(uint32_t width, uint32_t height);
 
     private:
         void setItemBuffers(WGPUBuffer vertexBuffer, WGPUBuffer indexBuffer, uint32_t indexCount, uint32_t material, WGPURenderPassEncoder renderPass) const
