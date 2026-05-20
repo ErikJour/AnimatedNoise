@@ -20,6 +20,7 @@ public:
 private:
     juce::AudioBuffer<float> mRingBuffer;
     int mWritePosition;
+    int mReadPosition;
     double mSampleRate;
     int mRingBufferSize = 0.0;
 

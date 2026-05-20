@@ -346,18 +346,6 @@ void Scene::initializeScene()
 
 }
 
-void Scene::onResize()
-{
-    // Terminate in reverse order
-    // terminateDepthBuffer();
-    // terminateSwapChain();
-    //
-    // Re-init
-    // initSwapChain();
-    // initDepthBuffer();
-}
-
-
 bool Scene::createPipeline()
 {
     if (mBindGroup)    { wgpuBindGroupRelease(mBindGroup);    mBindGroup     = nullptr; }

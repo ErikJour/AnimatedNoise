@@ -6,6 +6,7 @@
 CombFilter::CombFilter()
 {
     mWritePosition = 0;
+    mReadPosition = 0;
     mSampleRate = 44100;
 }
 
@@ -20,6 +21,9 @@ void CombFilter::reset(const double sampleRate, const int numChannels)
 
 void CombFilter::processRingBuffer(const int numSamples, const int channel, const float* channelData)
 {
+
+    // readPosition = (mWritePosition - delaySamples + mRingBufferSize) % mRingBufferSize
+
     if (mRingBufferSize > numSamples + mWritePosition)
     {
         mRingBuffer.copyFrom(channel,
@@ -27,9 +31,12 @@ void CombFilter::processRingBuffer(const int numSamples, const int channel, cons
                                     channelData,
                                     numSamples);
     }
+
+
     else
     {
         const auto numSamplesToEnd = mRingBufferSize - mWritePosition;
+
         mRingBuffer.copyFrom(channel,
                                     mWritePosition,
                                     channelData,
