@@ -31,6 +31,8 @@ void AudioPluginAudioProcessorEditor::parentHierarchyChanged()
             startTimerHz(60);
             juce::MessageManager::callAsync([this]() {
                 setResizable(true, true);
+                setResizeLimits(200, 113, 3200, 1800);
+                getConstrainer()->setFixedAspectRatio(800.0 / 450.0);
             });
         }
     }

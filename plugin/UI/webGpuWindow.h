@@ -36,8 +36,6 @@ private:
 
     void applySurfaceConfig(const uint32_t width, const uint32_t height)
     {
-        mDepthTextureView = mScene.getDepthTextureView();
-
         if (mSurfaceFormat == WGPUTextureFormat_Undefined) {
             WGPUSurfaceCapabilities caps = {};
             wgpuSurfaceGetCapabilities(mSurface, mAdapter, &caps);
@@ -55,31 +53,6 @@ private:
         config.height       = height;
         config.presentMode  = WGPUPresentMode_Immediate;
         config.alphaMode    = WGPUCompositeAlphaMode_Auto;
-
-        if (mDepthTextureView) { wgpuTextureViewRelease(mDepthTextureView); mDepthTextureView = nullptr; }
-        if (mDepthTexture)     { wgpuTextureDestroy(mDepthTexture); wgpuTextureRelease(mDepthTexture); mDepthTexture = nullptr; }
-
-        WGPUTextureFormat depthFormat = WGPUTextureFormat_Depth24Plus;
-
-        WGPUTextureDescriptor depthTexDesc   = {};
-        depthTexDesc.dimension               = WGPUTextureDimension_2D;
-        depthTexDesc.format                  = depthFormat;
-        depthTexDesc.mipLevelCount           = 1;
-        depthTexDesc.sampleCount             = 1;
-        depthTexDesc.size = { width, height, 1 };
-
-        depthTexDesc.usage                   = WGPUTextureUsage_RenderAttachment;
-        depthTexDesc.viewFormatCount         = 1;
-        depthTexDesc.viewFormats             = &depthFormat;
-        mDepthTexture = wgpuDeviceCreateTexture(mDevice, &depthTexDesc);
-
-        WGPUTextureViewDescriptor depthViewDesc = {};
-        depthViewDesc.format                    = depthFormat;
-        depthViewDesc.dimension                 = WGPUTextureViewDimension_2D;
-        depthViewDesc.aspect                    = WGPUTextureAspect_DepthOnly;
-        depthViewDesc.mipLevelCount             = 1;
-        depthViewDesc.arrayLayerCount           = 1;
-        mDepthTextureView = wgpuTextureCreateView(mDepthTexture, &depthViewDesc);
 
         wgpuSurfaceConfigure(mSurface, &config);
     }
@@ -107,8 +80,6 @@ private:
     WGPUBlendState                 mBlendState = {};
     WGPUColorTargetState           mColorTarget = {};
     WGPUDepthStencilState          depthStencilState = {};
-    WGPUTexture                    mDepthTexture     = nullptr;
-    WGPUTextureView                mDepthTextureView = nullptr;
 
 
     Scene mScene;

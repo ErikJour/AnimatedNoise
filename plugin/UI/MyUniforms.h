@@ -20,14 +20,16 @@ struct MyUniforms {
     float    sliderPos[3];
     uint32_t materialId;
     float    modelMatrix[16];
+    float    viewProjMatrix[16];
 };
 
 static_assert(sizeof(MyUniforms) % 16 == 0);
 static_assert(offsetof(MyUniforms, modelMatrix) % 16 == 0);
+static_assert(offsetof(MyUniforms, viewProjMatrix) % 16 == 0);
 
 static constexpr float kIdentity[16] = {
-    1.0f,    0.0f,    0.0f,  0.0f,  // col 0
-    0.0f,    0.7071f, -0.7071f, 0.0f,  // col 1
-    0.0f,    0.7071f,  0.7071f, 0.0f,  // col 2
-    0.0f,    0.0f,    0.0f,  1.0f   // col 3
+    1.0f, 0.0f, 0.0f, 0.0f,  // col 0
+    0.0f, 1.0f, 0.0f, 0.0f,  // col 1
+    0.0f, 0.0f, 1.0f, 0.0f,  // col 2
+    0.0f, 0.0f, 0.0f, 1.0f   // col 3
 };

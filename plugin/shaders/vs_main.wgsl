@@ -1,8 +1,6 @@
 // ── Projection helpers ────────────────────────────────────────────────────────
-fn projectPerspective(pos: vec3f) -> vec4f {
-    let depth = pos.z + 0.45;
-    let inv_d = FOV_FACTOR / depth;
-    return vec4f(pos.x * inv_d / u.aspectRatio, pos.y * inv_d, pos.z * 0.5 + 0.5, 1.0);
+fn projectPerspective(worldPos: vec3f) -> vec4f {
+    return u.viewProjMatrix * vec4f(worldPos, 1.0);
 }
 
 fn projectFlat(pos: vec3f) -> vec4f {
