@@ -18,10 +18,10 @@ void NoiseSynth::distributeResources(const double sampleRate, int samplesPerBloc
 
 void NoiseSynth::releaseResources() {}
 
-void NoiseSynth::reset(const double sampleRate, const int numChannels)
+void NoiseSynth::reset(const double sampleRate)
 {
     mSampleRate = sampleRate;
-    voice.reset(mSampleRate, numChannels);
+    voice.reset(mSampleRate);
     gainSmoothed.reset(mSampleRate, 0.01f);
 }
 
@@ -29,11 +29,11 @@ void NoiseSynth::render(float** outputBuffers, const int sampleCount)
 {
     float* outputBufferLeft = outputBuffers[0];
     float* outputBufferRight = outputBuffers[1];
+    gainSmoothed.setTargetValue(0.5f);
 
     for (int sample = 0; sample < sampleCount; sample++) {
 
         const float output = voice.render();
-        gainSmoothed.setTargetValue(0.5f);
         const float gain = gainSmoothed.getNextValue();
         outputBufferLeft[sample] = output * gain;
 
@@ -77,6 +77,8 @@ void NoiseSynth::startVoice(const int note, const int velocity)
 void NoiseSynth::noteOn(const int note, const int velocity)
 {
     startVoice(note, velocity);
+    const float frequency = 440.f * std::pow(2.f, (static_cast<float>(note) - 69) / 12.f);
+    voice.combFilter.excite(frequency);
 }
 
 void NoiseSynth::noteOff(const int note)

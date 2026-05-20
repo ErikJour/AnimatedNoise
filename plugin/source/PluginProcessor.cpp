@@ -85,7 +85,7 @@ void AudioPluginAudioProcessor::changeProgramName (int index, const juce::String
 void AudioPluginAudioProcessor::prepareToPlay (const double sampleRate, const int samplesPerBlock)
 {
     noiseSynth.distributeResources(sampleRate, samplesPerBlock);
-    noiseSynth.reset(sampleRate, getTotalNumOutputChannels());
+    noiseSynth.reset(sampleRate);
 }
 
 void AudioPluginAudioProcessor::releaseResources()

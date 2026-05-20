@@ -14,7 +14,7 @@ public:
 
     void distributeResources(double sampleRate, int samplesPerBlock);
     static void releaseResources();
-    void reset(double sampleRate, int numChannels);
+    void reset(double sampleRate);
     void render(float** outputBuffers, int sampleCount);
     void midiMessages(uint8_t data0, uint8_t data1, uint8_t data2);
     void startVoice(int note, int velocity);

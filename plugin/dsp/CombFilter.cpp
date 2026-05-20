@@ -3,56 +3,42 @@
 //
 
 #include "CombFilter.h"
+
+
 CombFilter::CombFilter()
 {
-    mWritePosition = 0;
-    mReadPosition = 0;
     mSampleRate = 44100;
 }
 
 CombFilter::~CombFilter() = default;
 
-void CombFilter::reset(const double sampleRate, const int numChannels)
+void CombFilter::reset(const double sampleRate)
 {
     mSampleRate = sampleRate;
-    mRingBufferSize = static_cast<int>(mSampleRate) * 2;
-    mRingBuffer.setSize(numChannels, mRingBufferSize);
 }
 
-void CombFilter::processRingBuffer(const int numSamples, const int channel, const float* channelData)
+void CombFilter::excite(const float frequency)
 {
-
-    // readPosition = (mWritePosition - delaySamples + mRingBufferSize) % mRingBufferSize
-
-    if (mRingBufferSize > numSamples + mWritePosition)
-    {
-        mRingBuffer.copyFrom(channel,
-                        mWritePosition,
-                                    channelData,
-                                    numSamples);
-    }
-
-
-    else
-    {
-        const auto numSamplesToEnd = mRingBufferSize - mWritePosition;
-
-        mRingBuffer.copyFrom(channel,
-                                    mWritePosition,
-                                    channelData,
-                                    numSamplesToEnd);
-
-        const auto samplesLeftOver = numSamples - numSamplesToEnd;
-
-        mRingBuffer.copyFrom(channel,
-                                   0,
-                                   channelData + numSamplesToEnd,
-                                   samplesLeftOver);
-    }
+    ringBufferLength = static_cast<uint32_t>(mSampleRate / frequency);
+    for (uint32_t i = 0; i < ringBufferLength; i++)
+        ringBufferMemory[i] = 0.f;
+    ringBufferIndex = 0;
+    mPrevSample = 0.f;
 }
 
-void CombFilter::advanceWritePosition(const int numSamples)
+
+float CombFilter::process(const float input)
 {
-    mWritePosition += numSamples;
-    mWritePosition %= mRingBufferSize;
+    const float delayed  = ringBufferMemory[ringBufferIndex];
+    const float filtered = 0.5f * (delayed + mPrevSample);
+
+    ringBufferMemory[ringBufferIndex] = (filtered + input) * mDecay;
+
+    ringBufferIndex++;
+    if (ringBufferIndex >= ringBufferLength)
+        ringBufferIndex = 0;
+
+    mPrevSample = delayed;
+    return filtered;
 }
+

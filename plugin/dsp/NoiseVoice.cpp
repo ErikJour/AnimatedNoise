@@ -7,19 +7,19 @@ NoiseVoice::NoiseVoice() : mSampleRate(0)
 {
 }
 
-void NoiseVoice::reset(const double sampleRate, const int numChannels)
+void NoiseVoice::reset(const double sampleRate)
 {
     note = 0;
     noise.setLevel(0.8f);
     mSampleRate = sampleRate;
-    combFilter.reset(sampleRate, numChannels);
+    combFilter.reset(sampleRate);
 }
 
 float NoiseVoice::render()
 {
     const float whiteNoiseSample = noise.getNextSample();
-    const float output = whiteNoiseSample;
+    const float noiseX = whiteNoiseSample;
+    const float output = combFilter.process(noiseX);
     return output;
-    DBG("Output" << output);
 }
 

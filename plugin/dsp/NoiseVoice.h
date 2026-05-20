@@ -15,7 +15,7 @@ class NoiseVoice {
     NoiseVoice();
     ~NoiseVoice() = default;
 
-    void reset(double sampleRate, int numChannels);
+    void reset(double sampleRate);
     float render();
 
     NoiseGenerator noise;

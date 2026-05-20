@@ -5,6 +5,9 @@
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
+#include <random>
+
+#define MAX_BUFFER_LENGTH 100000
 
 class CombFilter
 {
@@ -12,18 +15,20 @@ public:
     CombFilter();
     ~CombFilter();
 
-    void reset(double sampleRate, int numChannels);
-    void processRingBuffer(int numSamples, int channel, const float* channelData);
-    void advanceWritePosition(int numSamples);
-
+    void reset(double sampleRate);
+    void excite(float frequency);
+    float process(float input);
 
 private:
-    juce::AudioBuffer<float> mRingBuffer;
-    int mWritePosition;
-    int mReadPosition;
-    double mSampleRate;
-    int mRingBufferSize = 0.0;
+    double mSampleRate { 0.0f };
+    //New
 
+    uint32_t ringBufferLength = { 0 };
+    float ringBufferMemory[MAX_BUFFER_LENGTH] = {};
+    uint32_t ringBufferIndex = { 0 };
+
+    float mDecay      = 0.996f; // controls sustain
+    float mPrevSample = 0.f;
 };
 
 
