@@ -33,9 +33,8 @@ void NoiseSynth::render(float** outputBuffers, const int sampleCount)
     for (int sample = 0; sample < sampleCount; sample++) {
 
         const float output = voice.render();
-
+        gainSmoothed.setTargetValue(0.5f);
         const float gain = gainSmoothed.getNextValue();
-
         outputBufferLeft[sample] = output * gain;
 
         if (outputBufferRight != nullptr) {

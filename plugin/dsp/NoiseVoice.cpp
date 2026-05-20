@@ -20,5 +20,6 @@ float NoiseVoice::render()
     const float whiteNoiseSample = noise.getNextSample();
     const float output = whiteNoiseSample;
     return output;
+    DBG("Output" << output);
 }
 
