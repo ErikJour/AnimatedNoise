@@ -8,6 +8,7 @@ NoiseSynth::NoiseSynth()
 {
     mSampleRate = 44100.0;
     gainSmoothed.reset(mSampleRate, 0.01f);
+
 }
 
 void NoiseSynth::distributeResources(const double sampleRate, int samplesPerBlock)
@@ -23,6 +24,9 @@ void NoiseSynth::reset(const double sampleRate)
     mSampleRate = sampleRate;
     voice.reset(mSampleRate);
     gainSmoothed.reset(mSampleRate, 0.01f);
+    const float inverseSampleRate = 1.0f / static_cast<float>(mSampleRate);
+    voice.functionGenerator.mAttackMultiplier = std::exp(-inverseSampleRate * std::exp(4.5f - 0.075f * 50.0f));
+    voice.functionGenerator.mReleaseMultiplier = 0.95f;
 }
 
 void NoiseSynth::render(float** outputBuffers, const int sampleCount)
@@ -71,6 +75,7 @@ void NoiseSynth::startVoice(const int note, const int velocity)
 
     voice.note = note;
     voice.noise.setAmplitude(static_cast<float>(velocity) / 127.0f);
+    voice.functionGenerator.attack();
 
 }
 
@@ -85,6 +90,7 @@ void NoiseSynth::noteOff(const int note)
 {
     if (voice.note == note) {
         voice.note = 0;
+        voice.functionGenerator.release();
     }
 
 }

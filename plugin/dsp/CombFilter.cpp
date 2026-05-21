@@ -21,15 +21,14 @@ void CombFilter::reset(const double sampleRate)
 void CombFilter::excite(const float frequency)
 {
     ringBufferLength = static_cast<uint32_t>(mSampleRate / frequency);
-    if (ringBufferLength >= MAX_BUFFER_LENGTH) {
+    if (ringBufferLength >= MAX_BUFFER_LENGTH)
         ringBufferLength = MAX_BUFFER_LENGTH - 1;
-    }
 
+    // Seed with noise instead of zeros — this IS the pluck
     for (uint32_t i = 0; i < ringBufferLength; i++)
-        ringBufferMemory[i] = 0.f;
+        ringBufferMemory[i] = (static_cast<float>(rand()) / RAND_MAX) * 2.0f - 1.0f;
 
     ringBufferIndex = 0;
-
     mPrevSample = 0.f;
 }
 
@@ -37,7 +36,8 @@ void CombFilter::excite(const float frequency)
 float CombFilter::process(const float input)
 {
     const float delayed  = ringBufferMemory[ringBufferIndex];
-    const float filtered = 0.5f * (delayed + mPrevSample);
+    const float filtered = 0.7f * delayed + 0.3f * mPrevSample;
+
     // filtered = (delayed * (1.0 - damping)) + (mPrevSample * damping); // add mDamping with range 0 to 0.99
 
     ringBufferMemory[ringBufferIndex] = (filtered + input) * mDecay;

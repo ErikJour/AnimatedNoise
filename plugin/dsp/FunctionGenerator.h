@@ -6,6 +6,8 @@
 #define ANIMATEDNOISE_FUNCTIONGENERATOR_H
 #include <cstdint>
 #include <cmath>
+#include <juce_audio_processors/juce_audio_processors.h>
+
 
 constexpr float SILENT = 0.0001f;
 static constexpr float kOTAKnee = 0.052f / 10.0f;  // ~0.005f

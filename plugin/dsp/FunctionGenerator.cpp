@@ -4,9 +4,9 @@
 
 #include "FunctionGenerator.h"
 
-FunctionGenerator::FunctionGenerator() : mLevel(0), mAttackMultiplier(0), mReleaseMultiplier(0), mDrift(0), mDelay(0),
-                                         mMultiplier(0), mTarget(0),
-                                         mStage(), mDriftPhase(0), mDriftRate(0)
+FunctionGenerator::FunctionGenerator() : mLevel(0.0f), mAttackMultiplier(0.99f), mReleaseMultiplier(0.99f),
+                                        mLoop(false), mDrift(0.0f), mDelay(0.0f), mMultiplier(0.0f), mTarget(0),
+                                         mStage(Stage::Idle), mDriftPhase(0.0f), mDriftRate(0.0f)
 {
 }
 
@@ -29,12 +29,11 @@ void FunctionGenerator::release()
 {
     mStage = Stage::Release;
     mTarget = 0.0f;
-    mMultiplier = applyDrift(mReleaseMultiplier);
+    mMultiplier = mReleaseMultiplier;
 ;
 }
 float FunctionGenerator::nextValue()
 {
-    // mLevel = mMultiplier * (mLevel - mTarget) + mTarget;
     mLevel = analogCurve(mLevel, mTarget, mMultiplier);
 
     if (mStage == Stage::Attack && mLevel >= 1.0f) release();

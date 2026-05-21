@@ -13,13 +13,19 @@ void NoiseVoice::reset(const double sampleRate)
     noise.setLevel(0.8f);
     mSampleRate = sampleRate;
     combFilter.reset(sampleRate);
+    functionGenerator.reset();
 }
 
 float NoiseVoice::render()
 {
-    const float whiteNoiseSample = noise.getNextSample();
-    const float noiseX = whiteNoiseSample;
-    const float output = combFilter.process(noiseX);
+    const float functionGeneratorSample = functionGenerator.nextValue();
+    float output = combFilter.process(0.0f);
+    output *= functionGeneratorSample;
     return output;
+}
+
+void NoiseVoice::release()
+{
+    functionGenerator.release();
 }
 
