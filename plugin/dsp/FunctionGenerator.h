@@ -45,7 +45,7 @@ class FunctionGenerator
         Stage    mStage;
         uint32_t mRandomState {123456789u};
         float    mDriftPhase;
-    float       mDriftRate;
+    float        mDriftRate;
 
         float bipolarRandom()
         {

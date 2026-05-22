@@ -13,10 +13,7 @@ CombFilter::CombFilter()
 
 CombFilter::~CombFilter() = default;
 
-void CombFilter::reset(const double sampleRate)
-{
-    mSampleRate = sampleRate;
-}
+void CombFilter::reset(const double sampleRate) { mSampleRate = sampleRate; }
 
 void CombFilter::excite(const float frequency)
 {
@@ -31,7 +28,6 @@ void CombFilter::excite(const float frequency)
     ringBufferIndex = 0;
     mPrevSample = 0.f;
 }
-
 
 float CombFilter::process(const float input)
 {

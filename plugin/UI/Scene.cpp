@@ -246,12 +246,13 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
     mUniforms.aspectRatio = static_cast<float>(mWidth) / static_cast<float>(mHeight);
 
     // Camera: elevated above level, tilted down — eye=(0,1.5,-1.0), target=origin
-    {
-        float view[16], proj[16];
-        buildLookAt(view, 0.0f, 0.05f, -0.75f, 0.0f, 0.0f, 0.0f);
-        buildPerspective(proj, 1.047f, mUniforms.aspectRatio, 0.1f, 10.0f);
-        mulMat4(mUniforms.viewProjMatrix, proj, view);
-    }
+    // {
+    //     float view[16], proj[16];
+    //     buildLookAt(view, 0.0f, 0.05f, -0.75f, 0.0f, 0.0f, 0.0f);
+    //     buildPerspective(proj, 1.047f, mUniforms.aspectRatio, 0.1f, 10.0f);
+    //     mulMat4(mUniforms.viewProjMatrix, proj, view);
+    // }
+    updateViewMatrix();
 
     constexpr uint32_t ids[6] = { MAT_CAVE, MAT_SLIDER, MAT_PLANE, MAT_PARTICLES, MAT_FLOOR, MAT_SKYLIGHT };
     std::memcpy(mUniforms.modelMatrix, kIdentity, sizeof(kIdentity));
@@ -485,7 +486,7 @@ void Scene::initializeFloor()
     std::vector<FloorVertex> vertices;
     std::vector<FloorIndex>  indices;
 
-    CircularFloor::buildCircle(vertices, indices, 0.5f, 64);  // was 1.0f
+    CircularFloor::buildCircle(vertices, indices, 0.85f, 64);  // was 1.0f
 
     mFloorIndexCount = static_cast<uint32_t>(indices.size());
 
@@ -507,7 +508,7 @@ void Scene::initializeSkylight()
     std::vector<SkylightVertex> vertices;
     std::vector<SkylightIndex>  indices;
 
-    Skylight::buildSkylight(vertices, indices, 0.15f, 64);  // was 1.0f
+    Skylight::buildSkylight(vertices, indices, 0.15f, 0.75, 64);  // was 1.0f
 
     mSkylightIndexCount = static_cast<uint32_t>(indices.size());
 
@@ -605,18 +606,72 @@ void Scene::initializePlane()
     wgpuQueueWriteBuffer(mQueue, mPlaneIndexBuffer, 0, indices.data(), bd.size);
 }
 
-// void Scene::updateViewMatrix() {
-//     float cx = cos(mCameraState.angles.x);
-//     float sx = sin(mCameraState.angles.x);
-//     float cy = cos(mCameraState.angles.y);
-//     float sy = sin(mCameraState.angles.y);
-//     vec3 position = vec3(cx * cy, sx * cy, sy) * std::exp(-mCameraState.zoom);
-//     m_uniforms.viewMatrix = glm::lookAt(position, vec3(0.0f), vec3(0, 0, 1));
-//     wgpuQueueWriteBuffer(
-//         mQueue,
-//         mUniformBuffer,
-//         offsetof(MyUniforms, viewMatrix),
-//         &m_uniforms.viewMatrix,
-//         sizeof(MyUniforms::viewMatrix)
-//     );
-// }
+void Scene::updateViewMatrix()
+{
+    // Spherical coords — angles.x = azimuth, angles.y = elevation
+    // Adapted from tutorial's Z-up to your Y-up convention:
+    //   tutorial: vec3(cx*cy,  sx*cy,  sy)   (Z is up)
+    //   yours:    vec3(cx*cy,  sy,     sx*cy) (Y is up)
+    const float cx = cosf(mCameraState.angleX);
+    const float sx = sinf(mCameraState.angleX);
+    const float cy = cosf(mCameraState.angleY);
+    const float sy = sinf(mCameraState.angleY);
+    const float r  = std::exp(-mCameraState.zoom);
+
+    const float ex = cx * cy * r;
+    const float ey = sy       * r;
+    const float ez = sx * cy  * r;
+
+    float view[16], proj[16];
+    buildLookAt(view, ex, ey, ez, 0.0f, 0.0f, 0.0f);
+    buildPerspective(proj, 1.047f, mUniforms.aspectRatio, 0.1f, 10.0f);
+    mulMat4(mUniforms.viewProjMatrix, proj, view);
+}
+
+void Scene::onMouseMove(float xpos, float ypos)
+{
+    if (mDrag.active)
+    {
+        const float deltaX = (-(xpos) - mDrag.startMouseX) * mDrag.sensitivity;
+        const float deltaY = (  ypos  - mDrag.startMouseY) * mDrag.sensitivity;
+
+        mCameraState.angleX = mDrag.startAngleX + deltaX;
+        mCameraState.angleY = mDrag.startAngleY + deltaY;
+        // mDrag.velocity = delta - mDrag.previousDelta;
+        // mDrag.previousDelta = delta;
+
+        // Clamp elevation to avoid gimbal flip at poles
+        constexpr float kHalfPi = 1.5707963f;
+        mCameraState.angleY = std::clamp(mCameraState.angleY,
+                                         -kHalfPi + 1e-5f,
+                                          kHalfPi - 1e-5f);
+        updateViewMatrix();
+    }
+}
+
+void Scene::onMouseButton(int button, bool isPressed, float xpos, float ypos)
+{
+    if (button == 0) // left button
+    {
+        if (isPressed)
+        {
+            mDrag.active        = true;
+            // Negate X to match tutorial's inversion
+            mDrag.startMouseX   = -xpos;
+            mDrag.startMouseY   =  ypos;
+            mDrag.startAngleX   = mCameraState.angleX;
+            mDrag.startAngleY   = mCameraState.angleY;
+        }
+        else
+        {
+            mDrag.active = false;
+        }
+    }
+}
+
+void Scene::onScroll(float yoffset)
+{
+    mCameraState.zoom += mDrag.scrollSensitivity * yoffset;
+    mCameraState.zoom = std::clamp(mCameraState.zoom, -2.0f, 2.0f);
+    updateViewMatrix();
+}

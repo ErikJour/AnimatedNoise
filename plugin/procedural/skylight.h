@@ -21,6 +21,7 @@ public:
     static void buildSkylight(std::vector<SkylightVertex>& verts,
                             std::vector<SkylightIndex>&  indices,
                             const float radius   = 0.2f,
+                            const float height   = 0.0f,
                             int   segments = 64)
     {
         verts.clear();
@@ -34,7 +35,7 @@ public:
 
         // 1. Center vertex (Index 0)
         verts.push_back({
-            0.0f, 0.0f, 0.0f, // position
+            0.0f, height, 0.0f, // position
             0.0f, 1.0f, 0.0f, // normal (+Y, facing up)
             1.0f, 1.0f, 1.0f
         });
@@ -49,7 +50,7 @@ public:
             const float pz = std::sin(theta) * radius; // ← renamed from py
 
             verts.push_back({
-                px,   0.0f, pz,   // ← y=0, z gets the sin value
+                px,   height, pz,   // ← y=0, z gets the sin value
                 0.0f, 1.0f, 0.0f, // ← normal +Y
                 1.0f, 1.0f, 1.0f
             });

@@ -78,7 +78,9 @@ void AudioPluginAudioProcessorEditor::mouseDown(const juce::MouseEvent& e)
     const float sliderX = webGpuWindow.getScene().sliderXFraction()      * w;
     constexpr float hitRadius = 20.0f;
 
-    if (const float halfIndicator = Scene::indicatorHalfFraction() * h; static_cast<float>(e.y) >= top - halfIndicator && static_cast<float>(e.y) <= bottom + halfIndicator &&
+    if (const float halfIndicator = Scene::indicatorHalfFraction() * h;
+        static_cast<float>(e.y) >= top - halfIndicator &&
+        static_cast<float>(e.y) <= bottom + halfIndicator &&
         std::abs(static_cast<float>(e.x) - sliderX) <= hitRadius)
     {
         const float indicatorY = bottom - webGpuWindow.getScene().getSliderValue() * (bottom - top);
@@ -86,19 +88,49 @@ void AudioPluginAudioProcessorEditor::mouseDown(const juce::MouseEvent& e)
         mDragging   = true;
         updateSliderFromMouse(e.y);
     }
+    else
+    {
+        // Miss on slider — begin camera drag
+        mCameraDragging = true;
+        mLastMouseX     = static_cast<float>(e.x);
+        mLastMouseY     = static_cast<float>(e.y);
+        webGpuWindow.getScene().onMouseButton(0, true,
+                                       static_cast<float>(e.x),
+                                       static_cast<float>(e.y));
+    }
 }
 
 void AudioPluginAudioProcessorEditor::mouseDrag(const juce::MouseEvent& e)
 {
     if (mDragging)
+    {
         updateSliderFromMouse(e.y);
+        return;
+    }
+
+    if (mCameraDragging)
+    {
+        const float x = static_cast<float>(e.x);
+        const float y = static_cast<float>(e.y);
+        webGpuWindow.getScene().onMouseMove(x, y);
+        mLastMouseX = x;
+        mLastMouseY = y;
+    }
 }
 
 void AudioPluginAudioProcessorEditor::mouseUp(const juce::MouseEvent& e)
 {
     juce::ignoreUnused(e);
-    mDragging   = false;
-    mDragOffset = 0.0f;
+    mDragging       = false;
+    mDragOffset     = 0.0f;
+
+    if (mCameraDragging)
+    {
+        webGpuWindow.getScene().onMouseButton(0, true,
+                                      static_cast<float>(e.x),
+                                      static_cast<float>(e.y));
+        mCameraDragging = false;
+    }
 }
 
 void AudioPluginAudioProcessorEditor::updateSliderFromMouse(const int screenY)
@@ -112,18 +144,9 @@ void AudioPluginAudioProcessorEditor::updateSliderFromMouse(const int screenY)
     webGpuWindow.getScene().setSliderValue(v);
 }
 
-void AudioPluginAudioProcessorEditor::onMouseMove(double xpos, double ypos)
+void AudioPluginAudioProcessorEditor::mouseWheelMove(const juce::MouseEvent& e,
+                                                      const juce::MouseWheelDetails& wheel)
 {
-    juce::ignoreUnused(xpos, ypos);
-
-}
-void AudioPluginAudioProcessorEditor::onMouseButton(int button, int action, int mods)
-{
-    juce::ignoreUnused(button, action, mods);
-
-}
-void AudioPluginAudioProcessorEditor::onScroll(double xoffset, double yoffset)
-{
-    juce::ignoreUnused(xoffset, yoffset);
-
+    juce::ignoreUnused(e);
+    webGpuWindow.getScene().onScroll(wheel.deltaY);
 }

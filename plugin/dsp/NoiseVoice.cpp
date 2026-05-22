@@ -3,9 +3,7 @@
 //
 #include "NoiseVoice.h"
 
-NoiseVoice::NoiseVoice() : mSampleRate(0)
-{
-}
+NoiseVoice::NoiseVoice() : mSampleRate(0) { }
 
 void NoiseVoice::reset(const double sampleRate)
 {
@@ -24,8 +22,5 @@ float NoiseVoice::render()
     return output;
 }
 
-void NoiseVoice::release()
-{
-    functionGenerator.release();
-}
+void NoiseVoice::release() { functionGenerator.release(); }
 

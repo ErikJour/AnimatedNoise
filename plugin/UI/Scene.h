@@ -15,8 +15,10 @@
 #include "proceduralSlider.h"
 #include "circularFloor.h"
 #include "cameraState.h"
+#include "dragState.h"
 
 struct vec3 { float x,y,z; };
+
 
 static constexpr uint32_t MAX_PARTICLES = 1000;
 #define WGPU_STR(s) WGPUStringView{s, sizeof(s) - 1}
@@ -27,14 +29,12 @@ class Scene
         Scene();
         ~Scene();
         void init(WGPUDevice device, WGPUQueue queue);
-        void onResize();
         void setSurface(WGPUSurface surface);
         void setSurfaceSize(uint32_t width, uint32_t height) { mWidth = width; mHeight = height; }
         void setShaderModule(WGPUShaderModule shaderModule);
         void setPipelineDesc(WGPURenderPipelineDescriptor pipelineDesc);
         void setWindowColor();
         bool createShader();
-        void InitializeProceduralCave();
         void terminate();
         void reloadShader();
         void setUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer, float time);
@@ -61,6 +61,13 @@ class Scene
         WGPUFragmentState getFragmentState() const { return mFragmentState; }
         WGPUBlendState getBlendState() const { return mBlendState; }
         void updateDepthTexture(uint32_t width, uint32_t height);
+        void updateViewMatrix();
+        void onMouseButton(int button, bool isPressed, float xpos, float ypos);
+        void onMouseMove(float xpos, float ypos);
+        void onScroll(float yoffset);
+
+
+
 
     private:
         void setItemBuffers(WGPUBuffer vertexBuffer, WGPUBuffer indexBuffer, uint32_t indexCount, uint32_t material, WGPURenderPassEncoder renderPass) const
@@ -137,6 +144,7 @@ class Scene
 
         //Camera
         CameraState mCameraState;
+        DragState mDrag;
 
         mutable double mRed = {};
         double mGreen = {};

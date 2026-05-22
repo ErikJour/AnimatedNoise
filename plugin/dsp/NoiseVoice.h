@@ -20,7 +20,6 @@ class NoiseVoice {
     float render();
     void release();
 
-
     NoiseGenerator noise;
     int note = 0;
     int noiseType = 0;
