@@ -16,6 +16,9 @@
 #include "circularFloor.h"
 #include "cameraState.h"
 #include "dragState.h"
+#include "yurtBeams.h"
+#include "skylight.h"
+
 
 struct vec3 { float x,y,z; };
 
@@ -45,6 +48,8 @@ class Scene
         bool createPipeline();
         void initializeFloor();
         void initializeSkylight();
+        void initializeBeams();
+
         void InitializeSlider();
         void initializeParticles();
         void setSliderPosition(float x, float y, float z);
@@ -129,6 +134,10 @@ class Scene
         WGPUBuffer  mSkylightVertexBuffer  = nullptr;
         WGPUBuffer  mSkylightIndexBuffer  = nullptr;
         uint32_t    mSkylightIndexCount    = 0;
+        //Beams
+        WGPUBuffer  mBeamsVertexBuffer  = nullptr;
+        WGPUBuffer  mBeamsIndexBuffer  = nullptr;
+        uint32_t    mBeamsIndexCount    = 0;
         //Plane
         WGPUBuffer  mPlaneVertexBuffer  = nullptr;
         WGPUBuffer  mPlaneIndexBuffer  = nullptr;

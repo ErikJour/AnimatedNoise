@@ -3,9 +3,6 @@
 //
 
 #include "Scene.h"
-
-#include "skylight.h"
-
 #include <cmath>
 
 namespace {
@@ -122,6 +119,8 @@ void Scene::terminate()
     if (mDepthTexture)           { wgpuTextureDestroy(mDepthTexture); wgpuTextureRelease(mDepthTexture); mDepthTexture = nullptr; }
     if (mSkylightVertexBuffer)   { wgpuBufferRelease(mSkylightVertexBuffer); mSkylightVertexBuffer = nullptr; }
     if (mSkylightIndexBuffer)    { wgpuBufferRelease(mSkylightIndexBuffer); mSkylightIndexBuffer = nullptr; }
+    if (mBeamsVertexBuffer)      { wgpuBufferRelease(mBeamsVertexBuffer); mBeamsVertexBuffer = nullptr; }
+    if (mBeamsIndexBuffer)       { wgpuBufferRelease(mBeamsIndexBuffer); mBeamsIndexBuffer = nullptr; }
     if (mFloorVertexBuffer)      { wgpuBufferRelease(mFloorVertexBuffer); mFloorVertexBuffer = nullptr; }
     if (mFloorIndexBuffer)       { wgpuBufferRelease(mFloorIndexBuffer); mFloorIndexBuffer = nullptr; }
     if (mBindGroup)              { wgpuBindGroupRelease(mBindGroup); mBindGroup = nullptr; }
@@ -194,6 +193,8 @@ void Scene::renderFrame(const float currentTime)
         setItemBuffers(mFloorVertexBuffer, mFloorIndexBuffer, mFloorIndexCount, MAT_FLOOR, renderPass);
         //Skylight
         setItemBuffers(mSkylightVertexBuffer, mSkylightIndexBuffer, mSkylightIndexCount, MAT_SKYLIGHT, renderPass);
+        //Beams
+        setItemBuffers(mBeamsVertexBuffer, mBeamsIndexBuffer, mBeamsIndexCount, MAT_SKYLIGHT, renderPass);
         //Cave
         setItemBuffers(mCaveVertexBuffer, mCaveIndexBuffer, mCaveIndexCount, MAT_CAVE, renderPass);
         // Slider
@@ -245,13 +246,6 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
     mUniforms.sliderPos[2] = mSliderPos[2];
     mUniforms.aspectRatio = static_cast<float>(mWidth) / static_cast<float>(mHeight);
 
-    // Camera: elevated above level, tilted down — eye=(0,1.5,-1.0), target=origin
-    // {
-    //     float view[16], proj[16];
-    //     buildLookAt(view, 0.0f, 0.05f, -0.75f, 0.0f, 0.0f, 0.0f);
-    //     buildPerspective(proj, 1.047f, mUniforms.aspectRatio, 0.1f, 10.0f);
-    //     mulMat4(mUniforms.viewProjMatrix, proj, view);
-    // }
     updateViewMatrix();
 
     constexpr uint32_t ids[6] = { MAT_CAVE, MAT_SLIDER, MAT_PLANE, MAT_PARTICLES, MAT_FLOOR, MAT_SKYLIGHT };
@@ -378,6 +372,7 @@ void Scene::initializeScene()
     // initializePlane();
     initializeFloor();
     initializeSkylight();
+    initializeBeams();
     // InitializeSlider();
     // initializeParticles();
 
@@ -486,7 +481,7 @@ void Scene::initializeFloor()
     std::vector<FloorVertex> vertices;
     std::vector<FloorIndex>  indices;
 
-    CircularFloor::buildCircle(vertices, indices, 0.85f, 64);  // was 1.0f
+    CircularFloor::buildCircle(vertices, indices, 0.95f, 64);  // was 1.0f
 
     mFloorIndexCount = static_cast<uint32_t>(indices.size());
 
@@ -522,6 +517,33 @@ void Scene::initializeSkylight()
     bd.size  = (indices.size() * sizeof(SkylightIndex) + 3) & ~3ULL;
     mSkylightIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
     wgpuQueueWriteBuffer(mQueue, mSkylightIndexBuffer, 0, indices.data(), bd.size);
+}
+
+void Scene::initializeBeams()
+{
+    std::cout << "Initialize Beams" << std::endl;
+    std::vector<BeamVertex> vertices;
+    std::vector<BeamIndex>  indices;
+
+    YurtBeams::buildBeams(vertices, indices,
+    0.95f,   // floorRadius  — matches CircularFloor
+   -0.15f,   // floorY      — matches floor center vertex y
+    0.15f,   // skylightRadius — matches Skylight
+    0.75f,   // skylightY   — matches Skylight
+    64);     // segments    — matches both
+
+    mBeamsIndexCount = static_cast<uint32_t>(indices.size());
+
+    WGPUBufferDescriptor bd{};
+    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
+    bd.size  = vertices.size() * sizeof(BeamVertex);
+    mBeamsVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mBeamsVertexBuffer, 0, vertices.data(), bd.size);
+
+    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
+    bd.size  = (indices.size() * sizeof(BeamIndex) + 3) & ~3ULL;
+    mBeamsIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mBeamsIndexBuffer, 0, indices.data(), bd.size);
 }
 
 void Scene::InitializeSlider()

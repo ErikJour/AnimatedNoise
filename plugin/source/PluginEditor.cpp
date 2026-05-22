@@ -136,7 +136,7 @@ void AudioPluginAudioProcessorEditor::mouseUp(const juce::MouseEvent& e)
 
 void AudioPluginAudioProcessorEditor::updateSliderFromMouse(const int screenY)
 {
-    const auto height      = static_cast<float>(getHeight());
+    const auto  height     = static_cast<float>(getHeight());
     const float top        = webGpuWindow.getScene().sliderTopFraction()    * height;
     const float bottom     = webGpuWindow.getScene().sliderBottomFraction() * height;
 
