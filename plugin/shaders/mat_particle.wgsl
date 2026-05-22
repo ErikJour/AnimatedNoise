@@ -31,7 +31,7 @@ fn vs_particle(in: ParticleVertexInput) -> ParticleVertexOutput {
     );
 
     let depth = animated.z + 1.0;
-    let projX = animated.x * FOV_FACTOR / depth;  // reuse from common.wgsl
+    let projX = animated.x * FOV_FACTOR / depth;
     let projY = animated.y * FOV_FACTOR / depth;
 
     let bx = in.cornerOffset.x * size / depth;

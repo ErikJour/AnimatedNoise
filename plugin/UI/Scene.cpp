@@ -374,7 +374,7 @@ void Scene::initializeScene()
     initializeSkylight();
     initializeBeams();
     // InitializeSlider();
-    // initializeParticles();
+    initializeParticles();
 
 }
 
