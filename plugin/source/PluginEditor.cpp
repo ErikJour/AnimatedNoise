@@ -13,6 +13,7 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAud
 AudioPluginAudioProcessorEditor::~AudioPluginAudioProcessorEditor()
 {
     stopTimer();
+    processorRef.savedCameraState = webGpuWindow.getScene().getCameraState();
     webGpuWindow.terminate();
 }
 
@@ -28,6 +29,7 @@ void AudioPluginAudioProcessorEditor::parentHierarchyChanged()
             webGpuWindow.initSurface(handle, w, h);
             mConfiguredW = w;
             mConfiguredH = h;
+            webGpuWindow.getScene().setCameraState(processorRef.savedCameraState);
             startTimerHz(60);
             juce::MessageManager::callAsync([this]() {
                 setResizable(true, true);

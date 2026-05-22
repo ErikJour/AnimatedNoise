@@ -65,6 +65,9 @@ class Scene
         void onMouseButton(int button, bool isPressed, float xpos, float ypos);
         void onMouseMove(float xpos, float ypos);
         void onScroll(float yoffset);
+        //Camera Experiment
+        CameraState getCameraState() const { return mCameraState; }
+        void setCameraState(const CameraState& s) { mCameraState = s; updateViewMatrix(); }
 
 
 
