@@ -526,11 +526,11 @@ void Scene::initializeBeams()
     std::vector<BeamIndex>  indices;
 
     YurtBeams::buildBeams(vertices, indices,
-    0.95f,   // floorRadius  — matches CircularFloor
-   -0.15f,   // floorY      — matches floor center vertex y
-    0.15f,   // skylightRadius — matches Skylight
-    0.75f,   // skylightY   — matches Skylight
-    64);     // segments    — matches both
+     0.95f, -0.15f, 0.15f, 0.75f,
+     64,
+     0.025f, 0.015f,
+     8,
+     0.35f);
 
     mBeamsIndexCount = static_cast<uint32_t>(indices.size());
 
