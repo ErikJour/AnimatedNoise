@@ -58,7 +58,7 @@ static void mulMat4(float out[16], const float a[16], const float b[16])
         }
 }
 
-} // namespace
+}
 
 
 Scene::Scene() = default;
@@ -608,10 +608,6 @@ void Scene::initializePlane()
 
 void Scene::updateViewMatrix()
 {
-    // Spherical coords — angles.x = azimuth, angles.y = elevation
-    // Adapted from tutorial's Z-up to your Y-up convention:
-    //   tutorial: vec3(cx*cy,  sx*cy,  sy)   (Z is up)
-    //   yours:    vec3(cx*cy,  sy,     sx*cy) (Y is up)
     const float cx = cosf(mCameraState.angleX);
     const float sx = sinf(mCameraState.angleX);
     const float cy = cosf(mCameraState.angleY);

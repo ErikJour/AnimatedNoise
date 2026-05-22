@@ -71,14 +71,14 @@ void AudioPluginAudioProcessorEditor::resized()
 //==============================================================================
 void AudioPluginAudioProcessorEditor::mouseDown(const juce::MouseEvent& e)
 {
-    const auto h       = static_cast<float>(getHeight());
-    const auto w       = static_cast<float>(getWidth());
-    const float top     = webGpuWindow.getScene().sliderTopFraction()    * h;
-    const float bottom  = webGpuWindow.getScene().sliderBottomFraction() * h;
-    const float sliderX = webGpuWindow.getScene().sliderXFraction()      * w;
+    const auto height       = static_cast<float>(getHeight());
+    const auto width        = static_cast<float>(getWidth());
+    const float top         = webGpuWindow.getScene().sliderTopFraction()    * height;
+    const float bottom      = webGpuWindow.getScene().sliderBottomFraction() * height;
+    const float sliderX     = webGpuWindow.getScene().sliderXFraction()      * width;
     constexpr float hitRadius = 20.0f;
 
-    if (const float halfIndicator = Scene::indicatorHalfFraction() * h;
+    if (const float halfIndicator = Scene::indicatorHalfFraction() * height;
         static_cast<float>(e.y) >= top - halfIndicator &&
         static_cast<float>(e.y) <= bottom + halfIndicator &&
         std::abs(static_cast<float>(e.x) - sliderX) <= hitRadius)
@@ -110,8 +110,8 @@ void AudioPluginAudioProcessorEditor::mouseDrag(const juce::MouseEvent& e)
 
     if (mCameraDragging)
     {
-        const float x = static_cast<float>(e.x);
-        const float y = static_cast<float>(e.y);
+        const auto x = static_cast<float>(e.x);
+        const auto y = static_cast<float>(e.y);
         webGpuWindow.getScene().onMouseMove(x, y);
         mLastMouseX = x;
         mLastMouseY = y;
@@ -120,7 +120,6 @@ void AudioPluginAudioProcessorEditor::mouseDrag(const juce::MouseEvent& e)
 
 void AudioPluginAudioProcessorEditor::mouseUp(const juce::MouseEvent& e)
 {
-    juce::ignoreUnused(e);
     mDragging       = false;
     mDragOffset     = 0.0f;
 
@@ -135,9 +134,9 @@ void AudioPluginAudioProcessorEditor::mouseUp(const juce::MouseEvent& e)
 
 void AudioPluginAudioProcessorEditor::updateSliderFromMouse(const int screenY)
 {
-    const auto h      = static_cast<float>(getHeight());
-    const float top    = webGpuWindow.getScene().sliderTopFraction()    * h;
-    const float bottom = webGpuWindow.getScene().sliderBottomFraction() * h;
+    const auto height      = static_cast<float>(getHeight());
+    const float top        = webGpuWindow.getScene().sliderTopFraction()    * height;
+    const float bottom     = webGpuWindow.getScene().sliderBottomFraction() * height;
 
     float v = (bottom - (static_cast<float>(screenY) - mDragOffset)) / (bottom - top);
     v = juce::jlimit(0.0f, 1.0f, v);
