@@ -374,7 +374,7 @@ void Scene::initializeScene()
     initializeSkylight();
     initializeBeams();
     // InitializeSlider();
-    initializeParticles();
+    // initializeParticles();
 
 }
 
@@ -528,9 +528,9 @@ void Scene::initializeBeams()
     YurtBeams::buildBeams(vertices, indices,
      0.95f, -0.15f, 0.15f, 0.75f,
      64,
-     0.025f, 0.015f,
-     8,
-     0.35f);
+     0.125f, 0.005f,
+     32,
+     0.5f);
 
     mBeamsIndexCount = static_cast<uint32_t>(indices.size());
 
@@ -636,9 +636,16 @@ void Scene::updateViewMatrix()
     const float sy = sinf(mCameraState.angleY);
     const float r  = std::exp(-mCameraState.zoom);
 
-    const float ex = cx * cy * r;
+    float ex = cx * cy * r;
     const float ey = sy       * r;
-    const float ez = sx * cy  * r;
+    float ez = sx * cy  * r;
+
+    // constexpr float kFloorRadius = 0.95f;
+    // if (horizDist > kFloorRadius) {
+    //     const float scale = kFloorRadius / horizDist;
+    //     ex *= scale;
+    //     ez *= scale;
+    // }
 
     float view[16], proj[16];
     buildLookAt(view, ex, ey, ez, 0.0f, 0.0f, 0.0f);
