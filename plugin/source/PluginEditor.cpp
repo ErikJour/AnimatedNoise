@@ -24,11 +24,11 @@ void AudioPluginAudioProcessorEditor::parentHierarchyChanged()
 
     if (!webGpuWindow.hasSurface() && getPeer() != nullptr) {
         if (void* handle = getWindowHandle()) {
-            const auto w = static_cast<uint32_t>(getWidth());
-            const auto h = static_cast<uint32_t>(getHeight());
-            webGpuWindow.initSurface(handle, w, h);
-            mConfiguredW = w;
-            mConfiguredH = h;
+            const auto width = static_cast<uint32_t>(getWidth());
+            const auto height = static_cast<uint32_t>(getHeight());
+            webGpuWindow.initSurface(handle, width, height);
+            mConfiguredW = width;
+            mConfiguredH = height;
             webGpuWindow.getScene().setCameraState(processorRef.savedCameraState);
             startTimerHz(60);
             juce::MessageManager::callAsync([this]() {
