@@ -68,7 +68,6 @@ target_sources(AnimatedNoise
         UI/webGpuWindow.cpp
         UI/ResourceManager.cpp
         UI/Scene.cpp
-        procedural/perlinCave.cpp
         dsp/NoiseSynth.cpp
         dsp/NoiseGenerator.cpp
         dsp/CombFilter.cpp

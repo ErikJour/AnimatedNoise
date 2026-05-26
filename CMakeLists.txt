@@ -1,6 +1,3 @@
-#==================================
-#Animated Root-level CMake
-#==================================
 cmake_minimum_required(VERSION 4.0.0)
 
 if(NOT CMAKE_BUILD_TYPE)

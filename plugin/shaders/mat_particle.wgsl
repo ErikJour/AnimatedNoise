@@ -51,7 +51,7 @@ fn vs_particle(in: ParticleVertexInput) -> ParticleVertexOutput {
 fn fs_particle(in: ParticleVertexOutput) -> @location(0) vec4f {
     let centered = (in.uv - vec2f(0.5)) * 2.0;
     let dist     = length(centered);
-    let alpha    = smoothstep(1.0, 0.2, dist) * in.color.a * in.life;
+    let alpha    = smoothstep(1.0, 0.2, dist) * in.color.a * in.life * 0.05f;
     if alpha < 0.01 { discard; }
-    return vec4f(in.color.rgb, alpha);
+    return vec4f(in.color.rgb * 0.9f, alpha);
 }

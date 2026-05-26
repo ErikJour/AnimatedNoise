@@ -73,11 +73,11 @@ void AudioPluginAudioProcessorEditor::resized()
 //==============================================================================
 void AudioPluginAudioProcessorEditor::mouseDown(const juce::MouseEvent& e)
 {
-    const auto height       = static_cast<float>(getHeight());
-    const auto width        = static_cast<float>(getWidth());
-    const float top         = webGpuWindow.getScene().sliderTopFraction()    * height;
-    const float bottom      = webGpuWindow.getScene().sliderBottomFraction() * height;
-    const float sliderX     = webGpuWindow.getScene().sliderXFraction()      * width;
+    const auto height         = static_cast<float>(getHeight());
+    const auto width          = static_cast<float>(getWidth());
+    const float top           = webGpuWindow.getScene().sliderTopFraction()    * height;
+    const float bottom        = webGpuWindow.getScene().sliderBottomFraction() * height;
+    const float sliderX       = webGpuWindow.getScene().sliderXFraction()      * width;
     constexpr float hitRadius = 20.0f;
 
     if (const float halfIndicator = Scene::indicatorHalfFraction() * height;
@@ -149,5 +149,5 @@ void AudioPluginAudioProcessorEditor::mouseWheelMove(const juce::MouseEvent& e,
                                                       const juce::MouseWheelDetails& wheel)
 {
     juce::ignoreUnused(e);
-    webGpuWindow.getScene().onScroll(wheel.deltaY);
+    webGpuWindow.getScene().onScroll(wheel.deltaX, wheel.deltaY);
 }

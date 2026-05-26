@@ -5,12 +5,15 @@
 #ifndef ANIMATEDNOISE_CAMERASTATE_H
 #define ANIMATEDNOISE_CAMERASTATE_H
 
-struct vec2 { float x,y; };
+struct vec2 { float x, y; };
 
 struct CameraState {
-    float angleX = 0.0f;   // azimuth
-    float angleY = 0.0f;   // elevation
-    float zoom   = -0.5f;
+    float angleX = 0.0f;   // horizontal look direction (yaw)
+    float posX   = 0.0f;   // camera world position X
+    float posZ   = 0.5f;   // camera world position Z
+
+    static constexpr float eyeY        = 0.08f;  // fixed eye height
+    static constexpr float kWallRadius = 0.88f;  // clamp radius (floor edge is 0.95)
 };
 
 #endif //ANIMATEDNOISE_CAMERASTATE_H
