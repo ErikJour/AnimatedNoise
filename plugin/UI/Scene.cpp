@@ -7,22 +7,22 @@
 
 namespace {
 
-static void buildLookAt(float out[16],
-                        float ex, float ey, float ez,
+void buildLookAt(float out[16],
+                        const float ex, float ey, float ez,
                         float tx, float ty, float tz)
 {
     float fx = tx-ex, fy = ty-ey, fz = tz-ez;
-    float fl = sqrtf(fx*fx + fy*fy + fz*fz);
+    const float fl = sqrtf(fx*fx + fy*fy + fz*fz);
     fx/=fl; fy/=fl; fz/=fl;
 
     // right = cross(worldUp=(0,1,0), forward)
     float rx = fz, ry = 0.0f, rz = -fx;
-    float rl = sqrtf(rx*rx + ry*ry + rz*rz);
+    const float rl = sqrtf(rx*rx + ry*ry + rz*rz);
     rx/=rl; ry/=rl; rz/=rl;
 
     // corrected up = cross(forward, right)
-    float ux = fy*rz - fz*ry;
-    float uy = fz*rx - fx*rz;
+    const float ux = fy*rz - fz*ry;
+    const float uy = fz*rx - fx*rz;
     float uz = fx*ry - fy*rx;
 
     // column-major: out[col*4+row]
@@ -33,9 +33,9 @@ static void buildLookAt(float out[16],
 }
 
 // Right-handed perspective, Z maps to [0, 1] (WebGPU NDC)
-static void buildPerspective(float out[16], float fovY, float aspect, float zNear, float zFar)
+void buildPerspective(float out[16], float fovY, float aspect, float zNear, float zFar)
 {
-    float f = 1.0f / tanf(fovY * 0.5f);
+    const float f = 1.0f / tanf(fovY * 0.5f);
     std::memset(out, 0, 64);
     out[0]  = f / aspect;
     out[5]  = f;
@@ -44,7 +44,7 @@ static void buildPerspective(float out[16], float fovY, float aspect, float zNea
     out[14] = (zNear * zFar) / (zNear - zFar);
 }
 
-static void mulMat4(float out[16], const float a[16], const float b[16])
+void mulMat4(float out[16], const float a[16], const float b[16])
 {
     for (int col = 0; col < 4; ++col)
         for (int row = 0; row < 4; ++row) {
@@ -54,10 +54,9 @@ static void mulMat4(float out[16], const float a[16], const float b[16])
             out[col*4+row] = v;
         }
 }
-
 }
 
-
+//==============================================
 Scene::Scene() = default;
 
 Scene::~Scene() = default;
@@ -192,16 +191,13 @@ void Scene::renderFrame(const float currentTime)
         //Floor
         setItemBuffers(mFloorVertexBuffer, mFloorIndexBuffer, mFloorIndexCount, MAT_FLOOR, renderPass);
         //Skylight
-        setItemBuffers(mSkylightVertexBuffer, mSkylightIndexBuffer, mSkylightIndexCount, MAT_SKYLIGHT, renderPass);
+        setItemBuffers(mSkylightVertexBuffer, mSkylightIndexBuffer, mSkylightIndexCount, MAT_FLOOR, renderPass);
         //Beams
-        setItemBuffers(mBeamsVertexBuffer, mBeamsIndexBuffer, mBeamsIndexCount, MAT_SKYLIGHT, renderPass);
-        //Cave
-        setItemBuffers(mCaveVertexBuffer, mCaveIndexBuffer, mCaveIndexCount, MAT_CAVE, renderPass);
+        setItemBuffers(mBeamsVertexBuffer, mBeamsIndexBuffer, mBeamsIndexCount, MAT_FLOOR, renderPass);
         // Slider
         setItemBuffers(mSliderVertexBuffer, mSliderIndexBuffer, mSliderIndexCount, MAT_SLIDER, renderPass);
         //Plane
         setItemBuffers(mPlaneVertexBuffer, mPlaneIndexBuffer, mPlaneIndexCount, MAT_PLANE, renderPass);
-
         // Particles
         if (mParticleQuadBuffer && mParticleDataBuffer && mParticleCount > 0)
         {
@@ -219,7 +215,7 @@ void Scene::renderFrame(const float currentTime)
 
         WGPUCommandBufferDescriptor cmdDesc = {};
         cmdDesc.label = WGPU_STR("Frame command buffer");
-        WGPUCommandBuffer command = wgpuCommandEncoderFinish(encoder, &cmdDesc);
+        const WGPUCommandBuffer command = wgpuCommandEncoderFinish(encoder, &cmdDesc);
         wgpuCommandEncoderRelease(encoder);
         //==============================================
         //Process the frame
@@ -234,21 +230,22 @@ void Scene::renderFrame(const float currentTime)
 void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const float time)
 {
 
-    mUniforms.time        = time;
-    mUniforms.frequency   = 10.0f;
-    mUniforms.amplitude   = 0.5f;
+    mUniforms.time         = time;
+    mUniforms.frequency    = 10.0f;
+    mUniforms.amplitude    = 0.5f;
     mUniforms.sliderValue  = mSliderValue;
     mUniforms.lightPos[0]  = 0.0f;
-    mUniforms.lightPos[1]  = 0.75f;
-    mUniforms.lightPos[2]  = 0.35f;
+    mUniforms.lightPos[1]  = 0.35f;
+    mUniforms.lightPos[2]  = 0.0f;
     mUniforms.sliderPos[0] = mSliderPos[0];
     mUniforms.sliderPos[1] = mSliderPos[1];
     mUniforms.sliderPos[2] = mSliderPos[2];
-    mUniforms.aspectRatio = static_cast<float>(mWidth) / static_cast<float>(mHeight);
+    mUniforms.aspectRatio  = static_cast<float>(mWidth) / static_cast<float>(mHeight);
 
     updateViewMatrix();
 
     constexpr uint32_t ids[6] = { MAT_CAVE, MAT_SLIDER, MAT_PLANE, MAT_PARTICLES, MAT_FLOOR, MAT_SKYLIGHT };
+
     std::memcpy(mUniforms.modelMatrix, kIdentity, sizeof(kIdentity));
 
     for (uint32_t i = 0; i < 6; ++i) {
@@ -375,7 +372,6 @@ void Scene::initializeScene()
     initializeBeams();
     // InitializeSlider();
     // initializeParticles();
-
 }
 
 bool Scene::createPipeline()
@@ -384,7 +380,7 @@ bool Scene::createPipeline()
     if (mUniformBuffer){ wgpuBufferRelease(mUniformBuffer);   mUniformBuffer = nullptr; }
     if (mPipeline)     { wgpuRenderPipelineRelease(mPipeline); mPipeline     = nullptr; }
 
-    static constexpr uint32_t kAlignment = 256; // minUniformBufferOffsetAlignment
+    static constexpr uint32_t kAlignment = 256;
     mUniformStride = (sizeof(MyUniforms) + kAlignment - 1) & ~(kAlignment - 1);
 
     WGPUBindGroupLayoutEntry bglEntry  = {};
@@ -411,7 +407,7 @@ bool Scene::createPipeline()
     mColorTarget.format        = mSurfaceFormat;
     mColorTarget.blend         = &mBlendState;
     mColorTarget.writeMask     = WGPUColorWriteMask_All;
-    mPipelineDesc.vertex.module = mShaderModule;  // ← add this
+    mPipelineDesc.vertex.module = mShaderModule;
     mFragmentState.module      = mShaderModule;
     mFragmentState.entryPoint  = WGPU_STR("fs_main");
     mFragmentState.targetCount = 1;
@@ -442,7 +438,6 @@ bool Scene::createPipeline()
     bgDesc.entries                 = &entry;
     mBindGroup                     = wgpuDeviceCreateBindGroup(mDevice, &bgDesc);
 
-    // Depth texture
     updateDepthTexture(mWidth, mHeight);
 
     wgpuBindGroupLayoutRelease(bgl);
@@ -499,7 +494,6 @@ void Scene::initializeFloor()
 
 void Scene::initializeSkylight()
 {
-    std::cout << "Initialize Skylight" << std::endl;
     std::vector<SkylightVertex> vertices;
     std::vector<SkylightIndex>  indices;
 
@@ -521,7 +515,6 @@ void Scene::initializeSkylight()
 
 void Scene::initializeBeams()
 {
-    std::cout << "Initialize Beams" << std::endl;
     std::vector<BeamVertex> vertices;
     std::vector<BeamIndex>  indices;
 
@@ -548,8 +541,8 @@ void Scene::initializeBeams()
 
 void Scene::InitializeSlider()
 {
-    std::vector<Vertex> verts;
-    std::vector<Index>  indices;
+    std::vector<SliderVertex> verts;
+    std::vector<SliderIndex>  indices;
     buildSliderGeometry(verts, indices);
 
     mSliderIndexCount = static_cast<uint32_t>(indices.size());
@@ -600,15 +593,14 @@ void Scene::setSliderPosition(const float x, const float y, const float z)
     mParticleDrawCount = static_cast<uint32_t>(mSliderValue * MAX_PARTICLES);
 }
 
-void Scene::setSliderValue(float v)
+void Scene::setSliderValue(const float value)
 {
-    mSliderValue = v;
+    mSliderValue = value;
     mParticleDrawCount = static_cast<uint32_t>(mSliderValue * MAX_PARTICLES);
 }
 
 void Scene::initializePlane()
 {
-    std::cout << "Initialize plane" << std::endl;
     std::vector<PlaneVertex> vertices;
     std::vector<PlaneIndex>  indices;
 
@@ -630,62 +622,39 @@ void Scene::initializePlane()
 
 void Scene::updateViewMatrix()
 {
-    const float cx = cosf(mCameraState.angleX);
-    const float sx = sinf(mCameraState.angleX);
-    const float cy = cosf(mCameraState.angleY);
-    const float sy = sinf(mCameraState.angleY);
-    const float r  = std::exp(-mCameraState.zoom);
+    const float yaw = mCameraState.angleX;
+    const float ex  = mCameraState.posX;
+    constexpr float ey  = CameraState::eyeY;
+    const float ez  = mCameraState.posZ;
 
-    float ex = cx * cy * r;
-    const float ey = sy       * r;
-    float ez = sx * cy  * r;
-
-    // constexpr float kFloorRadius = 0.95f;
-    // if (horizDist > kFloorRadius) {
-    //     const float scale = kFloorRadius / horizDist;
-    //     ex *= scale;
-    //     ez *= scale;
-    // }
+    // Look target one unit ahead in the yaw direction
+    const float tx = ex + sinf(yaw);
+    const float tz = ez - cosf(yaw);
 
     float view[16], proj[16];
-    buildLookAt(view, ex, ey, ez, 0.0f, 0.0f, 0.0f);
-    buildPerspective(proj, 1.047f, mUniforms.aspectRatio, 0.1f, 10.0f);
+    buildLookAt(view, ex, ey, ez, tx, ey, tz);
+    buildPerspective(proj, 1.047f, mUniforms.aspectRatio, 0.1f, 3.0f);
     mulMat4(mUniforms.viewProjMatrix, proj, view);
 }
 
-void Scene::onMouseMove(float xpos, float ypos)
+void Scene::onMouseMove(const float xpos, const float /*ypos*/)
 {
     if (mDrag.active)
     {
-        const float deltaX = (-(xpos) - mDrag.startMouseX) * mDrag.sensitivity;
-        const float deltaY = (  ypos  - mDrag.startMouseY) * mDrag.sensitivity;
-
-        mCameraState.angleX = mDrag.startAngleX + deltaX;
-        mCameraState.angleY = mDrag.startAngleY + deltaY;
-        // mDrag.velocity = delta - mDrag.previousDelta;
-        // mDrag.previousDelta = delta;
-
-        // Clamp elevation to avoid gimbal flip at poles
-        constexpr float kHalfPi = 1.5707963f;
-        mCameraState.angleY = std::clamp(mCameraState.angleY,
-                                         -kHalfPi + 1e-5f,
-                                          kHalfPi - 1e-5f);
+        mCameraState.angleX = mDrag.startAngleX + (xpos - mDrag.startMouseX) * mDrag.sensitivity;
         updateViewMatrix();
     }
 }
 
-void Scene::onMouseButton(int button, bool isPressed, float xpos, float ypos)
+void Scene::onMouseButton(const int button, const bool isPressed, const float xpos, float /*ypos*/)
 {
-    if (button == 0) // left button
+    if (button == 0)
     {
         if (isPressed)
         {
-            mDrag.active        = true;
-            // Negate X to match tutorial's inversion
-            mDrag.startMouseX   = -xpos;
-            mDrag.startMouseY   =  ypos;
-            mDrag.startAngleX   = mCameraState.angleX;
-            mDrag.startAngleY   = mCameraState.angleY;
+            mDrag.active      = true;
+            mDrag.startMouseX = xpos;
+            mDrag.startAngleX = mCameraState.angleX;
         }
         else
         {
@@ -694,9 +663,27 @@ void Scene::onMouseButton(int button, bool isPressed, float xpos, float ypos)
     }
 }
 
-void Scene::onScroll(float yoffset)
+void Scene::onScroll(const float deltaX, const float deltaY)
 {
-    mCameraState.zoom += mDrag.scrollSensitivity * yoffset;
-    mCameraState.zoom = std::clamp(mCameraState.zoom, -2.0f, 2.0f);
+    const float yaw     = mCameraState.angleX;
+    const float speed   = mDrag.scrollSensitivity;
+
+    // Vertical scroll: walk forward/backward
+    mCameraState.posX +=  sinf(yaw) * deltaY * speed;
+    mCameraState.posZ += -cosf(yaw) * deltaY * speed;
+
+    // Horizontal scroll: turn left/right
+    mCameraState.angleX += deltaX * mDrag.turnSensitivity * speed;
+
+    // Clamp to the circular wall
+    const float r = sqrtf(mCameraState.posX * mCameraState.posX +
+                          mCameraState.posZ * mCameraState.posZ);
+    if (r > CameraState::kWallRadius)
+    {
+        const float inv = CameraState::kWallRadius / r;
+        mCameraState.posX *= inv;
+        mCameraState.posZ *= inv;
+    }
+
     updateViewMatrix();
 }

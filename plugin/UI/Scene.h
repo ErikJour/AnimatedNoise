@@ -6,7 +6,7 @@
 #define ANIMATEDNOISE_SCENE_H
 #include <filesystem>
 #include <webgpu/webgpu.h>
-#include "perlinCave.h"
+#include "sharedHelper.h"
 #include "utilityHelper.h"
 #include "ResourceManager.h"
 #include "plane.h"
@@ -53,7 +53,7 @@ class Scene
         void InitializeSlider();
         void initializeParticles();
         void setSliderPosition(float x, float y, float z);
-        void setSliderValue(float v);
+        void setSliderValue(float value);
         void initializePlane();
         float getSliderValue() const { return mSliderValue; }
         float sliderTopFraction()       const { return (1.0f - (kSpineMaxY + mSliderPos[1])) * 0.5f; }
@@ -69,7 +69,7 @@ class Scene
         void updateViewMatrix();
         void onMouseButton(int button, bool isPressed, float xpos, float ypos);
         void onMouseMove(float xpos, float ypos);
-        void onScroll(float yoffset);
+        void onScroll(float deltaX, float deltaY);
         //Camera Experiment
         CameraState getCameraState() const { return mCameraState; }
         void setCameraState(const CameraState& s) { mCameraState = s; updateViewMatrix(); }
@@ -113,10 +113,6 @@ class Scene
         WGPUFragmentState                   mFragmentState = {};
         WGPUBlendState                      mBlendState = {};
         MyUniforms                          mUniforms = {};
-        //Cave
-        WGPUBuffer                          mCaveVertexBuffer  = nullptr;
-        WGPUBuffer                          mCaveIndexBuffer  = nullptr;
-        uint32_t                            mCaveIndexCount    = 0;
         //Slider
         WGPUBuffer                          mSliderVertexBuffer = nullptr;
         WGPUBuffer                          mSliderIndexBuffer  = nullptr;

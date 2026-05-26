@@ -99,8 +99,8 @@ bool WebGpuWindow::createQueue()
 void WebGpuWindow::configurePipeline()
 {
     mFragmentState = mScene.getFragmentState();
-    mColorTarget = mScene.getColorTarget();
-    mBlendState = mScene.getBlendState();
+    mColorTarget   = mScene.getColorTarget();
+    mBlendState    = mScene.getBlendState();
 
     mPipelineDesc.nextInChain                        = nullptr;
     mPipelineDesc.layout                             = nullptr;

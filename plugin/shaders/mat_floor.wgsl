@@ -8,6 +8,6 @@ fn vsFloor(pos: ptr<function, vec3f>) -> vec4f {
 
 fn shadeFloor(in: VertexOutput) -> vec4f {
     let normal    = normalize(in.normal);
-    let baseColor = vec3f(0.4, 0.15, 0.1);
+    let baseColor = vec3f(0.4, 0.15, 0.2);
     return vec4f(baseColor * pointLight(in.worldPos, normal), 1.0);
 }
