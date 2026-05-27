@@ -517,7 +517,7 @@ void Scene::initializeBeams()
     YurtBeams::buildBeams(vertices, indices,
      0.95f, -0.15f, 0.15f, 0.75f,
      64,
-     0.125f, 0.005f,
+     0.025f, 0.005f,
      32,
      0.5f);
 
