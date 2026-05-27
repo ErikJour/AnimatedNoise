@@ -237,9 +237,6 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
     mUniforms.lightPos[0]  = 0.0f;
     mUniforms.lightPos[1]  = 0.35f;
     mUniforms.lightPos[2]  = 0.0f;
-    mUniforms.sliderPos[0] = mSliderPos[0];
-    mUniforms.sliderPos[1] = mSliderPos[1];
-    mUniforms.sliderPos[2] = mSliderPos[2];
     mUniforms.aspectRatio  = static_cast<float>(mWidth) / static_cast<float>(mHeight);
 
     updateViewMatrix();
@@ -370,8 +367,8 @@ void Scene::initializeScene()
     initializeFloor();
     initializeSkylight();
     initializeBeams();
-    // InitializeSlider();
-    // initializeParticles();
+    InitializeSlider();
+    initializeParticles();
 }
 
 bool Scene::createPipeline()
@@ -472,7 +469,6 @@ void Scene::updateDepthTexture(const uint32_t width, const uint32_t height)
 
 void Scene::initializeFloor()
 {
-    std::cout << "Initialize Floor" << std::endl;
     std::vector<FloorVertex> vertices;
     std::vector<FloorIndex>  indices;
 
@@ -549,12 +545,12 @@ void Scene::InitializeSlider()
 
     WGPUBufferDescriptor bd{};
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
-    bd.size  = verts.size() * sizeof(Vertex);
+    bd.size = verts.size() * sizeof(SliderVertex);
     mSliderVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
     wgpuQueueWriteBuffer(mQueue, mSliderVertexBuffer, 0, verts.data(), bd.size);
 
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
-    bd.size  = (indices.size() * sizeof(Index) + 3) & ~3ULL;
+    bd.size  = (indices.size() * sizeof(SliderIndex) + 3) & ~3ULL;
     mSliderIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
     wgpuQueueWriteBuffer(mQueue, mSliderIndexBuffer, 0, indices.data(), bd.size);
 }
@@ -565,32 +561,22 @@ void Scene::initializeParticles()
     std::vector<ParticleData> particles;
 
     ParticleSystem::buildQuad(quadVerts);
-    ParticleSystem::initParticles(particles, MAX_PARTICLES, 0.35f);
+    ParticleSystem::initParticles(particles, MAX_PARTICLES, 0.45f, 0.0125f);
 
-    // Quad vertex buffer — identical pattern to plane/slider
     WGPUBufferDescriptor bd{};
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
     bd.size  = quadVerts.size() * sizeof(QuadVertex);
     mParticleQuadBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
     wgpuQueueWriteBuffer(mQueue, mParticleQuadBuffer, 0, quadVerts.data(), bd.size);
 
-    // Particle data buffer — same pattern, different usage flag
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
     bd.size  = particles.size() * sizeof(ParticleData);
     mParticleDataBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
     wgpuQueueWriteBuffer(mQueue, mParticleDataBuffer, 0, particles.data(), bd.size);
 
     mParticleCount = static_cast<uint32_t>(particles.size());
-    mParticleDrawCount = mParticleCount;  // start with all visible
+    mParticleDrawCount = mParticleCount;
 
-}
-
-void Scene::setSliderPosition(const float x, const float y, const float z)
-{
-    mSliderPos[0] = x;
-    mSliderPos[1] = y;
-    mSliderPos[2] = z;
-    mParticleDrawCount = static_cast<uint32_t>(mSliderValue * MAX_PARTICLES);
 }
 
 void Scene::setSliderValue(const float value)

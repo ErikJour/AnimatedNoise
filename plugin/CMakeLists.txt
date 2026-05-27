@@ -88,7 +88,6 @@ target_include_directories(AnimatedNoise
         include
         source
         UI
-        geometries
         procedural
         shaders
         dsp

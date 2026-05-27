@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <cmath>
 #include <cstdlib>
+#include <random>
 
 // ─────────────────────────────────────────────────────────────────────────────
 // BUFFER 1 — QuadVertex  (vertex buffer, step mode: per-vertex)
@@ -101,10 +102,8 @@ public:
     {
         particles.clear();
         particles.reserve(static_cast<size_t>(count));
-
-        const float radius = spread * 0.35f;
-
         int spawned = 0;
+
         while (spawned < count)
         {
             float x = (randomFloat() - 0.5f) * spread;
@@ -112,7 +111,7 @@ public:
             float z = (randomFloat() - 0.5f) * spread;
 
             // Reject if outside sphere
-            if (x*x + y*y + z*z > radius * radius) continue;
+            if (x*x + y*y + z*z > spread * spread) continue;
 
             ParticleData p{};
             p.x = x;
@@ -125,6 +124,16 @@ public:
 
             particles.push_back(p);
             ++spawned;
+        }
+
+        // Color variation pass
+        std::mt19937 rng(42);
+        std::uniform_real_distribution<float> dist(-0.09f, 0.09f);
+
+        for (auto& p : particles) {
+            p.r = std::clamp(p.r + dist(rng), 0.0f, 1.0f);
+            p.g = std::clamp(p.g + dist(rng), 0.0f, 1.0f);
+            p.b = std::clamp(p.b + dist(rng), 0.0f, 1.0f);
         }
     }
 

@@ -26,20 +26,16 @@ fn vs_particle(in: ParticleVertexInput) -> ParticleVertexOutput {
 
     let animated = vec3f(
         worldPos.x,
-        worldPos.y + sin(u.time + worldPos.x * 5.0) * 0.02,
+        worldPos.y + sin(u.time + worldPos.x * 5.0) * 0.015,
         worldPos.z
     );
 
-    let depth = animated.z + 1.0;
-    let projX = animated.x * FOV_FACTOR / depth;
-    let projY = animated.y * FOV_FACTOR / depth;
+    let clipPos = u.viewProjMatrix * vec4f(animated, 1.0);
 
-    let bx = in.cornerOffset.x * size / depth;
-    let by = in.cornerOffset.y * size / depth;
+    let bx = in.cornerOffset.x * size * clipPos.w;
+    let by = in.cornerOffset.y * size * clipPos.w;
 
-    let zNDC = (depth - 0.01) / (100.0 - 0.01);
-
-    out.position = vec4f(projX + bx, projY + by, zNDC, 1.0);
+    out.position = vec4f(clipPos.x + bx, clipPos.y + by  + 0.25, clipPos.z, clipPos.w);
     out.color    = in.color;
     out.uv       = in.uv;
     out.life     = in.life_vel.x;
@@ -51,7 +47,7 @@ fn vs_particle(in: ParticleVertexInput) -> ParticleVertexOutput {
 fn fs_particle(in: ParticleVertexOutput) -> @location(0) vec4f {
     let centered = (in.uv - vec2f(0.5)) * 2.0;
     let dist     = length(centered);
-    let alpha    = smoothstep(1.0, 0.2, dist) * in.color.a * in.life * 0.05f;
+    let alpha    = smoothstep(1.0, 0.2, dist) * in.color.a * 0.05f;
     if alpha < 0.01 { discard; }
     return vec4f(in.color.rgb * 0.9f, alpha);
 }
