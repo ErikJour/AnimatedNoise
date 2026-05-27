@@ -10,6 +10,6 @@ struct DragState {
     float startAngleX       = 0.0f;
     float sensitivity       = 0.005f;
     float scrollSensitivity = 0.05f;
-    float turnSensitivity   = 2.0f;
+    float turnSensitivity   = 5.0f;
 };
 

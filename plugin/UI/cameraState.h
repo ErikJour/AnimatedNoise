@@ -12,7 +12,7 @@ struct CameraState {
     float posX   = 0.0f;   // camera world position X
     float posZ   = 0.5f;   // camera world position Z
 
-    static constexpr float eyeY        = 0.08f;  // fixed eye height
+    static constexpr float eyeY        = 0.02f;  // fixed eye height
     static constexpr float kWallRadius = 0.88f;  // clamp radius (floor edge is 0.95)
 };
 

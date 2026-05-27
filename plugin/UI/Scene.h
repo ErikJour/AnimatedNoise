@@ -52,7 +52,6 @@ class Scene
 
         void InitializeSlider();
         void initializeParticles();
-        void setSliderPosition(float x, float y, float z);
         void setSliderValue(float value);
         void initializePlane();
         float getSliderValue() const { return mSliderValue; }
@@ -73,6 +72,32 @@ class Scene
         //Camera Experiment
         CameraState getCameraState() const { return mCameraState; }
         void setCameraState(const CameraState& s) { mCameraState = s; updateViewMatrix(); }
+
+        void projectSliderBounds(float screenW, float screenH,
+                         float& outCenterX, float& outTopY, float& outBottomY) const
+        {
+            // Constants must match buildSliderGeometry
+            constexpr float wx = 0.93f;   // wallRadius * cos(centerAngle=0)
+            constexpr float wz = 0.0f;    // wallRadius * sin(centerAngle=0)
+            constexpr float yTop    =  0.25f;
+            constexpr float yBottom = -0.15f;
+            constexpr float yMid    = (yTop + yBottom) * 0.5f;
+
+            auto project = [&](float x, float y, float z, float& sx, float& sy)
+            {
+                const float* m = mUniforms.viewProjMatrix;
+                const float cx = m[0]*x + m[4]*y + m[8]*z  + m[12];
+                const float cy = m[1]*x + m[5]*y + m[9]*z  + m[13];
+                const float cw = m[3]*x + m[7]*y + m[11]*z + m[15];
+                sx = ( cx/cw * 0.5f + 0.5f)        * screenW;
+                sy = (1.0f - (cy/cw * 0.5f + 0.5f)) * screenH;
+            };
+
+            float dummy;
+            project(wx, yMid,    wz, outCenterX, dummy);
+            project(wx, yTop,    wz, dummy,      outTopY);
+            project(wx, yBottom, wz, dummy,      outBottomY);
+        }
 
 
 

@@ -11,16 +11,16 @@ static constexpr uint32_t MAT_FLOOR            = 4;
 static constexpr uint32_t MAT_SKYLIGHT         = 5;
 
 struct MyUniforms {
-    float    time;
-    float    frequency;
-    float    amplitude;
-    float    sliderValue;
-    float    lightPos[3];
-    float    aspectRatio;
-    float    sliderPos[3];
-    uint32_t materialId;
-    float    modelMatrix[16];
-    float    viewProjMatrix[16];
+    float    time;          // offset 0
+    float    frequency;     // offset 4
+    float    amplitude;     // offset 8
+    float    sliderValue;   // offset 12
+    float    lightPos[3];   // offset 20
+    float    aspectRatio;   // offset 16
+    float    pad[3];        // offset 32
+    uint32_t materialId;    // offset 44
+    float    modelMatrix[16];    // offset 48  ✓
+    float    viewProjMatrix[16]; // offset 112 ✓
 };
 
 static_assert(sizeof(MyUniforms) % 16 == 0);
