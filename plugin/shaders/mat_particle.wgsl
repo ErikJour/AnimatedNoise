@@ -26,8 +26,8 @@ fn vs_particle(in: ParticleVertexInput) -> ParticleVertexOutput {
 
     let animated = vec3f(
         worldPos.x,
-        worldPos.y + sin(u.time + worldPos.x * 5.0) * 0.015,
-        worldPos.z
+        worldPos.y,
+        worldPos.z + sin(u.time + worldPos.x * 25.0) * 0.01
     );
 
     let clipPos = u.viewProjMatrix * vec4f(animated, 1.0);

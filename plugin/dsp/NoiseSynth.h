@@ -20,12 +20,10 @@ public:
     void startVoice(int note, int velocity);
     void noteOn(int note, int velocity);
     void noteOff(int note);
-    void setGain (const float newGain) { gainSmoothed.setTargetValue(newGain); }
 
 private:
     double mSampleRate;
     NoiseVoice voice;
-    juce::SmoothedValue<float> gainSmoothed;
 
 
 };

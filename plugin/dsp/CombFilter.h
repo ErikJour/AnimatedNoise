@@ -17,12 +17,13 @@ public:
 
     void reset(double sampleRate);
     void excite(float frequency);
-    float process(float input);
+    void process(float* buffer, int numSamples);
+
 
 private:
+    float processSample(float input);
     double mSampleRate { 0.0f };
     //New
-
     uint32_t ringBufferLength = { 0 };
     float ringBufferMemory[MAX_BUFFER_LENGTH] = {};
     uint32_t ringBufferIndex = { 0 };

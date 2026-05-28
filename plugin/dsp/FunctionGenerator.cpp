@@ -74,4 +74,10 @@ float FunctionGenerator::analogCurve(const float level, const float target, cons
     return level + linearCurrent * (1.0f - multiplier);
 }
 
+void FunctionGenerator::process(float* buffer, const int numSamples)
+{
+    for (int i = 0; i < numSamples; i++)
+        buffer[i] *= nextValue();
+}
+
 

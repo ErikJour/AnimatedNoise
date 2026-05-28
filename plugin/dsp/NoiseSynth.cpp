@@ -7,8 +7,6 @@
 NoiseSynth::NoiseSynth()
 {
     mSampleRate = 44100.0;
-    gainSmoothed.reset(mSampleRate, 0.01f);
-
 }
 
 void NoiseSynth::distributeResources(const double sampleRate, int samplesPerBlock)
@@ -23,7 +21,6 @@ void NoiseSynth::reset(const double sampleRate)
 {
     mSampleRate = sampleRate;
     voice.reset(mSampleRate);
-    gainSmoothed.reset(mSampleRate, 0.01f);
     const float inverseSampleRate = 1.0f / static_cast<float>(mSampleRate);
     voice.functionGenerator.mAttackMultiplier = std::exp(-inverseSampleRate * std::exp(4.5f - 0.075f * 50.0f));
     voice.functionGenerator.mReleaseMultiplier = 0.95f;
@@ -33,19 +30,10 @@ void NoiseSynth::render(float** outputBuffers, const int sampleCount)
 {
     float* outputBufferLeft = outputBuffers[0];
     float* outputBufferRight = outputBuffers[1];
-    gainSmoothed.setTargetValue(0.5f);
 
-    for (int sample = 0; sample < sampleCount; sample++) {
-
-        const float output = voice.render();
-        const float gain = gainSmoothed.getNextValue();
-        outputBufferLeft[sample] = output * gain;
-
-        if (outputBufferRight != nullptr) {
-
-            outputBufferRight[sample] = output * gain;
-        }
-    }
+    voice.render(outputBufferLeft, sampleCount);
+    if (outputBufferRight != nullptr)
+        juce::FloatVectorOperations::copy(outputBufferRight, outputBufferLeft, sampleCount);
 
     protectMyEars(outputBufferLeft, sampleCount);
     protectMyEars(outputBufferRight, sampleCount);

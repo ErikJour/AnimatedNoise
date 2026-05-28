@@ -29,7 +29,7 @@ void CombFilter::excite(const float frequency)
     mPrevSample = 0.f;
 }
 
-float CombFilter::process(const float input)
+float CombFilter::processSample(const float input)
 {
     const float delayed  = ringBufferMemory[ringBufferIndex];
     const float filtered = 0.7f * delayed + 0.3f * mPrevSample;
@@ -45,5 +45,11 @@ float CombFilter::process(const float input)
 
     mPrevSample = delayed;
     return filtered;
+}
+
+void CombFilter::process(float* buffer, int numSamples)
+{
+    for (int i = 0; i < numSamples; i++)
+        buffer[i] = processSample(0.0f);
 }
 

@@ -561,7 +561,7 @@ void Scene::initializeParticles()
     std::vector<ParticleData> particles;
 
     ParticleSystem::buildQuad(quadVerts);
-    ParticleSystem::initParticles(particles, MAX_PARTICLES, 0.45f, 0.0125f);
+    ParticleSystem::initParticles(particles, MAX_PARTICLES, 0.35f, 0.013f);
 
     WGPUBufferDescriptor bd{};
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;

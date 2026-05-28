@@ -26,6 +26,8 @@ class FunctionGenerator
         void release();
         float nextValue();
         static float analogCurve(float level, float target, float multiplier);
+        void process(float* buffer, int numSamples);
+
 
         void setDrift(const float newDrift) { mDrift = newDrift; }
         [[nodiscard]] inline bool isActive() const { return mLevel > SILENT; }
