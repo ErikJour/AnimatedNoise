@@ -1,8 +1,8 @@
-#include "PluginProcessor.h"
-#include "PluginEditor.h"
+#include "AnimatedNoiseProcessor.h"
+#include "AnimatedNoiseEditor.h"
 
 //==============================================================================
-AudioPluginAudioProcessor::AudioPluginAudioProcessor()
+AnimatedNoiseProcessor::AnimatedNoiseProcessor()
      : AudioProcessor (BusesProperties()
                      #if ! JucePlugin_IsMidiEffect
                       #if ! JucePlugin_IsSynth
@@ -12,17 +12,23 @@ AudioPluginAudioProcessor::AudioPluginAudioProcessor()
                      #endif
                        )
 {
+    apvts.state.addListener(this);
+    castParameter(apvts, ParameterID::globalGain, globalGainParam);
 }
 
-AudioPluginAudioProcessor::~AudioPluginAudioProcessor() = default;
+AnimatedNoiseProcessor::~AnimatedNoiseProcessor()
+{
+    apvts.state.removeListener(this);
+
+}
 
 //==============================================================================
-const juce::String AudioPluginAudioProcessor::getName() const
+const juce::String AnimatedNoiseProcessor::getName() const
 {
     return JucePlugin_Name;
 }
 
-bool AudioPluginAudioProcessor::acceptsMidi() const
+bool AnimatedNoiseProcessor::acceptsMidi() const
 {
    #if JucePlugin_WantsMidiInput
     return true;
@@ -31,7 +37,7 @@ bool AudioPluginAudioProcessor::acceptsMidi() const
    #endif
 }
 
-bool AudioPluginAudioProcessor::producesMidi() const
+bool AnimatedNoiseProcessor::producesMidi() const
 {
    #if JucePlugin_ProducesMidiOutput
     return true;
@@ -40,7 +46,7 @@ bool AudioPluginAudioProcessor::producesMidi() const
    #endif
 }
 
-bool AudioPluginAudioProcessor::isMidiEffect() const
+bool AnimatedNoiseProcessor::isMidiEffect() const
 {
    #if JucePlugin_IsMidiEffect
     return true;
@@ -49,50 +55,50 @@ bool AudioPluginAudioProcessor::isMidiEffect() const
    #endif
 }
 
-double AudioPluginAudioProcessor::getTailLengthSeconds() const
+double AnimatedNoiseProcessor::getTailLengthSeconds() const
 {
     return 0.0;
 }
 
-int AudioPluginAudioProcessor::getNumPrograms()
+int AnimatedNoiseProcessor::getNumPrograms()
 {
     return 1;   // NB: some hosts don't cope very well if you tell them there are 0 programs,
                 // so this should be at least 1, even if you're not really implementing programs.
 }
 
-int AudioPluginAudioProcessor::getCurrentProgram()
+int AnimatedNoiseProcessor::getCurrentProgram()
 {
     return 0;
 }
 
-void AudioPluginAudioProcessor::setCurrentProgram (int index)
+void AnimatedNoiseProcessor::setCurrentProgram (int index)
 {
     juce::ignoreUnused (index);
 }
 
-const juce::String AudioPluginAudioProcessor::getProgramName (int index)
+const juce::String AnimatedNoiseProcessor::getProgramName (int index)
 {
     juce::ignoreUnused (index);
     return {};
 }
 
-void AudioPluginAudioProcessor::changeProgramName (int index, const juce::String& newName)
+void AnimatedNoiseProcessor::changeProgramName (int index, const juce::String& newName)
 {
     juce::ignoreUnused (index, newName);
 }
 
 //==============================================================================
-void AudioPluginAudioProcessor::prepareToPlay (const double sampleRate, const int samplesPerBlock)
+void AnimatedNoiseProcessor::prepareToPlay (const double sampleRate, const int samplesPerBlock)
 {
     noiseSynth.distributeResources(sampleRate, samplesPerBlock);
     noiseSynth.reset(sampleRate);
 }
 
-void AudioPluginAudioProcessor::releaseResources()
+void AnimatedNoiseProcessor::releaseResources()
 {
 }
 
-bool AudioPluginAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
+bool AnimatedNoiseProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
   #if JucePlugin_IsMidiEffect
     juce::ignoreUnused (layouts);
@@ -110,12 +116,12 @@ bool AudioPluginAudioProcessor::isBusesLayoutSupported (const BusesLayout& layou
   #endif
 }
 
-void AudioPluginAudioProcessor::handleMidi(const uint8_t data0, const uint8_t data1, const uint8_t data2)
+void AnimatedNoiseProcessor::handleMidi(const uint8_t data0, const uint8_t data1, const uint8_t data2)
 {
     noiseSynth.midiMessages(data0, data1, data2);
 }
 
-void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
+void AnimatedNoiseProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ignoreUnused (midiMessages);
 
@@ -126,11 +132,16 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; i++)
         buffer.clear(i, 0, buffer.getNumSamples());
 
+    bool expected = true;
+
+    if (parametersChanged.compare_exchange_strong(expected, false))
+        update();
+
     splitBufferByEvents(buffer, midiMessages);
 
 }
 
-void AudioPluginAudioProcessor::render(juce::AudioBuffer<float>& buffer, int sampleCount, int bufferOffset)
+void AnimatedNoiseProcessor::render(juce::AudioBuffer<float>& buffer, int sampleCount, int bufferOffset)
 {
     float* outputBuffers[2] = { nullptr, nullptr };
 
@@ -143,7 +154,7 @@ void AudioPluginAudioProcessor::render(juce::AudioBuffer<float>& buffer, int sam
     noiseSynth.render(outputBuffers, sampleCount);
 }
 
-void AudioPluginAudioProcessor::splitBufferByEvents(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
+void AnimatedNoiseProcessor::splitBufferByEvents(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
 
     int bufferOffset = 0;
@@ -174,31 +185,52 @@ void AudioPluginAudioProcessor::splitBufferByEvents(juce::AudioBuffer<float>& bu
 }
 
 //==============================================================================
-bool AudioPluginAudioProcessor::hasEditor() const
+bool AnimatedNoiseProcessor::hasEditor() const
 {
     return true;
 }
 
-juce::AudioProcessorEditor* AudioPluginAudioProcessor::createEditor()
+juce::AudioProcessorEditor* AnimatedNoiseProcessor::createEditor()
 {
-    return new AudioPluginAudioProcessorEditor (*this);
+    return new AnimatedNoiseProcessorEditor (*this);
 }
 
 //==============================================================================
-void AudioPluginAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
+void AnimatedNoiseProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     juce::ignoreUnused (destData);
 }
 
-void AudioPluginAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
+void AnimatedNoiseProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
 
     juce::ignoreUnused (data, sizeInBytes);
+}
+
+juce::AudioProcessorValueTreeState::ParameterLayout AnimatedNoiseProcessor::createParameterLayout()
+{
+    juce::AudioProcessorValueTreeState::ParameterLayout paramLayout;
+    paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
+        ParameterID::globalGain,
+        "Global Gain",
+        juce::NormalisableRange<float>{ 0.0f, 1.0f, 0.01f, 1.0f },
+        0.5f));
+
+    return paramLayout;
+}
+
+void AnimatedNoiseProcessor::update()
+{
+    //=======================================
+    //Global Gain
+    //=======================================
+    const float globalGain = globalGainParam->get();
+    noiseSynth.setGain(globalGain);
 }
 
 //==============================================================================
 // This creates new instances of the plugin..
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
-    return new AudioPluginAudioProcessor();
+    return new AnimatedNoiseProcessor();
 }

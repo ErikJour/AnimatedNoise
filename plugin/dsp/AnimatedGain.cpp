@@ -24,7 +24,7 @@ void AnimatedGain::setGain(const float newGain)
                         0.0f,
                         1.0f,
                         -24.0f,
-                        24.0f);
+                        0.0f);
 
     // Convert dB to linear gain
     gainSmoothed.setTargetValue(juce::Decibels::decibelsToGain(dB, -24.0f));
@@ -32,7 +32,7 @@ void AnimatedGain::setGain(const float newGain)
 
 float AnimatedGain::getGain() const { return gainSmoothed.getTargetValue(); }
 
-void AnimatedGain::process(float* buffer, int numSamples)
+void AnimatedGain::process(float* buffer, const int numSamples)
 {
     for (int i = 0; i < numSamples; i++)
     {

@@ -1,8 +1,8 @@
-#include "PluginProcessor.h"
-#include "PluginEditor.h"
+#include "AnimatedNoiseProcessor.h"
+#include "AnimatedNoiseEditor.h"
 
 //==============================================================================
-AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAudioProcessor& p)
+AnimatedNoiseProcessorEditor::AnimatedNoiseProcessorEditor (AnimatedNoiseProcessor& p)
     : AudioProcessorEditor (&p), processorRef (p)
 {
     juce::ignoreUnused (processorRef);
@@ -10,7 +10,7 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAud
     webGpuWindow.initialize();
 }
 
-AudioPluginAudioProcessorEditor::~AudioPluginAudioProcessorEditor()
+AnimatedNoiseProcessorEditor::~AnimatedNoiseProcessorEditor()
 {
     stopTimer();
     processorRef.savedCameraState = webGpuWindow.getScene().getCameraState();
@@ -18,7 +18,7 @@ AudioPluginAudioProcessorEditor::~AudioPluginAudioProcessorEditor()
 }
 
 //==============================================================================
-void AudioPluginAudioProcessorEditor::parentHierarchyChanged()
+void AnimatedNoiseProcessorEditor::parentHierarchyChanged()
 {
     AudioProcessorEditor::parentHierarchyChanged();
 
@@ -40,7 +40,7 @@ void AudioPluginAudioProcessorEditor::parentHierarchyChanged()
     }
 }
 
-void AudioPluginAudioProcessorEditor::timerCallback()
+void AnimatedNoiseProcessorEditor::timerCallback()
 {
     if (mResizePending) {
         if (mPendingW != mConfiguredW || mPendingH != mConfiguredH) {
@@ -54,15 +54,23 @@ void AudioPluginAudioProcessorEditor::timerCallback()
     static auto startTime = juce::Time::getMillisecondCounterHiRes();
     const double elapsed  = (juce::Time::getMillisecondCounterHiRes() - startTime) * 0.001;
     webGpuWindow.getScene().renderFrame(static_cast<float>(elapsed));
+
+    //Testing automation
+    if (auto* param = processorRef.apvts.getParameter("globalGain"))
+    {
+        const float paramValue = param->getValue(); // already normalized 0-1
+        if (std::abs(paramValue - webGpuWindow.getScene().getSliderValue()) > 0.001f)
+            webGpuWindow.getScene().setSliderValue(paramValue);
+    }
 }
 
-void AudioPluginAudioProcessorEditor::setResizeReady()
+void AnimatedNoiseProcessorEditor::setResizeReady()
 {
     setResizable(true, true);
 }
 
 //==============================================================================
-void AudioPluginAudioProcessorEditor::resized()
+void AnimatedNoiseProcessorEditor::resized()
 {
     if (!webGpuWindow.hasSurface()) return;
     mPendingW = static_cast<uint32_t>(getWidth());
@@ -71,7 +79,7 @@ void AudioPluginAudioProcessorEditor::resized()
 }
 
 //==============================================================================
-void AudioPluginAudioProcessorEditor::mouseDown(const juce::MouseEvent& e)
+void AnimatedNoiseProcessorEditor::mouseDown(const juce::MouseEvent& e)
 {
     const float w = static_cast<float>(getWidth());
     const float h = static_cast<float>(getHeight());
@@ -100,7 +108,7 @@ void AudioPluginAudioProcessorEditor::mouseDown(const juce::MouseEvent& e)
     }
 }
 
-void AudioPluginAudioProcessorEditor::mouseDrag(const juce::MouseEvent& e)
+void AnimatedNoiseProcessorEditor::mouseDrag(const juce::MouseEvent& e)
 {
     if (mDragging)
     {
@@ -118,7 +126,7 @@ void AudioPluginAudioProcessorEditor::mouseDrag(const juce::MouseEvent& e)
     }
 }
 
-void AudioPluginAudioProcessorEditor::mouseUp(const juce::MouseEvent& e)
+void AnimatedNoiseProcessorEditor::mouseUp(const juce::MouseEvent& e)
 {
     mDragging       = false;
     mDragOffset     = 0.0f;
@@ -132,7 +140,7 @@ void AudioPluginAudioProcessorEditor::mouseUp(const juce::MouseEvent& e)
     }
 }
 
-void AudioPluginAudioProcessorEditor::updateSliderFromMouse(const int screenY)
+void AnimatedNoiseProcessorEditor::updateSliderFromMouse(const int screenY)
 {
     const float w = static_cast<float>(getWidth());
     const float h = static_cast<float>(getHeight());
@@ -143,9 +151,12 @@ void AudioPluginAudioProcessorEditor::updateSliderFromMouse(const int screenY)
     float v = (bottomY - (static_cast<float>(screenY) - mDragOffset)) / (bottomY - topY);
     v = juce::jlimit(0.0f, 1.0f, v);
     webGpuWindow.getScene().setSliderValue(v);
+    //Set apvts param value
+    if (auto* param = processorRef.apvts.getParameter("globalGain"))
+        param->setValueNotifyingHost(v);
 }
 
-void AudioPluginAudioProcessorEditor::mouseWheelMove(const juce::MouseEvent& e,
+void AnimatedNoiseProcessorEditor::mouseWheelMove(const juce::MouseEvent& e,
                                                       const juce::MouseWheelDetails& wheel)
 {
     juce::ignoreUnused(e);

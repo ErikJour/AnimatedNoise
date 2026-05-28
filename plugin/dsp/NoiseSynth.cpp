@@ -83,3 +83,9 @@ void NoiseSynth::noteOff(const int note)
 
 }
 
+void NoiseSynth::setGain(const float gain)
+{
+    voice.mGain.setGain(gain);
+}
+
+

@@ -3,15 +3,17 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "NoiseSynth.h"
 #include "cameraState.h"
-
+#include "ParamIds.h"
 
 //==============================================================================
-class AudioPluginAudioProcessor final : public juce::AudioProcessor
+
+class AnimatedNoiseProcessor final : public juce::AudioProcessor,
+                                        private juce::ValueTree::Listener
 {
 public:
     //==============================================================================
-    AudioPluginAudioProcessor();
-    ~AudioPluginAudioProcessor() override;
+    AnimatedNoiseProcessor();
+    ~AnimatedNoiseProcessor() override;
 
     //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
@@ -48,10 +50,26 @@ public:
     //==============================================================================
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
+
+    //==============================================================================
+    NoiseSynth& getNoiseSynth() { return noiseSynth; }
+
     CameraState savedCameraState;
+
+    juce::AudioProcessorValueTreeState apvts {*this,
+                                nullptr,
+                                "Parameters",
+                                                createParameterLayout() };
 
 private:
     NoiseSynth noiseSynth;
+    juce::AudioParameterFloat* globalGainParam{};
+
+    static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
+
+    void valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier&) override { parametersChanged.store(true); }
+    void update();
+    std::atomic<bool> parametersChanged { false };
     //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioPluginAudioProcessor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AnimatedNoiseProcessor)
 };

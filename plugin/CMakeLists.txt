@@ -63,8 +63,8 @@ endif()
 #==================================
 target_sources(AnimatedNoise
         PRIVATE
-        source/PluginEditor.cpp
-        source/PluginProcessor.cpp
+        source/AnimatedNoiseEditor.cpp
+        source/AnimatedNoiseProcessor.cpp
         UI/webGpuWindow.cpp
         UI/ResourceManager.cpp
         UI/Scene.cpp
@@ -92,6 +92,7 @@ target_include_directories(AnimatedNoise
         procedural
         shaders
         dsp
+        utilities
 )
 
 #==================================

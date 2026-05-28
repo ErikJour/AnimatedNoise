@@ -20,6 +20,7 @@ public:
     void startVoice(int note, int velocity);
     void noteOn(int note, int velocity);
     void noteOff(int note);
+    void setGain(float gain);
 
 private:
     double mSampleRate;
