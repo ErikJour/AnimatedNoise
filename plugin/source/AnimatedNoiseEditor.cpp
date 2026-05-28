@@ -55,13 +55,8 @@ void AnimatedNoiseProcessorEditor::timerCallback()
     const double elapsed  = (juce::Time::getMillisecondCounterHiRes() - startTime) * 0.001;
     webGpuWindow.getScene().renderFrame(static_cast<float>(elapsed));
 
-    //Testing automation
-    if (auto* param = processorRef.apvts.getParameter("globalGain"))
-    {
-        const float paramValue = param->getValue(); // already normalized 0-1
-        if (std::abs(paramValue - webGpuWindow.getScene().getSliderValue()) > 0.001f)
-            webGpuWindow.getScene().setSliderValue(paramValue);
-    }
+    syncParameters();
+
 }
 
 void AnimatedNoiseProcessorEditor::setResizeReady()
@@ -151,7 +146,7 @@ void AnimatedNoiseProcessorEditor::updateSliderFromMouse(const int screenY)
     float v = (bottomY - (static_cast<float>(screenY) - mDragOffset)) / (bottomY - topY);
     v = juce::jlimit(0.0f, 1.0f, v);
     webGpuWindow.getScene().setSliderValue(v);
-    //Set apvts param value
+
     if (auto* param = processorRef.apvts.getParameter("globalGain"))
         param->setValueNotifyingHost(v);
 }
@@ -161,4 +156,14 @@ void AnimatedNoiseProcessorEditor::mouseWheelMove(const juce::MouseEvent& e,
 {
     juce::ignoreUnused(e);
     webGpuWindow.getScene().onScroll(wheel.deltaX, wheel.deltaY);
+}
+
+void AnimatedNoiseProcessorEditor::syncParameters()
+{
+    if (const auto* param = processorRef.apvts.getParameter("globalGain"))
+    {
+        const float paramValue = param->getValue(); // already normalized 0-1
+        if (std::abs(paramValue - webGpuWindow.getScene().getSliderValue()) > 0.001f)
+            webGpuWindow.getScene().setSliderValue(paramValue);
+    }
 }

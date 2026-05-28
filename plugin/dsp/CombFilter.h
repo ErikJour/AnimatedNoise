@@ -18,7 +18,7 @@ public:
     void reset(double sampleRate);
     void excite(float frequency);
     void process(float* buffer, int numSamples);
-
+    void setLevel(float level);
 
 private:
     float processSample(float input);
@@ -28,8 +28,10 @@ private:
     float ringBufferMemory[MAX_BUFFER_LENGTH] = {};
     uint32_t ringBufferIndex = { 0 };
 
-    float mDecay      = 0.996f; // controls sustain
+    float mDecay      = 0.996f;
     float mPrevSample = 0.f;
+
+    float mLevel      = 0.0f;
 };
 
 

@@ -4,6 +4,7 @@
 
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
+#include <random>
 
 class NoiseGenerator
 {
@@ -18,6 +19,8 @@ public:
     void setDensity(float newDensity);
     void setSampleRate(float newSampleRate);
     void setNoiseDensityModAmt(const float noiseDensityModAmt) { noiseDensityMod = noiseDensityModAmt; }
+    void process(float* buffer, int numSamples);
+
 
 private:
 

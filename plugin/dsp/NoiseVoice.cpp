@@ -8,19 +8,20 @@ NoiseVoice::NoiseVoice() : mSampleRate(0) { }
 void NoiseVoice::reset(const double sampleRate)
 {
     note = 0;
-    noise.setLevel(0.8f);
+    mNoiseGenerator.setLevel(0.8f);
     mSampleRate = sampleRate;
     mGain.distributeResources(mSampleRate);
-    combFilter.reset(sampleRate);
-    functionGenerator.reset();
+    mCombFilter.reset(sampleRate);
+    mFunctionGenerator.reset();
 }
 
 void NoiseVoice::render(float* buffer, const int sampleCount)
 {
-    functionGenerator.process(buffer, sampleCount);
-    combFilter.process(buffer, sampleCount);
+    // mNoiseGenerator.process(buffer, sampleCount);
+    mCombFilter.process(buffer, sampleCount);
+    // mFunctionGenerator.process(buffer, sampleCount);
     mGain.process(buffer, sampleCount);
 }
 
-void NoiseVoice::release() { functionGenerator.release(); }
+void NoiseVoice::release() { mFunctionGenerator.release(); }
 

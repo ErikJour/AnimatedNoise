@@ -22,8 +22,8 @@ void NoiseSynth::reset(const double sampleRate)
     mSampleRate = sampleRate;
     voice.reset(mSampleRate);
     const float inverseSampleRate = 1.0f / static_cast<float>(mSampleRate);
-    voice.functionGenerator.mAttackMultiplier = std::exp(-inverseSampleRate * std::exp(4.5f - 0.075f * 50.0f));
-    voice.functionGenerator.mReleaseMultiplier = 0.95f;
+    voice.mFunctionGenerator.mAttackMultiplier = std::exp(-inverseSampleRate * std::exp(4.5f - 0.075f * 50.0f));
+    voice.mFunctionGenerator.mReleaseMultiplier = 0.95f;
 }
 
 void NoiseSynth::render(float** outputBuffers, const int sampleCount)
@@ -60,27 +60,25 @@ void NoiseSynth::midiMessages(uint8_t data0, uint8_t data1, uint8_t data2)
 
 void NoiseSynth::startVoice(const int note, const int velocity)
 {
-
     voice.note = note;
-    voice.noise.setAmplitude(static_cast<float>(velocity) / 127.0f);
-    voice.functionGenerator.attack();
-
+    voice.mNoiseGenerator.setAmplitude(static_cast<float>(velocity) / 127.0f);
+    voice.mCombFilter.setLevel(static_cast<float>(velocity) / 127.0f);
+    voice.mFunctionGenerator.attack();
 }
 
 void NoiseSynth::noteOn(const int note, const int velocity)
 {
     startVoice(note, velocity);
     const float frequency = 440.f * std::pow(2.f, (static_cast<float>(note) - 69) / 12.f);
-    voice.combFilter.excite(frequency);
+    voice.mCombFilter.excite(frequency);
 }
 
 void NoiseSynth::noteOff(const int note)
 {
     if (voice.note == note) {
         voice.note = 0;
-        voice.functionGenerator.release();
+        voice.mFunctionGenerator.release();
     }
-
 }
 
 void NoiseSynth::setGain(const float gain)

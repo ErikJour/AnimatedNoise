@@ -21,11 +21,11 @@ class NoiseVoice {
     void render(float* buffer, int sampleCount);
     void release();
 
-    NoiseGenerator noise;
+    NoiseGenerator mNoiseGenerator;
     int note = 0;
     int noiseType = 0;
-    CombFilter combFilter;
-    FunctionGenerator functionGenerator;
+    CombFilter mCombFilter;
+    FunctionGenerator mFunctionGenerator;
     AnimatedGain mGain;
     juce::AudioBuffer<float> mAudioBuffer;
     double mSampleRate;

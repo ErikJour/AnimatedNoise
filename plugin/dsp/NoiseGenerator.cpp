@@ -65,3 +65,9 @@ void NoiseGenerator::setSampleRate(const float newSampleRate)
     densitySmoothed.reset(mSampleRate, 0.05f);
 }
 
+void NoiseGenerator::process(float* buffer, const int numSamples)
+{
+    for (int i = 0; i < numSamples; i++)
+        buffer[i] += getNextSample();
+}
+

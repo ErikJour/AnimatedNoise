@@ -23,7 +23,7 @@ void CombFilter::excite(const float frequency)
 
     // Seed with noise instead of zeros — this IS the pluck
     for (uint32_t i = 0; i < ringBufferLength; i++)
-        ringBufferMemory[i] = (static_cast<float>(rand()) / RAND_MAX) * 2.0f - 1.0f;
+        ringBufferMemory[i] = (static_cast<float>(rand()) / RAND_MAX) * 2.0f - 1.0f;;
 
     ringBufferIndex = 0;
     mPrevSample = 0.f;
@@ -44,12 +44,16 @@ float CombFilter::processSample(const float input)
         ringBufferIndex = 0;
 
     mPrevSample = delayed;
-    return filtered;
+    return filtered * mLevel;
 }
 
 void CombFilter::process(float* buffer, int numSamples)
 {
     for (int i = 0; i < numSamples; i++)
-        buffer[i] = processSample(0.0f);
+        buffer[i] += processSample(0.0f);
 }
+
+void CombFilter::setLevel(float level) { mLevel = juce::jlimit(0.0f, 1.0f, level); }
+
+
 
