@@ -517,7 +517,7 @@ void Scene::initializeBeams()
     YurtBeams::buildBeams(vertices, indices,
      0.95f, -0.15f, 0.15f, 0.75f,
      64,
-     0.025f, 0.005f,
+     0.04f, 0.025f,
      32,
      0.5f);
 
@@ -561,7 +561,7 @@ void Scene::initializeParticles()
     std::vector<ParticleData> particles;
 
     ParticleSystem::buildQuad(quadVerts);
-    ParticleSystem::initParticles(particles, MAX_PARTICLES, 0.35f, 0.013f);
+    ParticleSystem::initParticles(particles, MAX_PARTICLES, 0.35f, 0.01f);
 
     WGPUBufferDescriptor bd{};
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;

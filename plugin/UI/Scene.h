@@ -23,7 +23,7 @@
 struct vec3 { float x,y,z; };
 
 
-static constexpr uint32_t MAX_PARTICLES = 1000;
+static constexpr uint32_t MAX_PARTICLES = 2000;
 #define WGPU_STR(s) WGPUStringView{s, sizeof(s) - 1}
 
 class Scene
