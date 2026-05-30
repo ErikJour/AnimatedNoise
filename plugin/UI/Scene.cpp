@@ -84,6 +84,7 @@ bool Scene::createShader()
         dir + "/lighting.wgsl",
         dir + "/mat_cave.wgsl",
         dir + "/mat_slider.wgsl",
+        dir + "/mat_comb_slider.wgsl",
         dir + "/mat_plane.wgsl",
         dir + "/mat_particle.wgsl",
         dir + "/mat_floor.wgsl",
@@ -114,18 +115,27 @@ bool Scene::createShader()
 
 void Scene::terminate()
 {
-    if (mDepthTextureView)       { wgpuTextureViewRelease(mDepthTextureView); mDepthTextureView = nullptr; }
-    if (mDepthTexture)           { wgpuTextureDestroy(mDepthTexture); wgpuTextureRelease(mDepthTexture); mDepthTexture = nullptr; }
-    if (mSkylightVertexBuffer)   { wgpuBufferRelease(mSkylightVertexBuffer); mSkylightVertexBuffer = nullptr; }
-    if (mSkylightIndexBuffer)    { wgpuBufferRelease(mSkylightIndexBuffer); mSkylightIndexBuffer = nullptr; }
-    if (mBeamsVertexBuffer)      { wgpuBufferRelease(mBeamsVertexBuffer); mBeamsVertexBuffer = nullptr; }
-    if (mBeamsIndexBuffer)       { wgpuBufferRelease(mBeamsIndexBuffer); mBeamsIndexBuffer = nullptr; }
-    if (mFloorVertexBuffer)      { wgpuBufferRelease(mFloorVertexBuffer); mFloorVertexBuffer = nullptr; }
-    if (mFloorIndexBuffer)       { wgpuBufferRelease(mFloorIndexBuffer); mFloorIndexBuffer = nullptr; }
-    if (mBindGroup)              { wgpuBindGroupRelease(mBindGroup); mBindGroup = nullptr; }
-    if (mUniformBuffer)          { wgpuBufferRelease(mUniformBuffer); mUniformBuffer = nullptr; }
-    if (mPipeline)               { wgpuRenderPipelineRelease(mPipeline); mPipeline = nullptr; }
-    if (mSurface)                { wgpuSurfaceUnconfigure(mSurface); wgpuSurfaceRelease(mSurface); mSurface = nullptr; }
+    if (mDepthTextureView)              { wgpuTextureViewRelease(mDepthTextureView); mDepthTextureView = nullptr; }
+    if (mDepthTexture)                  { wgpuTextureDestroy(mDepthTexture); wgpuTextureRelease(mDepthTexture); mDepthTexture = nullptr; }
+    if (mSkylightVertexBuffer)          { wgpuBufferRelease(mSkylightVertexBuffer); mSkylightVertexBuffer = nullptr; }
+    if (mSkylightIndexBuffer)           { wgpuBufferRelease(mSkylightIndexBuffer); mSkylightIndexBuffer = nullptr; }
+    if (mBeamsVertexBuffer)             { wgpuBufferRelease(mBeamsVertexBuffer); mBeamsVertexBuffer = nullptr; }
+    if (mBeamsIndexBuffer)              { wgpuBufferRelease(mBeamsIndexBuffer); mBeamsIndexBuffer = nullptr; }
+    if (mFloorVertexBuffer)             { wgpuBufferRelease(mFloorVertexBuffer); mFloorVertexBuffer = nullptr; }
+    if (mFloorIndexBuffer)              { wgpuBufferRelease(mFloorIndexBuffer); mFloorIndexBuffer = nullptr; }
+    if (mCombAmtSliderVertexBuffer)     { wgpuBufferRelease(mCombAmtSliderVertexBuffer); mCombAmtSliderVertexBuffer = nullptr; }
+    if (mCombAmtSliderIndexBuffer)      { wgpuBufferRelease(mCombAmtSliderIndexBuffer); mCombAmtSliderIndexBuffer = nullptr; }
+    if (mGlobalGainSliderVertexBuffer)  { wgpuBufferRelease(mGlobalGainSliderVertexBuffer); mGlobalGainSliderVertexBuffer = nullptr; }
+    if (mGlobalGainSliderIndexBuffer)   { wgpuBufferRelease(mGlobalGainSliderIndexBuffer); mGlobalGainSliderIndexBuffer = nullptr; }
+    if (mPlaneVertexBuffer)             { wgpuBufferRelease(mPlaneVertexBuffer); mPlaneVertexBuffer = nullptr; }
+    if (mPlaneIndexBuffer)              { wgpuBufferRelease(mPlaneIndexBuffer); mPlaneIndexBuffer = nullptr; }
+    if (mParticleQuadBuffer)            { wgpuBufferRelease(mParticleQuadBuffer); mParticleQuadBuffer = nullptr; }
+    if (mParticleDataBuffer)            { wgpuBufferRelease(mParticleDataBuffer); mParticleDataBuffer = nullptr; }
+    if (mParticlePipeline)              { wgpuRenderPipelineRelease(mParticlePipeline); mParticlePipeline = nullptr; }
+    if (mBindGroup)                     { wgpuBindGroupRelease(mBindGroup); mBindGroup = nullptr; }
+    if (mUniformBuffer)                 { wgpuBufferRelease(mUniformBuffer); mUniformBuffer = nullptr; }
+    if (mPipeline)                      { wgpuRenderPipelineRelease(mPipeline); mPipeline = nullptr; }
+    if (mSurface)                       { wgpuSurfaceUnconfigure(mSurface); wgpuSurfaceRelease(mSurface); mSurface = nullptr; }
 }
 
 void Scene::renderFrame(const float currentTime)
@@ -184,7 +194,7 @@ void Scene::renderFrame(const float currentTime)
         depthStencilAttachment.stencilLoadOp    = WGPULoadOp_Undefined;
         depthStencilAttachment.stencilStoreOp   = WGPUStoreOp_Undefined;
         depthStencilAttachment.stencilReadOnly  = true;
-        renderPassDesc.depthStencilAttachment = &depthStencilAttachment; // was nullptr
+        renderPassDesc.depthStencilAttachment = &depthStencilAttachment;
 
         const WGPURenderPassEncoder renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
         wgpuRenderPassEncoderSetPipeline(renderPass, mPipeline);
@@ -195,7 +205,9 @@ void Scene::renderFrame(const float currentTime)
         //Beams
         setItemBuffers(mBeamsVertexBuffer, mBeamsIndexBuffer, mBeamsIndexCount, MAT_FLOOR, renderPass);
         // Slider
-        setItemBuffers(mSliderVertexBuffer, mSliderIndexBuffer, mSliderIndexCount, MAT_SLIDER, renderPass);
+        setItemBuffers(mGlobalGainSliderVertexBuffer, mGlobalGainSliderIndexBuffer, mGlobalGainSliderIndexCount, MAT_GLOBAL_GAIN_SLIDER, renderPass);
+        setItemBuffers(mCombAmtSliderVertexBuffer, mCombAmtSliderIndexBuffer, mCombAmtSliderIndexCount, MAT_COMB_AMT_SLIDER, renderPass);
+
         //Plane
         setItemBuffers(mPlaneVertexBuffer, mPlaneIndexBuffer, mPlaneIndexCount, MAT_PLANE, renderPass);
         // Particles
@@ -241,13 +253,25 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
 
     updateViewMatrix();
 
-    constexpr uint32_t ids[6] = { MAT_CAVE, MAT_SLIDER, MAT_PLANE, MAT_PARTICLES, MAT_FLOOR, MAT_SKYLIGHT };
+    constexpr uint32_t ids[7] = {
+                                    MAT_CAVE,
+                                    MAT_GLOBAL_GAIN_SLIDER,
+                                    MAT_COMB_AMT_SLIDER,
+                                    MAT_PLANE,
+                                    MAT_PARTICLES,
+                                    MAT_FLOOR,
+                                    MAT_SKYLIGHT
+                                };
 
     std::memcpy(mUniforms.modelMatrix, kIdentity, sizeof(kIdentity));
 
-    for (uint32_t i = 0; i < 6; ++i) {
+    for (uint32_t i = 0; i < 7; ++i) {
         mUniforms.materialId = ids[i];
-        wgpuQueueWriteBuffer(queue, uniformBuffer, ids[i] * mUniformStride, &mUniforms, sizeof(MyUniforms));
+        wgpuQueueWriteBuffer(queue,
+                            uniformBuffer,
+                            ids[i] * mUniformStride,
+                            &mUniforms,
+                            sizeof(MyUniforms));
     }
 }
 
@@ -264,12 +288,12 @@ void Scene::ConfigureVertexLayout()
     // Attribute 2 — Color (location 1)
     mVertexAttribs[2].shaderLocation = 1;
     mVertexAttribs[2].format         = WGPUVertexFormat_Float32x3;
-    mVertexAttribs[2].offset         = 6 * sizeof(float);
+    mVertexAttribs[2].offset         = 6 * sizeof(float);           //Maybe update
 
     mVertexBufferLayouts.resize(1);
     mVertexBufferLayouts[0].attributeCount = 3;
     mVertexBufferLayouts[0].attributes     = mVertexAttribs.data();
-    mVertexBufferLayouts[0].arrayStride    = 9 * sizeof(float);
+    mVertexBufferLayouts[0].arrayStride    = 9 * sizeof(float);     //Maybe update
     mVertexBufferLayouts[0].stepMode       = WGPUVertexStepMode_Vertex;
 
     mPipelineDesc.vertex.bufferCount = 1;
@@ -367,7 +391,18 @@ void Scene::initializeScene()
     initializeFloor();
     initializeSkylight();
     initializeBeams();
-    InitializeSlider();
+    InitializeSlider(mGlobalGainSliderIndexCount,
+                    mGlobalGainSliderVertexBuffer,
+                    mGlobalGainSliderIndexBuffer,
+                    0.9f,
+                    0.0f);
+
+    InitializeSlider(mCombAmtSliderIndexCount,
+                    mCombAmtSliderVertexBuffer,
+                    mCombAmtSliderIndexBuffer,
+                    0.9f,
+                    2.975f);
+
     initializeParticles();
 }
 
@@ -419,7 +454,7 @@ bool Scene::createPipeline()
     }
 
     WGPUBufferDescriptor bufferDesc = {};
-    bufferDesc.size                 = 6 * mUniformStride;  // one slot per material
+    bufferDesc.size                 = 7 * mUniformStride;  // one slot per material
     bufferDesc.usage                = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
     mUniformBuffer                  = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
 
@@ -535,24 +570,24 @@ void Scene::initializeBeams()
     wgpuQueueWriteBuffer(mQueue, mBeamsIndexBuffer, 0, indices.data(), bd.size);
 }
 
-void Scene::InitializeSlider()
+void Scene::InitializeSlider(uint32_t& indexCount, WGPUBuffer& vertexBuffer, WGPUBuffer& indexBuffer, const float wallRadius = 0.9f, const float angle = 0.0f) const
 {
     std::vector<SliderVertex> verts;
     std::vector<SliderIndex>  indices;
-    buildSliderGeometry(verts, indices);
+    buildSliderGeometry(verts, indices, wallRadius, angle);
 
-    mSliderIndexCount = static_cast<uint32_t>(indices.size());
+    indexCount = static_cast<uint32_t>(indices.size());
 
     WGPUBufferDescriptor bd{};
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
     bd.size = verts.size() * sizeof(SliderVertex);
-    mSliderVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-    wgpuQueueWriteBuffer(mQueue, mSliderVertexBuffer, 0, verts.data(), bd.size);
+    vertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, vertexBuffer, 0, verts.data(), bd.size);
 
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
     bd.size  = (indices.size() * sizeof(SliderIndex) + 3) & ~3ULL;
-    mSliderIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-    wgpuQueueWriteBuffer(mQueue, mSliderIndexBuffer, 0, indices.data(), bd.size);
+    indexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, indexBuffer, 0, indices.data(), bd.size);
 }
 
 void Scene::initializeParticles()

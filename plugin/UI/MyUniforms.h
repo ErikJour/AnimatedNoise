@@ -3,12 +3,13 @@
 #include <cstdint>
 
 // Must match common.wgsl
-static constexpr uint32_t MAT_CAVE             = 0;
-static constexpr uint32_t MAT_SLIDER           = 1;
-static constexpr uint32_t MAT_PLANE            = 2;
-static constexpr uint32_t MAT_PARTICLES        = 3;
-static constexpr uint32_t MAT_FLOOR            = 4;
-static constexpr uint32_t MAT_SKYLIGHT         = 5;
+static constexpr uint32_t MAT_CAVE                = 0;
+static constexpr uint32_t MAT_GLOBAL_GAIN_SLIDER  = 1;
+static constexpr uint32_t MAT_COMB_AMT_SLIDER     = 2;
+static constexpr uint32_t MAT_PLANE               = 3;
+static constexpr uint32_t MAT_PARTICLES           = 4;
+static constexpr uint32_t MAT_FLOOR               = 5;
+static constexpr uint32_t MAT_SKYLIGHT            = 6;
 
 struct MyUniforms {
     float    time;          // offset 0

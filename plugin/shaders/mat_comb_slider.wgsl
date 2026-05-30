@@ -1,17 +1,17 @@
-const PANEL_ASPECT : f32 = 0.22;
-const TRACK_HALF_W : f32 = 0.04;
+//const PANEL_ASPECT_TWO : f32 = 0.22;
+//const TRACK_HALF_W_TWO : f32 = 0.04;
 
 //===============================
 //Vertex
 //===============================
-fn vsGainSlider(pos: ptr<function, vec3f>, color: vec3f) -> vec4f {
+fn vsCombSlider(pos: ptr<function, vec3f>, color: vec3f) -> vec4f {
     return u.viewProjMatrix * vec4f(*pos, 1.0);
 }
 
 //===============================
 //Fragment
 //===============================
-fn shadeGainSlider(in: VertexOutput) -> vec4f {
+fn shadeCombSlider(in: VertexOutput) -> vec4f {
     let uv = in.color.xy;
 
     //===============================
@@ -47,7 +47,7 @@ fn shadeGainSlider(in: VertexOutput) -> vec4f {
     // Moss green for the empty channel
     let groove   = vec3f(0.06, 0.12, 0.08);
     // Teal for the filled fluid
-    let filledC  = vec3f(0.15, 0.65, 0.55) * 0.9;
+    let filledC  = vec3f(0.35, 0.25, 0.85) * 0.9;
     // Base color
     var base = select(groove, filledC, filled);
     // Interior glow

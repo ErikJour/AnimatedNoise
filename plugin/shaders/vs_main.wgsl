@@ -14,12 +14,13 @@ fn vs_main(in: VertexInput) -> VertexOutput {
     var pos = in.position;
 
     switch u.materialId {
-        case MAT_CAVE:             { out.clipPos = vsCave(pos);             }
-        case MAT_SLIDER:           { out.clipPos = vsSlider(&pos, in.color); }
-        case MAT_PLANE:            { out.clipPos = vsPlane(&pos);           }
-        case MAT_FLOOR:            {out.clipPos  = vsFloor(&pos);            }
-        case MAT_SKYLIGHT:         {out.clipPos  = vsSkylight(&pos);            }
-        default:                   { out.clipPos = projectPerspective(pos); }
+        case MAT_CAVE:                    { out.clipPos  = vsCave(pos);                  }
+        case MAT_GLOBAL_GAIN_SLIDER:      { out.clipPos  = vsGainSlider(&pos, in.color); }
+        case MAT_COMB_AMT_SLIDER:         { out.clipPos  = vsCombSlider(&pos, in.color); }
+        case MAT_PLANE:                   { out.clipPos  = vsPlane(&pos);                }
+        case MAT_FLOOR:                   { out.clipPos  = vsFloor(&pos);                }
+        case MAT_SKYLIGHT:                { out.clipPos  = vsSkylight(&pos);             }
+        default:                          { out.clipPos  = projectPerspective(pos);      }
     }
 
     out.color    = in.color;

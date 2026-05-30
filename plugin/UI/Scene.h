@@ -50,7 +50,7 @@ class Scene
         void initializeSkylight();
         void initializeBeams();
 
-        void InitializeSlider();
+        void InitializeSlider(uint32_t& indexCount, WGPUBuffer& vertexBuffer, WGPUBuffer& indexBuffer, float wallRadius, float angle) const;
         void initializeParticles();
         void setSliderValue(float value);
         void initializePlane();
@@ -138,10 +138,17 @@ class Scene
         WGPUFragmentState                   mFragmentState = {};
         WGPUBlendState                      mBlendState = {};
         MyUniforms                          mUniforms = {};
-        //Slider
-        WGPUBuffer                          mSliderVertexBuffer = nullptr;
-        WGPUBuffer                          mSliderIndexBuffer  = nullptr;
-        uint32_t                            mSliderIndexCount   = 0;
+
+        //Gain Slider
+        WGPUBuffer                          mGlobalGainSliderVertexBuffer = nullptr;
+        WGPUBuffer                          mGlobalGainSliderIndexBuffer  = nullptr;
+        uint32_t                            mGlobalGainSliderIndexCount   = 0;
+
+        //Comb Amount Slider
+        WGPUBuffer                          mCombAmtSliderVertexBuffer = nullptr;
+        WGPUBuffer                          mCombAmtSliderIndexBuffer  = nullptr;
+        uint32_t                            mCombAmtSliderIndexCount   = 0;
+
         float                               mSliderValue     = 0.5f;
         float                               mSliderPos[3]   = { 0.5f, 0.0f, 0.2f };
         static constexpr float kSpineMinY      = -0.15f;
@@ -168,12 +175,12 @@ class Scene
         WGPUBuffer  mParticleDataBuffer  = nullptr;
         uint32_t    mParticleCount    = 0;
         // Particle Pipeline
-        WGPURenderPipeline           mParticlePipeline     = nullptr;
-        WGPURenderPipelineDescriptor mParticlePipelineDesc {};
+        WGPURenderPipeline                      mParticlePipeline     = nullptr;
+        WGPURenderPipelineDescriptor            mParticlePipelineDesc {};
         std::array<WGPUVertexAttribute, 5>      mParticleVertexAttribs {};
         std::vector<WGPUVertexBufferLayout>     mParticleVertexBufferLayouts;
-        WGPUFragmentState             mParticleFragmentState     {};   // ← needed for fs_particle
-        uint32_t                        mParticleDrawCount = 500;        // current visible count
+        WGPUFragmentState                       mParticleFragmentState     {};   // ← needed for fs_particle
+        uint32_t                                mParticleDrawCount = 500;        // current visible count
 
         //Camera
         CameraState mCameraState;
