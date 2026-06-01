@@ -73,12 +73,12 @@ class Scene
         CameraState getCameraState() const { return mCameraState; }
         void setCameraState(const CameraState& s) { mCameraState = s; updateViewMatrix(); }
 
-        void projectSliderBounds(float screenW, float screenH,
-                         float& outCenterX, float& outTopY, float& outBottomY) const
+        void projectSliderBounds(const float screenW, const float screenH,
+                         float& outCenterX, float& outTopY, float& outBottomY, const float angle) const
         {
             // Constants must match buildSliderGeometry
-            constexpr float wx = 0.93f;   // wallRadius * cos(centerAngle=0)
-            constexpr float wz = 0.0f;    // wallRadius * sin(centerAngle=0)
+            const float wx = 0.9f * std::cos(angle);   // wallRadius * cos(centerAngle=0)
+            const float wz = 0.9f * std::sin(angle);    // wallRadius * sin(centerAngle=0)
             constexpr float yTop    =  0.25f;
             constexpr float yBottom = -0.15f;
             constexpr float yMid    = (yTop + yBottom) * 0.5f;

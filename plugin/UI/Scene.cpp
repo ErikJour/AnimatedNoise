@@ -570,7 +570,7 @@ void Scene::initializeBeams()
     wgpuQueueWriteBuffer(mQueue, mBeamsIndexBuffer, 0, indices.data(), bd.size);
 }
 
-void Scene::InitializeSlider(uint32_t& indexCount, WGPUBuffer& vertexBuffer, WGPUBuffer& indexBuffer, const float wallRadius = 0.9f, const float angle = 0.0f) const
+void Scene::InitializeSlider(uint32_t& indexCount, WGPUBuffer& vertexBuffer, WGPUBuffer& indexBuffer, const float wallRadius = 0.9f, const float angle = 2.975f) const
 {
     std::vector<SliderVertex> verts;
     std::vector<SliderIndex>  indices;

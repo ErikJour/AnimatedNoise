@@ -76,15 +76,21 @@ void AnimatedNoiseProcessorEditor::resized()
 //==============================================================================
 void AnimatedNoiseProcessorEditor::mouseDown(const juce::MouseEvent& e)
 {
-    const float w = static_cast<float>(getWidth());
-    const float h = static_cast<float>(getHeight());
+    const auto screenWidth = static_cast<float>(getWidth());
+    const auto screenHeight = static_cast<float>(getHeight());
 
-    float centerX, topY, bottomY;
-    webGpuWindow.getScene().projectSliderBounds(w, h, centerX, topY, bottomY);
+    float centerX, topY, bottomY, angle = 2.975f;
+
+    webGpuWindow.getScene().projectSliderBounds(screenWidth,
+                                                screenHeight,
+                                                centerX,
+                                                topY,
+                                                bottomY,
+                                                angle);
 
     constexpr float kHitRadiusX = 24.0f;
-    const float     ey          = static_cast<float>(e.y);
-    const float     ex          = static_cast<float>(e.x);
+    const auto     ey          = static_cast<float>(e.y);
+    const auto     ex          = static_cast<float>(e.x);
 
     if (ey >= topY && ey <= bottomY && std::abs(ex - centerX) <= kHitRadiusX)
     {
@@ -140,8 +146,8 @@ void AnimatedNoiseProcessorEditor::updateSliderFromMouse(const int screenY)
     const float w = static_cast<float>(getWidth());
     const float h = static_cast<float>(getHeight());
 
-    float centerX, topY, bottomY;
-    webGpuWindow.getScene().projectSliderBounds(w, h, centerX, topY, bottomY);
+    float centerX, topY, bottomY, angle = 2.975f;
+    webGpuWindow.getScene().projectSliderBounds(w, h, centerX, topY, bottomY, angle);
 
     float v = (bottomY - (static_cast<float>(screenY) - mDragOffset)) / (bottomY - topY);
     v = juce::jlimit(0.0f, 1.0f, v);
