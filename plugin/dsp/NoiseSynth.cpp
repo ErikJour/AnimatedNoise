@@ -62,8 +62,9 @@ void NoiseSynth::startVoice(const int note, const int velocity)
 {
     voice.note = note;
     voice.mNoiseGenerator.setAmplitude(static_cast<float>(velocity) / 127.0f);
-    voice.mCombFilter.setLevel(static_cast<float>(velocity) / 127.0f);
     voice.mFunctionGenerator.attack();
+    voice.mCombFilter.setAmplitude(static_cast<float>(velocity) / 127.0f);
+
 }
 
 void NoiseSynth::noteOn(const int note, const int velocity)
@@ -81,9 +82,14 @@ void NoiseSynth::noteOff(const int note)
     }
 }
 
-void NoiseSynth::setGain(const float gain)
+void NoiseSynth::setNoiseLevel(const float level)
 {
-    voice.mGain.setGain(gain);
+    voice.mNoiseGenerator.setLevel(level);
+}
+
+void NoiseSynth::setCombLevel(const float level)
+{
+    voice.mCombFilter.setLevel(level);
 }
 
 

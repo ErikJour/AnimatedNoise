@@ -13,13 +13,14 @@ AnimatedNoiseProcessor::AnimatedNoiseProcessor()
                        )
 {
     apvts.state.addListener(this);
-    castParameter(apvts, ParameterID::globalGain, globalGainParam);
+    castParameter(apvts, ParameterID::noiseLevel, noiseLevelParam);
+    castParameter(apvts, ParameterID::combLevel, combLevelParam);
+
 }
 
 AnimatedNoiseProcessor::~AnimatedNoiseProcessor()
 {
     apvts.state.removeListener(this);
-
 }
 
 //==============================================================================
@@ -210,9 +211,21 @@ void AnimatedNoiseProcessor::setStateInformation (const void* data, int sizeInBy
 juce::AudioProcessorValueTreeState::ParameterLayout AnimatedNoiseProcessor::createParameterLayout()
 {
     juce::AudioProcessorValueTreeState::ParameterLayout paramLayout;
+
+    //==========================================================
+    //Global Gain
+    //==========================================================
     paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
-        ParameterID::globalGain,
+        ParameterID::noiseLevel,
         "Global Gain",
+        juce::NormalisableRange<float>{ 0.0f, 1.0f, 0.01f, 1.0f },
+        0.5f));
+    //==========================================================
+    //Comb Level
+    //==========================================================
+    paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
+        ParameterID::combLevel,
+        "Comb Level",
         juce::NormalisableRange<float>{ 0.0f, 1.0f, 0.01f, 1.0f },
         0.5f));
 
@@ -224,8 +237,13 @@ void AnimatedNoiseProcessor::update()
     //=======================================
     //Global Gain
     //=======================================
-    const float globalGain = globalGainParam->get();
-    noiseSynth.setGain(globalGain);
+    const float noiseLevel = noiseLevelParam->get();
+    noiseSynth.setNoiseLevel(noiseLevel);
+    //=======================================
+    //Comb Level
+    //=======================================
+    const float combLevel = combLevelParam->get();
+    noiseSynth.setCombLevel(combLevel);
 }
 
 //==============================================================================

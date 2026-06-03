@@ -18,7 +18,10 @@ public:
     void reset(double sampleRate);
     void excite(float frequency);
     void process(float* buffer, int numSamples);
-    void setLevel(float level);
+    void setLevel(float newCombLevel);
+    void setAmplitude(const float newAmplitude) { mAmplitude = newAmplitude; }
+
+
 
 private:
     float processSample(float input);
@@ -27,11 +30,10 @@ private:
     uint32_t ringBufferLength = { 0 };
     float ringBufferMemory[MAX_BUFFER_LENGTH] = {};
     uint32_t ringBufferIndex = { 0 };
-
+    juce::SmoothedValue<float> levelSmoothed;
     float mDecay      = 0.996f;
     float mPrevSample = 0.f;
-
-    float mLevel      = 0.0f;
+    float mAmplitude = 0.0f;
 };
 
 

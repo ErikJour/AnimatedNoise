@@ -63,7 +63,8 @@ public:
 
 private:
     NoiseSynth noiseSynth;
-    juce::AudioParameterFloat* globalGainParam{};
+    juce::AudioParameterFloat* noiseLevelParam{};
+    juce::AudioParameterFloat* combLevelParam{};
 
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 

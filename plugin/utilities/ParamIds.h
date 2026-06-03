@@ -11,7 +11,8 @@ namespace ParameterID
 {
 #define PARAMETER_ID(str) const juce::ParameterID str(#str, 1);
 
-    PARAMETER_ID(globalGain)
+    PARAMETER_ID(noiseLevel)
+    PARAMETER_ID(combLevel)
 
 #undef PARAMETER_ID
 

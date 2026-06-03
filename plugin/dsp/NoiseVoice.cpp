@@ -17,9 +17,9 @@ void NoiseVoice::reset(const double sampleRate)
 
 void NoiseVoice::render(float* buffer, const int sampleCount)
 {
-    // mNoiseGenerator.process(buffer, sampleCount);
+    mNoiseGenerator.process(buffer, sampleCount);
     mCombFilter.process(buffer, sampleCount);
-    // mFunctionGenerator.process(buffer, sampleCount);
+    mFunctionGenerator.process(buffer, sampleCount);
     mGain.process(buffer, sampleCount);
 }
 

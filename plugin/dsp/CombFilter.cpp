@@ -9,6 +9,8 @@ CombFilter::CombFilter()
 {
     mSampleRate = 44100;
     mDecay = 0.99f;
+    levelSmoothed.reset(mSampleRate, 0.02f);
+
 }
 
 CombFilter::~CombFilter() = default;
@@ -31,6 +33,8 @@ void CombFilter::excite(const float frequency)
 
 float CombFilter::processSample(const float input)
 {
+    const float combLevel = levelSmoothed.getNextValue();
+
     const float delayed  = ringBufferMemory[ringBufferIndex];
     const float filtered = 0.7f * delayed + 0.3f * mPrevSample;
 
@@ -44,7 +48,7 @@ float CombFilter::processSample(const float input)
         ringBufferIndex = 0;
 
     mPrevSample = delayed;
-    return filtered * mLevel;
+    return filtered * combLevel * mAmplitude;
 }
 
 void CombFilter::process(float* buffer, int numSamples)
@@ -53,7 +57,10 @@ void CombFilter::process(float* buffer, int numSamples)
         buffer[i] += processSample(0.0f);
 }
 
-void CombFilter::setLevel(float level) { mLevel = juce::jlimit(0.0f, 1.0f, level); }
+void CombFilter::setLevel(const float newCombLevel)
+{
+    levelSmoothed.setTargetValue(newCombLevel);
+}
 
 
 

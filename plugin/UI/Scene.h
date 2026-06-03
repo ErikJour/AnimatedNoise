@@ -52,9 +52,9 @@ class Scene
 
         void InitializeSlider(uint32_t& indexCount, WGPUBuffer& vertexBuffer, WGPUBuffer& indexBuffer, float wallRadius, float angle) const;
         void initializeParticles();
-        void setSliderValue(float value);
+        void setSliderValue(int index, float value);
         void initializePlane();
-        float getSliderValue() const { return mSliderValue; }
+        float getSliderValue(const int index) const { return mSliderValues[index]; }
         float sliderTopFraction()       const { return (1.0f - (kSpineMaxY + mSliderPos[1])) * 0.5f; }
         float sliderBottomFraction()    const { return (1.0f - (kSpineMinY + mSliderPos[1])) * 0.5f; }
         float sliderXFraction()         const { return (mSliderPos[0] + 1.0f) * 0.5f; }
@@ -149,8 +149,9 @@ class Scene
         WGPUBuffer                          mCombAmtSliderIndexBuffer  = nullptr;
         uint32_t                            mCombAmtSliderIndexCount   = 0;
 
-        float                               mSliderValue     = 0.5f;
-        float                               mSliderPos[3]   = { 0.5f, 0.0f, 0.2f };
+        float                   mSliderValues[2] = { 0.0f, 0.0f };
+
+        float                  mSliderPos[3]   = { 0.5f, 0.0f, 0.2f };
         static constexpr float kSpineMinY      = -0.15f;
         static constexpr float kSpineMaxY      =  0.25f;
         static constexpr float kIndicatorHalfY =  0.025f;

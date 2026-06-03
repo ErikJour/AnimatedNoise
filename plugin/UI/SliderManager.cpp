@@ -4,16 +4,20 @@
 
 #include "SliderManager.h"
 
-constexpr float kSlotAngles[] = { 0.0f, 2.975f, 5.32f };
+struct SliderDefinition {
+    const char* paramId;
+    float       angle;
+};
 
-void SliderManager::initializeSlider(const char* paramId)
+constexpr SliderDefinition kSliderDefinitions[] = {
+    { "noiseLevel", 0.0f   },
+    { "combLevel",   2.975f }
+};
+
+void SliderManager::initializeSliders()
 {
-    const int index = static_cast<int>(mSliders.size());
-    const float angle = kSlotAngles[index];
-
-    jassert(index < static_cast<int>(std::size(kSlotAngles)));
-
-    mSliders.push_back(AnimatedSlider{ angle, paramId, 0.0f });
+    for (const auto& def : kSliderDefinitions)
+        mSliders.push_back(AnimatedSlider{ def.angle, def.paramId, 0.0f });
 }
 
 bool SliderManager::handleMouseDown(const juce::MouseEvent& event, const int width, const int height)
@@ -45,7 +49,7 @@ bool SliderManager::handleMouseDown(const juce::MouseEvent& event, const int wid
             float v = (bottomY - (ey - mDragOffset)) / (bottomY - topY);
             v = juce::jlimit(0.0f, 1.0f, v);
             mSliders[static_cast<size_t>(i)].value = v;
-            mScene.setSliderValue(v);
+            mScene.setSliderValue(mActiveSlider, v);
 
             if (auto* param = mApvts.getParameter(mSliders[i].paramID))
                 param->setValueNotifyingHost(v);
@@ -70,7 +74,7 @@ bool SliderManager::handleMouseDrag(const juce::MouseEvent& event, const int wid
     float v = (bottomY - (static_cast<float>(event.y) - mDragOffset)) / (bottomY - topY);
     v = juce::jlimit(0.0f, 1.0f, v);
     slider.value = v;
-    mScene.setSliderValue(v);
+    mScene.setSliderValue(mActiveSlider, v);
 
     if (auto* param = mApvts.getParameter(slider.paramID))
         param->setValueNotifyingHost(v);
@@ -87,15 +91,16 @@ bool SliderManager::handleMouseUp()
 
 void SliderManager::syncFromApvts()
 {
-    for (auto& slider : mSliders)
+    for (size_t i = 0; i < mSliders.size(); ++i)
     {
+        auto& slider = mSliders[i];
         if (const auto* param = mApvts.getParameter(slider.paramID))
         {
             const float v = param->getValue();
             if (std::abs(v - slider.value) > 0.001f)
             {
                 slider.value = v;
-                mScene.setSliderValue(v);
+                mScene.setSliderValue(static_cast<int>(i), v);
             }
         }
     }

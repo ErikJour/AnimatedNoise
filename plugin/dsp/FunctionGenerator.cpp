@@ -10,7 +10,7 @@ FunctionGenerator::FunctionGenerator() : mLevel(0.0f), mAttackMultiplier(0.99f),
 {
 }
 
-FunctionGenerator::~FunctionGenerator() {}
+FunctionGenerator::~FunctionGenerator() = default;
 
 void FunctionGenerator::reset()
 {

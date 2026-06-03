@@ -16,7 +16,7 @@ class SliderManager
         explicit SliderManager(Scene& scene, juce::AudioProcessorValueTreeState& apvts) : mScene(scene), mApvts(apvts) {}
         ~SliderManager() = default;
 
-        void initializeSlider(const char* paramId);
+        void initializeSliders();
         bool handleMouseDown(const juce::MouseEvent& event, int width, int height);
         bool handleMouseDrag(const juce::MouseEvent& event, int width, int height);
         bool handleMouseUp();

@@ -12,8 +12,6 @@ AnimatedNoiseProcessorEditor::AnimatedNoiseProcessorEditor (AnimatedNoiseProcess
     setSize(initWidth, initHeight);
 
     webGpuWindow.initialize();
-
-    mSliderManager.initializeSlider("globalGain");
 }
 
 AnimatedNoiseProcessorEditor::~AnimatedNoiseProcessorEditor()
@@ -36,6 +34,7 @@ void AnimatedNoiseProcessorEditor::parentHierarchyChanged()
             mConfiguredW = width;
             mConfiguredH = height;
             webGpuWindow.getScene().setCameraState(processorRef.savedCameraState);
+            mSliderManager.initializeSliders();
             startTimerHz(60);
             juce::MessageManager::callAsync([this]() {
                 setResizable(true, true);
