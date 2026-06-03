@@ -69,7 +69,6 @@ class Scene
         void onMouseButton(int button, bool isPressed, float xpos, float ypos);
         void onMouseMove(float xpos, float ypos);
         void onScroll(float deltaX, float deltaY);
-        //Camera Experiment
         CameraState getCameraState() const { return mCameraState; }
         void setCameraState(const CameraState& s) { mCameraState = s; updateViewMatrix(); }
 
@@ -83,7 +82,11 @@ class Scene
             constexpr float yBottom = -0.15f;
             constexpr float yMid    = (yTop + yBottom) * 0.5f;
 
-            auto project = [&](float x, float y, float z, float& sx, float& sy)
+            auto project = [&](const float x,
+                                const float y,
+                                const float z,
+                                float& sx,
+                                float& sy)
             {
                 const float* m = mUniforms.viewProjMatrix;
                 const float cx = m[0]*x + m[4]*y + m[8]*z  + m[12];
@@ -98,9 +101,6 @@ class Scene
             project(wx, yTop,    wz, dummy,      outTopY);
             project(wx, yBottom, wz, dummy,      outBottomY);
         }
-
-
-
 
     private:
         void setItemBuffers(WGPUBuffer vertexBuffer, WGPUBuffer indexBuffer, uint32_t indexCount, uint32_t material, WGPURenderPassEncoder renderPass) const

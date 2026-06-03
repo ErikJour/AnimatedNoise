@@ -81,7 +81,6 @@ private:
     WGPUColorTargetState           mColorTarget = {};
     WGPUDepthStencilState          depthStencilState = {};
 
-
     Scene mScene;
 
 };

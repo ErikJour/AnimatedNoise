@@ -4,8 +4,10 @@
 #include "AnimatedNoiseProcessor.h"
 #include "utilityHelper.h"
 #include "webGpuWindow.h"
+#include "SliderManager.h"
 #include "Scene.h"
 
+constexpr float sliderAngles[] = { 0.0f, 2.975f };
 //==============================================================================
 class AnimatedNoiseProcessorEditor final : public juce::AudioProcessorEditor,
                                               private juce::Timer
@@ -19,7 +21,6 @@ public:
     void mouseDown   (const juce::MouseEvent& e) override;
     void mouseDrag   (const juce::MouseEvent& e) override;
     void mouseUp     (const juce::MouseEvent& e) override;
-    void updateSliderFromMouse(int screenY);
     void paint(juce::Graphics&) override {}
 private:
     void parentHierarchyChanged() override;
@@ -34,6 +35,8 @@ private:
     WebGpuWindow webGpuWindow;
     bool  mDragging    = false;
     float mDragOffset  = 0.0f;
+    int mActiveSlider = 0;
+
     bool timerReady = false;
     bool     mResizePending = false;
     uint32_t mPendingW    = 0;
@@ -45,6 +48,9 @@ private:
     bool  mCameraDragging = false;
     float mLastMouseX     = 0.0f;
     float mLastMouseY     = 0.0f;
+
+    //Sliders
+    SliderManager mSliderManager;
 
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AnimatedNoiseProcessorEditor)

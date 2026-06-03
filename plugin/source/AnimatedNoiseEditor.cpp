@@ -3,11 +3,17 @@
 
 //==============================================================================
 AnimatedNoiseProcessorEditor::AnimatedNoiseProcessorEditor (AnimatedNoiseProcessor& p)
-    : AudioProcessorEditor (&p), processorRef (p)
+    : AudioProcessorEditor(&p), processorRef(p), mSliderManager(webGpuWindow.getScene(), processorRef.apvts)
 {
-    juce::ignoreUnused (processorRef);
-    setSize (800, 450);
+    juce::ignoreUnused(processorRef);
+    constexpr int initWidth = 800;
+    constexpr int initHeight = 450;
+
+    setSize(initWidth, initHeight);
+
     webGpuWindow.initialize();
+
+    mSliderManager.initializeSlider("globalGain");
 }
 
 AnimatedNoiseProcessorEditor::~AnimatedNoiseProcessorEditor()
@@ -33,7 +39,10 @@ void AnimatedNoiseProcessorEditor::parentHierarchyChanged()
             startTimerHz(60);
             juce::MessageManager::callAsync([this]() {
                 setResizable(true, true);
-                setResizeLimits(200, 113, 3200, 1800);
+                setResizeLimits(200,
+                                113,
+                                3200,
+                                1800);
                 getConstrainer()->setFixedAspectRatio(800.0 / 450.0);
             });
         }
@@ -74,63 +83,38 @@ void AnimatedNoiseProcessorEditor::resized()
 }
 
 //==============================================================================
-void AnimatedNoiseProcessorEditor::mouseDown(const juce::MouseEvent& e)
+void AnimatedNoiseProcessorEditor::mouseDown(const juce::MouseEvent& event)
 {
-    const auto screenWidth = static_cast<float>(getWidth());
-    const auto screenHeight = static_cast<float>(getHeight());
-
-    float centerX, topY, bottomY, angle = 2.975f;
-
-    webGpuWindow.getScene().projectSliderBounds(screenWidth,
-                                                screenHeight,
-                                                centerX,
-                                                topY,
-                                                bottomY,
-                                                angle);
-
-    constexpr float kHitRadiusX = 24.0f;
-    const auto     ey          = static_cast<float>(e.y);
-    const auto     ex          = static_cast<float>(e.x);
-
-    if (ey >= topY && ey <= bottomY && std::abs(ex - centerX) <= kHitRadiusX)
-    {
-        const float indicatorY = bottomY - webGpuWindow.getScene().getSliderValue()
-                                           * (bottomY - topY);
-        mDragOffset = ey - indicatorY;
-        mDragging   = true;
-        updateSliderFromMouse(e.y);
-    }
-    else
+    if (!mSliderManager.handleMouseDown(event, getWidth(), getHeight()))
     {
         mCameraDragging = true;
-        mLastMouseX     = ex;
-        mLastMouseY     = ey;
-        webGpuWindow.getScene().onMouseButton(0, true, ex, ey);
+        mLastMouseX     = static_cast<float>(event.x);
+        mLastMouseY     = static_cast<float>(event.y);
+        webGpuWindow.getScene().onMouseButton(0,
+                                    true,
+                                        static_cast<float>(event.x),
+                                        static_cast<float>(event.y));
     }
 }
 
-void AnimatedNoiseProcessorEditor::mouseDrag(const juce::MouseEvent& e)
+void AnimatedNoiseProcessorEditor::mouseDrag(const juce::MouseEvent& event)
 {
-    if (mDragging)
+    if (!mSliderManager.handleMouseDrag(event, getWidth(), getHeight()))
     {
-        updateSliderFromMouse(e.y);
-        return;
-    }
-
-    if (mCameraDragging)
-    {
-        const auto x = static_cast<float>(e.x);
-        const auto y = static_cast<float>(e.y);
-        webGpuWindow.getScene().onMouseMove(x, y);
-        mLastMouseX = x;
-        mLastMouseY = y;
+        if (mCameraDragging)
+        {
+            const auto x = static_cast<float>(event.x);
+            const auto y = static_cast<float>(event.y);
+            webGpuWindow.getScene().onMouseMove(x, y);
+            mLastMouseX = x;
+            mLastMouseY = y;
+        }
     }
 }
 
 void AnimatedNoiseProcessorEditor::mouseUp(const juce::MouseEvent& e)
 {
-    mDragging       = false;
-    mDragOffset     = 0.0f;
+    mSliderManager.handleMouseUp();
 
     if (mCameraDragging)
     {
@@ -139,22 +123,6 @@ void AnimatedNoiseProcessorEditor::mouseUp(const juce::MouseEvent& e)
                                       static_cast<float>(e.y));
         mCameraDragging = false;
     }
-}
-
-void AnimatedNoiseProcessorEditor::updateSliderFromMouse(const int screenY)
-{
-    const float w = static_cast<float>(getWidth());
-    const float h = static_cast<float>(getHeight());
-
-    float centerX, topY, bottomY, angle = 2.975f;
-    webGpuWindow.getScene().projectSliderBounds(w, h, centerX, topY, bottomY, angle);
-
-    float v = (bottomY - (static_cast<float>(screenY) - mDragOffset)) / (bottomY - topY);
-    v = juce::jlimit(0.0f, 1.0f, v);
-    webGpuWindow.getScene().setSliderValue(v);
-
-    if (auto* param = processorRef.apvts.getParameter("globalGain"))
-        param->setValueNotifyingHost(v);
 }
 
 void AnimatedNoiseProcessorEditor::mouseWheelMove(const juce::MouseEvent& e,
@@ -166,10 +134,5 @@ void AnimatedNoiseProcessorEditor::mouseWheelMove(const juce::MouseEvent& e,
 
 void AnimatedNoiseProcessorEditor::syncParameters()
 {
-    if (const auto* param = processorRef.apvts.getParameter("globalGain"))
-    {
-        const float paramValue = param->getValue(); // already normalized 0-1
-        if (std::abs(paramValue - webGpuWindow.getScene().getSliderValue()) > 0.001f)
-            webGpuWindow.getScene().setSliderValue(paramValue);
-    }
+    mSliderManager.syncFromApvts();
 }

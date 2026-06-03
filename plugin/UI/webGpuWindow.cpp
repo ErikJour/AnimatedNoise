@@ -16,8 +16,8 @@ void WebGpuWindow::setWindowColor()
 
 bool WebGpuWindow::createInstance()
 {
-    WGPUInstanceDescriptor descriptor = {};
-    descriptor.nextInChain            = nullptr;
+    WGPUInstanceDescriptor descriptor = {}; //The descriptor
+    descriptor.nextInChain            = nullptr; //For custom extensions, usually nullptr
     WGPUDawnTogglesDescriptor toggles = {};
     toggles.chain.next                = nullptr;
     toggles.chain.sType               = WGPUSType_DawnTogglesDescriptor;
@@ -27,7 +27,7 @@ bool WebGpuWindow::createInstance()
     toggles.enabledToggles            = &toggleName;
     descriptor.nextInChain            = &toggles.chain;
 
-    mInstance                         = wgpuCreateInstance(&descriptor);
+    mInstance                         = wgpuCreateInstance(&descriptor); //The instance
 
     if (!mInstance) {
         std::cerr << "Failed to create WGPUInstance." << std::endl;

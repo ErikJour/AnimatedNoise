@@ -68,6 +68,7 @@ target_sources(AnimatedNoise
         UI/webGpuWindow.cpp
         UI/ResourceManager.cpp
         UI/Scene.cpp
+        UI/SliderManager.cpp
         dsp/NoiseSynth.cpp
         dsp/NoiseGenerator.cpp
         dsp/CombFilter.cpp
