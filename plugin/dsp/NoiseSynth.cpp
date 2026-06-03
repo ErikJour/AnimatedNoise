@@ -22,8 +22,9 @@ void NoiseSynth::reset(const double sampleRate)
     mSampleRate = sampleRate;
     voice.reset(mSampleRate);
     const float inverseSampleRate = 1.0f / static_cast<float>(mSampleRate);
-    voice.mFunctionGenerator.mAttackMultiplier = std::exp(-inverseSampleRate * std::exp(4.5f - 0.075f * 50.0f));
-    voice.mFunctionGenerator.mReleaseMultiplier = 0.95f;
+    voice.mFunctionGenerator.mAttackMultiplier  = std::exp(-inverseSampleRate * std::exp(4.5f - 0.075f * 50.0f));
+    voice.mFunctionGenerator.mReleaseMultiplier = std::exp(-inverseSampleRate / 1.5f); // 1.5 second release
+
 }
 
 void NoiseSynth::render(float** outputBuffers, const int sampleCount)
