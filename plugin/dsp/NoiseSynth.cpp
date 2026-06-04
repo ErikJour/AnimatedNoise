@@ -65,6 +65,8 @@ void NoiseSynth::startVoice(const int note, const int velocity)
     voice.mNoiseGenerator.setAmplitude(static_cast<float>(velocity) / 127.0f);
     voice.mFunctionGenerator.attack();
     voice.mCombFilter.setAmplitude(static_cast<float>(velocity) / 127.0f);
+    voice.rfSmoothed = 1e3f;   // re-arm gate, synced to note-on
+
 
 }
 

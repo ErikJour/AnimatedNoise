@@ -9,6 +9,7 @@
 #include "FunctionGenerator.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "AnimatedGain.h"
+#include  "AnimatedLPG.h"
 
 class NoiseVoice {
 
@@ -29,6 +30,13 @@ class NoiseVoice {
     AnimatedGain mGain;
     juce::AudioBuffer<float> mAudioBuffer;
     double mSampleRate;
+
+    //low pass gate
+    AnimatedLPG mLPG;
+    float rfSmoothed = 1e4f;
+    float rfTarget = 5e4f;
+    float rfSmoothedCoeff = 0.0050f;
+    float rfDecayMult = 1.1f;
 
 
 };
