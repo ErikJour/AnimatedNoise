@@ -10,6 +10,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "AnimatedGain.h"
 #include  "AnimatedLPG.h"
+#include "AnimatedVactrol.h"
 
 class NoiseVoice {
 
@@ -36,7 +37,9 @@ class NoiseVoice {
     float rfSmoothed = 1e4f;
     float rfTarget = 5e4f;
     float rfSmoothedCoeff = 0.0050f;
-    float rfDecayMult = 1.1f;
+    float rfDecayMult = 1.05f;
+    AnimatedVactrol mVactrol;
+
 
 
 };

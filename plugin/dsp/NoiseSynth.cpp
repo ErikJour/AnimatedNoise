@@ -24,7 +24,7 @@ void NoiseSynth::reset(const double sampleRate)
     const float inverseSampleRate = 1.0f / static_cast<float>(mSampleRate);
     voice.mFunctionGenerator.mAttackMultiplier  = std::exp(-inverseSampleRate * std::exp(4.5f - 0.075f * 50.0f));
     voice.mFunctionGenerator.mReleaseMultiplier = std::exp(-inverseSampleRate / 1.5f); // 1.5 second release
-
+    voice.mVactrol.setReleaseTime(1.0f);
 }
 
 void NoiseSynth::render(float** outputBuffers, const int sampleCount)
@@ -65,7 +65,7 @@ void NoiseSynth::startVoice(const int note, const int velocity)
     voice.mNoiseGenerator.setAmplitude(static_cast<float>(velocity) / 127.0f);
     voice.mFunctionGenerator.attack();
     voice.mCombFilter.setAmplitude(static_cast<float>(velocity) / 127.0f);
-    voice.rfSmoothed = 1e3f;   // re-arm gate, synced to note-on
+    voice.mVactrol.strike(static_cast<float>(velocity) / 127.0f);
 
 
 }
@@ -82,6 +82,7 @@ void NoiseSynth::noteOff(const int note)
     if (voice.note == note) {
         voice.note = 0;
         voice.mFunctionGenerator.release();
+        voice.mVactrol.releaseGate();
     }
 }
 
