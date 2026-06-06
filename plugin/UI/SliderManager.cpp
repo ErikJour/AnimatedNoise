@@ -10,9 +10,9 @@ struct SliderDefinition {
 };
 
 constexpr SliderDefinition kSliderDefinitions[] = {
-    { "noiseLevel", 0.0f   },
+    { "noiseLevel",  0.0f   },
     { "combLevel",   2.975f },
-    { "lpgResonance",   1.45f }
+    { "lpgResonance",1.45f }
 };
 
 void SliderManager::initializeSliders()
@@ -23,11 +23,10 @@ void SliderManager::initializeSliders()
 
 bool SliderManager::handleMouseDown(const juce::MouseEvent& event, const int width, const int height)
 {
-    const auto screenWidth = static_cast<float>(width);
-    const auto screenHeight = static_cast<float>(height);
-
-    const auto     ey          = static_cast<float>(event.y);
-    const auto     ex          = static_cast<float>(event.x);
+    const auto screenWidth      = static_cast<float>(width);
+    const auto screenHeight     = static_cast<float>(height);
+    const auto     ey           = static_cast<float>(event.y);
+    const auto     ex           = static_cast<float>(event.x);
     constexpr float kHitRadiusX = 24.0f;
 
     for (size_t i = 0; i < mSliders.size(); ++i)
@@ -87,7 +86,6 @@ bool SliderManager::handleMouseUp()
     mDragging       = false;
     mDragOffset     = 0.0f;
     return true;
-
 }
 
 void SliderManager::syncFromApvts()

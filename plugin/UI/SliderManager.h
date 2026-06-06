@@ -23,12 +23,12 @@ class SliderManager
         void syncFromApvts();
 
     private:
-        Scene&                      mScene;
-        std::vector<AnimatedSlider> mSliders;
+        Scene&                                mScene;
+        std::vector<AnimatedSlider>           mSliders;
         juce::AudioProcessorValueTreeState&   mApvts;
-        int                         mActiveSlider = -1;
-        float                       mDragOffset   = 0.0f;
-        bool                        mDragging     = false;
+        int                                   mActiveSlider = -1;
+        float                                 mDragOffset   = 0.0f;
+        bool                                  mDragging     = false;
 };
 
 

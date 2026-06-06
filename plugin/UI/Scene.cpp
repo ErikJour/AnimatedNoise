@@ -413,7 +413,6 @@ void Scene::initializeScene()
                    mLpgRezSliderIndexBuffer,
                    0.9f,
                    1.45f);
-    std::cout << "sliders initialized, count=" << mCombAmtSliderIndexCount << std::endl;
 
     initializeParticles();
 }
@@ -540,7 +539,7 @@ void Scene::initializeSkylight()
     std::vector<SkylightVertex> vertices;
     std::vector<SkylightIndex>  indices;
 
-    Skylight::buildSkylight(vertices, indices, 0.15f, 0.75, 64);  // was 1.0f
+    Skylight::buildSkylight(vertices, indices, 0.15f, 0.75, 64);
 
     mSkylightIndexCount = static_cast<uint32_t>(indices.size());
 
@@ -563,9 +562,9 @@ void Scene::initializeBeams()
 
     YurtBeams::buildBeams(vertices, indices,
      0.95f, -0.15f, 0.15f, 0.75f,
-     64,
+     48,
      0.04f, 0.025f,
-     32,
+     64,
      0.5f);
 
     mBeamsIndexCount = static_cast<uint32_t>(indices.size());
@@ -587,15 +586,12 @@ void Scene::InitializeSlider(uint32_t& indexCount, WGPUBuffer& vertexBuffer, WGP
     std::vector<SliderVertex> verts;
     std::vector<SliderIndex>  indices;
     buildSliderGeometry(verts, indices, wallRadius, angle);
-
     indexCount = static_cast<uint32_t>(indices.size());
-
     WGPUBufferDescriptor bd{};
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
     bd.size = verts.size() * sizeof(SliderVertex);
     vertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
     wgpuQueueWriteBuffer(mQueue, vertexBuffer, 0, verts.data(), bd.size);
-
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
     bd.size  = (indices.size() * sizeof(SliderIndex) + 3) & ~3ULL;
     indexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
@@ -655,17 +651,17 @@ void Scene::initializePlane()
 
 void Scene::updateViewMatrix()
 {
-    const float yaw = mCameraState.angleX;
-    const float ex  = mCameraState.posX;
-    constexpr float ey  = CameraState::eyeY;
-    const float ez  = mCameraState.posZ;
+    const float yaw          = mCameraState.angleX;
+    const float cameraX      = mCameraState.posX;
+    constexpr float cameraY  = CameraState::eyeY;
+    const float cameraZ      = mCameraState.posZ;
 
     // Look target one unit ahead in the yaw direction
-    const float tx = ex + sinf(yaw);
-    const float tz = ez - cosf(yaw);
+    const float tx = cameraX + sinf(yaw);
+    const float tz = cameraZ - cosf(yaw);
 
     float view[16], proj[16];
-    buildLookAt(view, ex, ey, ez, tx, ey, tz);
+    buildLookAt(view, cameraX, cameraY, cameraZ, tx, cameraY, tz);
     buildPerspective(proj, 1.047f, mUniforms.aspectRatio, 0.1f, 3.0f);
     mulMat4(mUniforms.viewProjMatrix, proj, view);
 }
@@ -704,10 +700,8 @@ void Scene::onScroll(const float deltaX, const float deltaY)
     // Vertical scroll: walk forward/backward
     mCameraState.posX +=  sinf(yaw) * deltaY * speed;
     mCameraState.posZ += -cosf(yaw) * deltaY * speed;
-
     // Horizontal scroll: turn left/right
     mCameraState.angleX += deltaX * mDrag.turnSensitivity * speed;
-
     // Clamp to the circular wall
     const float r = sqrtf(mCameraState.posX * mCameraState.posX +
                           mCameraState.posZ * mCameraState.posZ);
