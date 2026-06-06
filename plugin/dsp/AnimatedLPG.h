@@ -20,10 +20,7 @@ class AnimatedLPG
             reset();
         }
 
-        void reset()
-        {
-            sVx = sVout = sDiff = 0.0f;
-        }
+        void reset() { sVx = sVout = sDiff = 0.0f; }
 
         void setMode(const Mode mode)
         {

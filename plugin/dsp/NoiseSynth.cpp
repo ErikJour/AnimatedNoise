@@ -62,16 +62,17 @@ void NoiseSynth::midiMessages(uint8_t data0, uint8_t data1, uint8_t data2)
 void NoiseSynth::startVoice(const int note, const int velocity)
 {
     voice.note = note;
-    voice.mNoiseGenerator.setAmplitude(static_cast<float>(velocity) / 127.0f);
+    constexpr float midiScaling = 127.0f;
+    voice.mNoiseGenerator.setAmplitude(static_cast<float>(velocity) / midiScaling);
     voice.mFunctionGenerator.attack();
-    voice.mCombFilter.setAmplitude(static_cast<float>(velocity) / 127.0f);
-    voice.mVactrol.strike(static_cast<float>(velocity) / 127.0f);
+    voice.mCombFilter.setAmplitude(static_cast<float>(velocity) / midiScaling);
+    voice.mVactrol.strike(static_cast<float>(velocity) / midiScaling);
 }
 
 void NoiseSynth::noteOn(const int note, const int velocity)
 {
     startVoice(note, velocity);
-    const float frequency = 440.f * std::pow(2.f, (static_cast<float>(note) - 69) / 12.f);
+    const float frequency = 440.f * std::pow(2.f, (static_cast<float>(note) - 69) / 12.0f);
     voice.mCombFilter.excite(frequency);
 }
 

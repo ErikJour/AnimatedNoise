@@ -143,18 +143,20 @@ class Scene
         WGPUBuffer                          mGlobalGainSliderVertexBuffer = nullptr;
         WGPUBuffer                          mGlobalGainSliderIndexBuffer  = nullptr;
         uint32_t                            mGlobalGainSliderIndexCount   = 0;
-
         //Comb Amount Slider
         WGPUBuffer                          mCombAmtSliderVertexBuffer = nullptr;
         WGPUBuffer                          mCombAmtSliderIndexBuffer  = nullptr;
         uint32_t                            mCombAmtSliderIndexCount   = 0;
+        //LPG Resonance Slider
+        WGPUBuffer                          mLpgRezSliderVertexBuffer = nullptr;
+        WGPUBuffer                          mLpgRezSliderIndexBuffer  = nullptr;
+        uint32_t                            mLpgRezSliderIndexCount   = 0;
 
-        float                   mSliderValues[2] = { 0.0f, 0.0f };
-
-        float                  mSliderPos[3]   = { 0.5f, 0.0f, 0.2f };
-        static constexpr float kSpineMinY      = -0.15f;
-        static constexpr float kSpineMaxY      =  0.25f;
-        static constexpr float kIndicatorHalfY =  0.025f;
+        float                  mSliderValues[2] = { 0.0f, 0.0f };
+        float                  mSliderPos[3]    = { 0.5f, 0.0f, 0.2f };
+        static constexpr float kSpineMinY       = -0.15f;
+        static constexpr float kSpineMaxY       =  0.25f;
+        static constexpr float kIndicatorHalfY  =  0.025f;
         //Floor
         WGPUBuffer  mFloorVertexBuffer  = nullptr;
         WGPUBuffer  mFloorIndexBuffer  = nullptr;

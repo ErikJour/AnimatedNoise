@@ -123,6 +123,8 @@ void Scene::terminate()
     if (mBeamsIndexBuffer)              { wgpuBufferRelease(mBeamsIndexBuffer); mBeamsIndexBuffer = nullptr; }
     if (mFloorVertexBuffer)             { wgpuBufferRelease(mFloorVertexBuffer); mFloorVertexBuffer = nullptr; }
     if (mFloorIndexBuffer)              { wgpuBufferRelease(mFloorIndexBuffer); mFloorIndexBuffer = nullptr; }
+    if (mLpgRezSliderVertexBuffer)      { wgpuBufferRelease(mLpgRezSliderVertexBuffer); mLpgRezSliderVertexBuffer = nullptr; }
+    if (mLpgRezSliderIndexBuffer)       { wgpuBufferRelease(mLpgRezSliderIndexBuffer); mLpgRezSliderIndexBuffer = nullptr; }
     if (mCombAmtSliderVertexBuffer)     { wgpuBufferRelease(mCombAmtSliderVertexBuffer); mCombAmtSliderVertexBuffer = nullptr; }
     if (mCombAmtSliderIndexBuffer)      { wgpuBufferRelease(mCombAmtSliderIndexBuffer); mCombAmtSliderIndexBuffer = nullptr; }
     if (mGlobalGainSliderVertexBuffer)  { wgpuBufferRelease(mGlobalGainSliderVertexBuffer); mGlobalGainSliderVertexBuffer = nullptr; }
@@ -207,7 +209,7 @@ void Scene::renderFrame(const float currentTime)
         // Slider
         setItemBuffers(mGlobalGainSliderVertexBuffer, mGlobalGainSliderIndexBuffer, mGlobalGainSliderIndexCount, MAT_GLOBAL_GAIN_SLIDER, renderPass);
         setItemBuffers(mCombAmtSliderVertexBuffer, mCombAmtSliderIndexBuffer, mCombAmtSliderIndexCount, MAT_COMB_AMT_SLIDER, renderPass);
-
+        setItemBuffers(mLpgRezSliderVertexBuffer, mLpgRezSliderIndexBuffer, mLpgRezSliderIndexCount, MAT_COMB_AMT_SLIDER, renderPass);
         //Plane
         setItemBuffers(mPlaneVertexBuffer, mPlaneIndexBuffer, mPlaneIndexCount, MAT_PLANE, renderPass);
         // Particles
@@ -401,12 +403,16 @@ void Scene::initializeScene()
                     mGlobalGainSliderIndexBuffer,
                     0.9f,
                     0.0f);
-
     InitializeSlider(mCombAmtSliderIndexCount,
                     mCombAmtSliderVertexBuffer,
                     mCombAmtSliderIndexBuffer,
                     0.9f,
                     2.975f);
+    InitializeSlider(mLpgRezSliderIndexCount,
+                   mLpgRezSliderVertexBuffer,
+                   mLpgRezSliderIndexBuffer,
+                   0.9f,
+                   1.45f);
     std::cout << "sliders initialized, count=" << mCombAmtSliderIndexCount << std::endl;
 
     initializeParticles();

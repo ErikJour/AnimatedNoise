@@ -257,7 +257,7 @@ void AnimatedNoiseProcessor::update()
     //LPG Resonance
     //=======================================
     const float lpgResonance = lpgResonanceParam->get();
-    noiseSynth.setCombLevel(combLevel);
+    noiseSynth.setLpgResonance(lpgResonance);
 }
 
 //==============================================================================

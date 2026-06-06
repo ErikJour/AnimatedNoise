@@ -60,11 +60,11 @@ void AnimatedNoiseProcessorEditor::timerCallback()
     }
 
     static auto startTime = juce::Time::getMillisecondCounterHiRes();
-    const double elapsed  = (juce::Time::getMillisecondCounterHiRes() - startTime) * 0.001;
+    const double elapsed        = (juce::Time::getMillisecondCounterHiRes() - startTime) * 0.001;
+
     webGpuWindow.getScene().renderFrame(static_cast<float>(elapsed));
 
     syncParameters();
-
 }
 
 void AnimatedNoiseProcessorEditor::setResizeReady()

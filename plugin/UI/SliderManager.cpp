@@ -11,7 +11,8 @@ struct SliderDefinition {
 
 constexpr SliderDefinition kSliderDefinitions[] = {
     { "noiseLevel", 0.0f   },
-    { "combLevel",   2.975f }
+    { "combLevel",   2.975f },
+    { "lpgResonance",   1.45f }
 };
 
 void SliderManager::initializeSliders()
@@ -48,7 +49,7 @@ bool SliderManager::handleMouseDown(const juce::MouseEvent& event, const int wid
 
             float v = (bottomY - (ey - mDragOffset)) / (bottomY - topY);
             v = juce::jlimit(0.0f, 1.0f, v);
-            mSliders[static_cast<size_t>(i)].value = v;
+            mSliders[i].value = v;
             mScene.setSliderValue(mActiveSlider, v);
 
             if (auto* param = mApvts.getParameter(mSliders[i].paramID))
@@ -63,8 +64,8 @@ bool SliderManager::handleMouseDrag(const juce::MouseEvent& event, const int wid
 {
     if (!mDragging) return false;
 
-    const float w = static_cast<float>(width);
-    const float h = static_cast<float>(height);
+    const auto w = static_cast<float>(width);
+    const auto h = static_cast<float>(height);
     auto& slider  = mSliders[static_cast<size_t>(mActiveSlider)];
 
     float centerX, topY, bottomY;
