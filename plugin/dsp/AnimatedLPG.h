@@ -15,6 +15,8 @@ class AnimatedLPG
         {
             mSampleRate = static_cast<float>(sampleRate);
             Rf = 1e3f;
+            resonanceSmoothed.reset(mSampleRate, 0.01f);
+            resonanceSmoothed.setCurrentAndTargetValue(0.5f);
             reset();
         }
 
@@ -36,19 +38,21 @@ class AnimatedLPG
         }
         void setRf(const float resistance) { Rf = resistance; }
 
-        void setResonance(float norm)
+        void setResonance(const float newResonance)
         {
-            norm = std::clamp(norm, 0.0f, 0.999f);
-            a = (C3 > 0.0f) ? norm * getAmax() : 0.0f;
+            resonanceSmoothed.setTargetValue(newResonance);
+            float resonance = resonanceSmoothed.getCurrentValue();
+            resonance = std::clamp(resonance, 0.0f, 0.999f);
+            a = (C3 > 0.0f) ? resonance * getAmax() : 0.0f;
         }
 
-        float getAmax() const
+        [[nodiscard]] float getAmax() const
         {
             if (C3 <= 0.0f) return 0.0f;
             return (2.0f * C1 * Ra + (C2 + C3) * (Ra + Rf)) / (C3 * Ra);
         }
 
-        float getRf() const { return Rf; }
+        [[nodiscard]] float getRf() const { return Rf; }
 
         void processBuffer(float* buffer, const int numSamples)
         {
@@ -84,7 +88,7 @@ class AnimatedLPG
 
                 for (int i = 0; i < numSamples; ++i)
                 {
-                    Rf = nextRf();   // fresh resistance this sample
+                    Rf = nextRf();
 
                     const float a1 = 1.0f / (C1 * Rf);
                     const float a2 = -(1.0f / C1) * (1.0f / Rf + 1.0f / Ra);
@@ -134,9 +138,6 @@ class AnimatedLPG
 
             return yo;
         }
-
-
-
     private:
 
         float C1 = 1e-9f;
@@ -151,6 +152,9 @@ class AnimatedLPG
         float sVout = 0.0f;
         float sDiff = 0.0f;
         Mode mMode = Mode::LowPass;
+
+        juce::SmoothedValue<float> resonanceSmoothed;
+
 };
 
 #endif //ANIMATEDNOISE_ANIMATEDLPG_H

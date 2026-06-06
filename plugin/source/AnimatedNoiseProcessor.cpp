@@ -15,6 +15,7 @@ AnimatedNoiseProcessor::AnimatedNoiseProcessor()
     apvts.state.addListener(this);
     castParameter(apvts, ParameterID::noiseLevel, noiseLevelParam);
     castParameter(apvts, ParameterID::combLevel, combLevelParam);
+    castParameter(apvts, ParameterID::lpgResonance, lpgResonanceParam);
 
 }
 
@@ -171,8 +172,8 @@ void AnimatedNoiseProcessor::splitBufferByEvents(juce::AudioBuffer<float>& buffe
             bufferOffset += samplesThisSegment;
         }
         if (metadata.numBytes <= 3) {
-            uint8_t data1 = (metadata.numBytes >= 2) ? metadata.data[1] : 0;
-            uint8_t data2 = (metadata.numBytes == 3) ? metadata.data[2] : 0;
+            const uint8_t data1 = (metadata.numBytes >= 2) ? metadata.data[1] : 0;
+            const uint8_t data2 = (metadata.numBytes == 3) ? metadata.data[2] : 0;
             handleMidi(metadata.data[0], data1, data2);
         }
     }
@@ -228,6 +229,14 @@ juce::AudioProcessorValueTreeState::ParameterLayout AnimatedNoiseProcessor::crea
         "Comb Level",
         juce::NormalisableRange<float>{ 0.0f, 1.0f, 0.01f, 1.0f },
         0.5f));
+    //==========================================================
+    //Lpg Resonance
+    //==========================================================
+    paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
+        ParameterID::lpgResonance,
+        "LPG Resonance",
+        juce::NormalisableRange<float>{ 0.0f, 1.0f, 0.01f, 1.0f },
+        0.5f));
 
     return paramLayout;
 }
@@ -243,6 +252,11 @@ void AnimatedNoiseProcessor::update()
     //Comb Level
     //=======================================
     const float combLevel = combLevelParam->get();
+    noiseSynth.setCombLevel(combLevel);
+    //=======================================
+    //LPG Resonance
+    //=======================================
+    const float lpgResonance = lpgResonanceParam->get();
     noiseSynth.setCombLevel(combLevel);
 }
 

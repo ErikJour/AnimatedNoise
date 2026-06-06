@@ -65,6 +65,7 @@ private:
     NoiseSynth noiseSynth;
     juce::AudioParameterFloat* noiseLevelParam{};
     juce::AudioParameterFloat* combLevelParam{};
+    juce::AudioParameterFloat* lpgResonanceParam{};
 
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 

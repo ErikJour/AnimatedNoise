@@ -13,6 +13,7 @@ namespace ParameterID
 
     PARAMETER_ID(noiseLevel)
     PARAMETER_ID(combLevel)
+    PARAMETER_ID(lpgResonance)
 
 #undef PARAMETER_ID
 

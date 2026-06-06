@@ -6,7 +6,7 @@
 
 AnimatedGain::AnimatedGain() : mSampleRate(44100.0) {}
 
-AnimatedGain::~AnimatedGain() {}
+AnimatedGain::~AnimatedGain() = default;
 
 void AnimatedGain::distributeResources(const double sampleRate)
 {

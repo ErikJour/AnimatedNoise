@@ -24,7 +24,6 @@ void NoiseVoice::render(float* buffer, const int sampleCount)
     mNoiseGenerator.process(buffer, sampleCount);
     mCombFilter.process(buffer, sampleCount);
     mLPG.processBufferModulated(buffer, sampleCount, [this]{ return mVactrol.tick(); });
-    DBG("vactrol Rf: " << mVactrol.getRf());
     mFunctionGenerator.process(buffer, sampleCount);
     mGain.process(buffer, sampleCount);
 }

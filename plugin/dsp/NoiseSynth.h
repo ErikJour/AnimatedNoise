@@ -20,9 +20,10 @@ public:
     void startVoice(int note, int velocity);
     void noteOn(int note, int velocity);
     void noteOff(int note);
-    void setNoiseLevel(float level);
-    void setCombLevel(float level);
-
+    //======================================================================================
+    void setNoiseLevel(const float level)          { voice.mNoiseGenerator.setLevel(level); }
+    void setCombLevel(const float level)           { voice.mCombFilter.setLevel(level); }
+    void setLpgResonance(const float newResonance) { voice.mLPG.setResonance(newResonance); }
 
 private:
     double mSampleRate;
