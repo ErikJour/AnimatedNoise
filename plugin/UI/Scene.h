@@ -127,9 +127,9 @@ class Scene
         WGPUTexture                         mDepthTexture     = nullptr;
         WGPUTextureView                     mDepthTextureView = nullptr; //Revisit this
 
-        uint32_t                            mUniformStride    = 0;
-        WGPUBindGroup                       mBindGroup = nullptr;
-        std::array<WGPUVertexAttribute, 3>  mVertexAttribs = {};
+        uint32_t                            mUniformStride       = 0;
+        WGPUBindGroup                       mBindGroup           = nullptr;
+        std::array<WGPUVertexAttribute, 3>  mVertexAttribs       = {};
         std::vector<WGPUVertexBufferLayout> mVertexBufferLayouts = {};
 
         WGPUShaderModule                    mShaderModule = {};
@@ -138,7 +138,6 @@ class Scene
         WGPUFragmentState                   mFragmentState = {};
         WGPUBlendState                      mBlendState = {};
         MyUniforms                          mUniforms = {};
-
         //Gain Slider
         WGPUBuffer                          mGlobalGainSliderVertexBuffer = nullptr;
         WGPUBuffer                          mGlobalGainSliderIndexBuffer  = nullptr;
@@ -152,31 +151,31 @@ class Scene
         WGPUBuffer                          mLpgRezSliderIndexBuffer  = nullptr;
         uint32_t                            mLpgRezSliderIndexCount   = 0;
 
-        float                  mSliderValues[2] = { 0.0f, 0.0f };
-        float                  mSliderPos[3]    = { 0.5f, 0.0f, 0.2f };
-        static constexpr float kSpineMinY       = -0.15f;
-        static constexpr float kSpineMaxY       =  0.25f;
-        static constexpr float kIndicatorHalfY  =  0.025f;
+        float                               mSliderValues[3] = { 0.0f, 0.0f, 0.0f };
+        float                               mSliderPos[3]    = { 0.5f, 0.0f, 0.2f };
+        static constexpr float              kSpineMinY       = -0.15f;
+        static constexpr float              kSpineMaxY       =  0.25f;
+        static constexpr float              kIndicatorHalfY  =  0.025f;
         //Floor
-        WGPUBuffer  mFloorVertexBuffer  = nullptr;
-        WGPUBuffer  mFloorIndexBuffer  = nullptr;
-        uint32_t    mFloorIndexCount    = 0;
+        WGPUBuffer                          mFloorVertexBuffer  = nullptr;
+        WGPUBuffer                          mFloorIndexBuffer  = nullptr;
+        uint32_t                            mFloorIndexCount    = 0;
         //Skylight
-        WGPUBuffer  mSkylightVertexBuffer  = nullptr;
-        WGPUBuffer  mSkylightIndexBuffer  = nullptr;
-        uint32_t    mSkylightIndexCount    = 0;
+        WGPUBuffer                          mSkylightVertexBuffer  = nullptr;
+        WGPUBuffer                          mSkylightIndexBuffer  = nullptr;
+        uint32_t                            mSkylightIndexCount    = 0;
         //Beams
-        WGPUBuffer  mBeamsVertexBuffer  = nullptr;
-        WGPUBuffer  mBeamsIndexBuffer  = nullptr;
-        uint32_t    mBeamsIndexCount    = 0;
+        WGPUBuffer                          mBeamsVertexBuffer  = nullptr;
+        WGPUBuffer                          mBeamsIndexBuffer  = nullptr;
+        uint32_t                            mBeamsIndexCount    = 0;
         //Plane
-        WGPUBuffer  mPlaneVertexBuffer  = nullptr;
-        WGPUBuffer  mPlaneIndexBuffer  = nullptr;
-        uint32_t    mPlaneIndexCount    = 0;
+        WGPUBuffer                          mPlaneVertexBuffer  = nullptr;
+        WGPUBuffer                          mPlaneIndexBuffer  = nullptr;
+        uint32_t                            mPlaneIndexCount    = 0;
         //Particle System
-        WGPUBuffer  mParticleQuadBuffer  = nullptr;
-        WGPUBuffer  mParticleDataBuffer  = nullptr;
-        uint32_t    mParticleCount    = 0;
+        WGPUBuffer                          mParticleQuadBuffer  = nullptr;
+        WGPUBuffer                          mParticleDataBuffer  = nullptr;
+        uint32_t                            mParticleCount    = 0;
         // Particle Pipeline
         WGPURenderPipeline                      mParticlePipeline     = nullptr;
         WGPURenderPipelineDescriptor            mParticlePipelineDesc {};

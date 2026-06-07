@@ -91,6 +91,7 @@ bool Scene::createShader()
         dir + "/mat_skylight.wgsl",
         dir + "/vs_main.wgsl",
         dir + "/fs_main.wgsl",
+        dir + "/mat_lpg_rez_slider.wgsl",
     };
     mLastShaderWriteTime = latestWriteTime(mShaderPaths);
     mShaderModule        = ResourceManager::loadShaderModules(mShaderPaths, mDevice);
@@ -199,6 +200,7 @@ void Scene::renderFrame(const float currentTime)
         renderPassDesc.depthStencilAttachment = &depthStencilAttachment;
 
         const WGPURenderPassEncoder renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
+
         wgpuRenderPassEncoderSetPipeline(renderPass, mPipeline);
         //Floor
         setItemBuffers(mFloorVertexBuffer, mFloorIndexBuffer, mFloorIndexCount, MAT_FLOOR, renderPass);
@@ -206,10 +208,10 @@ void Scene::renderFrame(const float currentTime)
         setItemBuffers(mSkylightVertexBuffer, mSkylightIndexBuffer, mSkylightIndexCount, MAT_FLOOR, renderPass);
         //Beams
         setItemBuffers(mBeamsVertexBuffer, mBeamsIndexBuffer, mBeamsIndexCount, MAT_FLOOR, renderPass);
-        // Slider
+        // Sliders
         setItemBuffers(mGlobalGainSliderVertexBuffer, mGlobalGainSliderIndexBuffer, mGlobalGainSliderIndexCount, MAT_GLOBAL_GAIN_SLIDER, renderPass);
         setItemBuffers(mCombAmtSliderVertexBuffer, mCombAmtSliderIndexBuffer, mCombAmtSliderIndexCount, MAT_COMB_AMT_SLIDER, renderPass);
-        setItemBuffers(mLpgRezSliderVertexBuffer, mLpgRezSliderIndexBuffer, mLpgRezSliderIndexCount, MAT_COMB_AMT_SLIDER, renderPass);
+        setItemBuffers(mLpgRezSliderVertexBuffer, mLpgRezSliderIndexBuffer, mLpgRezSliderIndexCount, MAT_LPG_REZ_SLIDER, renderPass);
         //Plane
         setItemBuffers(mPlaneVertexBuffer, mPlaneIndexBuffer, mPlaneIndexCount, MAT_PLANE, renderPass);
         // Particles
@@ -254,23 +256,25 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
 
     updateViewMatrix();
 
-    constexpr uint32_t ids[7] = {
+    constexpr uint32_t ids[8] = {
                                     MAT_CAVE,
                                     MAT_GLOBAL_GAIN_SLIDER,
                                     MAT_COMB_AMT_SLIDER,
                                     MAT_PLANE,
                                     MAT_PARTICLES,
                                     MAT_FLOOR,
-                                    MAT_SKYLIGHT
+                                    MAT_SKYLIGHT,
+                                    MAT_LPG_REZ_SLIDER,
                                 };
 
     std::memcpy(mUniforms.modelMatrix, kIdentity, sizeof(kIdentity));
 
-    for (uint32_t i = 0; i < 7; ++i) {
+    for (uint32_t i = 0; i < 8; ++i) {
         mUniforms.materialId = ids[i];
 
         if      (ids[i] == MAT_GLOBAL_GAIN_SLIDER) mUniforms.sliderValue = mSliderValues[0];
         else if (ids[i] == MAT_COMB_AMT_SLIDER)    mUniforms.sliderValue = mSliderValues[1];
+        else if (ids[i] == MAT_LPG_REZ_SLIDER)     mUniforms.sliderValue = mSliderValues[2];
         else                                       mUniforms.sliderValue = 0.0f;
 
         wgpuQueueWriteBuffer(queue,
@@ -294,12 +298,12 @@ void Scene::ConfigureVertexLayout()
     // Attribute 2 — Color (location 1)
     mVertexAttribs[2].shaderLocation = 1;
     mVertexAttribs[2].format         = WGPUVertexFormat_Float32x3;
-    mVertexAttribs[2].offset         = 6 * sizeof(float);           //Maybe update
+    mVertexAttribs[2].offset         = 6 * sizeof(float);
 
     mVertexBufferLayouts.resize(1);
     mVertexBufferLayouts[0].attributeCount = 3;
     mVertexBufferLayouts[0].attributes     = mVertexAttribs.data();
-    mVertexBufferLayouts[0].arrayStride    = 9 * sizeof(float);     //Maybe update
+    mVertexBufferLayouts[0].arrayStride    = 9 * sizeof(float);
     mVertexBufferLayouts[0].stepMode       = WGPUVertexStepMode_Vertex;
 
     mPipelineDesc.vertex.bufferCount = 1;
@@ -403,11 +407,13 @@ void Scene::initializeScene()
                     mGlobalGainSliderIndexBuffer,
                     0.9f,
                     0.0f);
+
     InitializeSlider(mCombAmtSliderIndexCount,
                     mCombAmtSliderVertexBuffer,
                     mCombAmtSliderIndexBuffer,
                     0.9f,
                     2.975f);
+
     InitializeSlider(mLpgRezSliderIndexCount,
                    mLpgRezSliderVertexBuffer,
                    mLpgRezSliderIndexBuffer,
@@ -465,7 +471,7 @@ bool Scene::createPipeline()
     }
 
     WGPUBufferDescriptor bufferDesc = {};
-    bufferDesc.size                 = 7 * mUniformStride;  // one slot per material
+    bufferDesc.size                 = 8 * mUniformStride;  // one slot per material
     bufferDesc.usage                = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
     mUniformBuffer                  = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
 
