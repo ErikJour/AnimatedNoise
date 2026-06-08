@@ -22,8 +22,16 @@ public:
     void noteOff(int note);
     //======================================================================================
     void setNoiseLevel(const float level)          { voice.mNoiseGenerator.setLevel(level); }
-    void setCombLevel(const float level)           { voice.mCombFilter.setLevel(level); }
-    void setLpgResonance(const float newResonance) { voice.mLPG.setResonance(newResonance); }
+    void setNoiseDensity(const float density)      { voice.mNoiseGenerator.setDensity(density); }
+    void setCombLevel(const float level)
+    {
+        voice.mCombFilter.setLevel(level);
+    }
+    void setLpgResonance(const float newResonance)
+    {
+
+        voice.mLPG.setResonance(newResonance);
+    }
 
 private:
     double mSampleRate;

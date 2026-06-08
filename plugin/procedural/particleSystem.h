@@ -106,9 +106,9 @@ public:
 
         while (spawned < count)
         {
-            float x = (randomFloat() - 0.5f) * spread;
-            float y = (randomFloat() - 0.5f) * spread;
-            float z = (randomFloat() - 0.5f) * spread;
+            float x = (randomFloat() - 0.5f) * spread * 3.14f;
+            float y = (randomFloat() - 0.5f) * spread * 3.14f;
+            float z = (randomFloat() - 0.5f) * spread * 3.14f;
 
             // Reject if outside sphere
             if (x*x + y*y + z*z > spread * spread) continue;

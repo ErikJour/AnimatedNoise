@@ -25,12 +25,13 @@ fn vs_particle(in: ParticleVertexInput) -> ParticleVertexOutput {
     let size     = in.pos_size.w;
 
     let animated = vec3f(
-        worldPos.x,
-        worldPos.y,
+        worldPos.x + sin(u.time + worldPos.x * 25.0) * 0.005,
+        worldPos.y - 0.85,
         worldPos.z + sin(u.time + worldPos.x * 25.0) * 0.01
     );
 
-    let clipPos = u.viewProjMatrix * vec4f(animated, 1.0);
+//  let clipPos = u.viewProjMatrix * vec4f(animated, 1.0); //Fixed position in space
+    let clipPos = vec4f(animated, 1.0); //Avatar mode
 
     let bx = in.cornerOffset.x * size * clipPos.w;
     let by = in.cornerOffset.y * size * clipPos.w;

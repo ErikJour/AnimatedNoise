@@ -15,7 +15,7 @@ class AnimatedLPG
         {
             mSampleRate = static_cast<float>(sampleRate);
             Rf = 1e3f;
-            resonanceSmoothed.reset(mSampleRate, 0.01f);
+            resonanceSmoothed.reset(sampleRate, 0.01f);
             resonanceSmoothed.setCurrentAndTargetValue(0.5f);
             reset();
         }
@@ -38,7 +38,11 @@ class AnimatedLPG
         void setResonance(const float newResonance)
         {
             resonanceSmoothed.setTargetValue(newResonance);
-            float resonance = resonanceSmoothed.getCurrentValue();
+        }
+
+        void updateResonance()
+        {
+            float resonance = resonanceSmoothed.getNextValue();
             resonance = std::clamp(resonance, 0.0f, 0.999f);
             a = (C3 > 0.0f) ? resonance * getAmax() : 0.0f;
         }
@@ -53,6 +57,7 @@ class AnimatedLPG
 
         void processBuffer(float* buffer, const int numSamples)
         {
+            updateResonance();
             const float a1 = 1.0f / (C1 * Rf);
             const float a2 = -(1.0f / C1) * (1.0f / Rf + 1.0f / Ra);
             const float b1 = 1.0f  / (C2 * Rf);
@@ -85,6 +90,8 @@ class AnimatedLPG
 
                 for (int i = 0; i < numSamples; ++i)
                 {
+                    updateResonance();
+
                     Rf = nextRf();
 
                     const float a1 = 1.0f / (C1 * Rf);

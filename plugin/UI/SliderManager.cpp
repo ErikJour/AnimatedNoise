@@ -17,8 +17,9 @@ constexpr SliderDefinition kSliderDefinitions[] = {
 
 void SliderManager::initializeSliders()
 {
-    for (const auto& def : kSliderDefinitions)
-        mSliders.push_back(AnimatedSlider{ def.angle, def.paramId, 0.0f });
+    for (const auto& [paramId, angle] : kSliderDefinitions)
+        mSliders.push_back(AnimatedSlider{ angle, paramId, 0.0f });
+    syncFromApvts();
 }
 
 bool SliderManager::handleMouseDown(const juce::MouseEvent& event, const int width, const int height)

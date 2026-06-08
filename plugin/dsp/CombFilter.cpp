@@ -33,8 +33,7 @@ void CombFilter::excite(const float frequency)
 
 float CombFilter::processSample(const float input)
 {
-    const float combLevel = levelSmoothed.getNextValue();
-
+    const float combLevel = updateLevel();
     const float delayed  = ringBufferMemory[ringBufferIndex];
     const float filtered = 0.7f * delayed + 0.3f * mPrevSample;
 
@@ -60,6 +59,11 @@ void CombFilter::process(float* buffer, int numSamples)
 void CombFilter::setLevel(const float newCombLevel)
 {
     levelSmoothed.setTargetValue(newCombLevel);
+}
+
+float CombFilter::updateLevel()
+{
+    return levelSmoothed.getNextValue();
 }
 
 

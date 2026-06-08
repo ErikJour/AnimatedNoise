@@ -12,6 +12,7 @@ namespace ParameterID
 #define PARAMETER_ID(str) const juce::ParameterID str(#str, 1);
 
     PARAMETER_ID(noiseLevel)
+    PARAMETER_ID(noiseDensity)
     PARAMETER_ID(combLevel)
     PARAMETER_ID(lpgResonance)
 

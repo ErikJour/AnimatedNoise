@@ -20,6 +20,7 @@ public:
     void process(float* buffer, int numSamples);
     void setLevel(float newCombLevel);
     void setAmplitude(const float newAmplitude) { mAmplitude = newAmplitude; }
+    float updateLevel();
 
 
 

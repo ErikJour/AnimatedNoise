@@ -421,6 +421,7 @@ void Scene::initializeScene()
                    1.45f);
 
     initializeParticles();
+    // initializePlane();
 }
 
 bool Scene::createPipeline()
@@ -566,12 +567,17 @@ void Scene::initializeBeams()
     std::vector<BeamVertex> vertices;
     std::vector<BeamIndex>  indices;
 
-    YurtBeams::buildBeams(vertices, indices,
-     0.95f, -0.15f, 0.15f, 0.75f,
-     48,
-     0.04f, 0.025f,
-     64,
-     0.5f);
+    YurtBeams::buildBeams(vertices,
+                            indices,
+                    0.95f,
+                    -0.15f,
+                    0.15f,
+                    0.75f,
+                    48,
+                    0.04f,
+                    0.025f,
+                    64,
+                    0.5f);
 
     mBeamsIndexCount = static_cast<uint32_t>(indices.size());
 
@@ -610,7 +616,7 @@ void Scene::initializeParticles()
     std::vector<ParticleData> particles;
 
     ParticleSystem::buildQuad(quadVerts);
-    ParticleSystem::initParticles(particles, MAX_PARTICLES, 0.35f, 0.01f);
+    ParticleSystem::initParticles(particles, MAX_PARTICLES, 0.2f, 0.01f);
 
     WGPUBufferDescriptor bd{};
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
@@ -625,13 +631,12 @@ void Scene::initializeParticles()
 
     mParticleCount = static_cast<uint32_t>(particles.size());
     mParticleDrawCount = mParticleCount;
-
 }
 
 void Scene::setSliderValue(const int index, const float value)
 {
     mSliderValues[index] = value;
-    // mParticleDrawCount = static_cast<uint32_t>(mSliderValues[0] * MAX_PARTICLES);
+    mParticleDrawCount = static_cast<uint32_t>(mSliderValues[0] * MAX_PARTICLES) + 100;
 }
 
 void Scene::initializePlane()

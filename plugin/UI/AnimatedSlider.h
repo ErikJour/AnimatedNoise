@@ -7,8 +7,8 @@
 
 struct AnimatedSlider
 {
-    float angle;
-    const char* paramID;
+    float angle{};
+    const char* paramID{};
     float value = 0.0f;
 };
 

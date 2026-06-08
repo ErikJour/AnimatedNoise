@@ -15,7 +15,7 @@ public:
 
     float getNextSample();
     void setAmplitude(const float newAmplitude) { mAmplitude = newAmplitude; }
-    void setLevel(const float newNoiseLevel) { levelSmoothed.setTargetValue(newNoiseLevel); }
+    void setLevel(const float newNoiseLevel) {levelSmoothed.setTargetValue(newNoiseLevel);}
     void setDensity(float newDensity);
     void setSampleRate(float newSampleRate);
     void setNoiseDensityModAmt(const float noiseDensityModAmt) { noiseDensityMod = noiseDensityModAmt; }

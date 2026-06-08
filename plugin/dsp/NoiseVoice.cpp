@@ -8,14 +8,14 @@ NoiseVoice::NoiseVoice() : mSampleRate(0) { }
 void NoiseVoice::reset(const double sampleRate)
 {
     note = 0;
-    mNoiseGenerator.setLevel(0.8f);
+    mNoiseGenerator.setLevel(0.5f);
     mSampleRate = sampleRate;
     mGain.distributeResources(mSampleRate);
     mCombFilter.reset(sampleRate);
     mFunctionGenerator.reset();
     mLPG.prepare(mSampleRate);
     mLPG.setMode(AnimatedLPG::Mode::LowPass);
-    mLPG.setResonance(0.9f);
+    mLPG.setResonance(0.5f);
     mVactrol.prepare(mSampleRate);
 }
 

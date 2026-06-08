@@ -14,9 +14,9 @@ AnimatedNoiseProcessor::AnimatedNoiseProcessor()
 {
     apvts.state.addListener(this);
     castParameter(apvts, ParameterID::noiseLevel, noiseLevelParam);
+    castParameter(apvts, ParameterID::noiseDensity, noiseDensityParam);
     castParameter(apvts, ParameterID::combLevel, combLevelParam);
     castParameter(apvts, ParameterID::lpgResonance, lpgResonanceParam);
-
 }
 
 AnimatedNoiseProcessor::~AnimatedNoiseProcessor()
@@ -94,6 +94,8 @@ void AnimatedNoiseProcessor::prepareToPlay (const double sampleRate, const int s
 {
     noiseSynth.distributeResources(sampleRate, samplesPerBlock);
     noiseSynth.reset(sampleRate);
+    parametersChanged.store(true);
+
 }
 
 void AnimatedNoiseProcessor::releaseResources()
@@ -128,8 +130,8 @@ void AnimatedNoiseProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     juce::ignoreUnused (midiMessages);
 
     juce::ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels  = getTotalNumInputChannels();
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
+    const auto totalNumInputChannels  = getTotalNumInputChannels();
+    const auto totalNumOutputChannels = getTotalNumOutputChannels();
 
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; i++)
         buffer.clear(i, 0, buffer.getNumSamples());
@@ -214,11 +216,19 @@ juce::AudioProcessorValueTreeState::ParameterLayout AnimatedNoiseProcessor::crea
     juce::AudioProcessorValueTreeState::ParameterLayout paramLayout;
 
     //==========================================================
-    //Global Gain
+    //Noise Level
     //==========================================================
     paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
         ParameterID::noiseLevel,
-        "Global Gain",
+        "Noise Level",
+        juce::NormalisableRange<float>{ 0.0f, 1.0f, 0.01f, 1.0f },
+        0.5f));
+    //==========================================================
+    //Noise Density
+    //==========================================================
+    paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
+        ParameterID::noiseDensity,
+        "Noise Density",
         juce::NormalisableRange<float>{ 0.0f, 1.0f, 0.01f, 1.0f },
         0.5f));
     //==========================================================
@@ -244,10 +254,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout AnimatedNoiseProcessor::crea
 void AnimatedNoiseProcessor::update()
 {
     //=======================================
-    //Global Gain
+    //Noise Level
     //=======================================
     const float noiseLevel = noiseLevelParam->get();
     noiseSynth.setNoiseLevel(noiseLevel);
+    //=======================================
+    //Noise Density
+    //=======================================
+    const float noiseDensity = noiseDensityParam->get();
+    noiseSynth.setNoiseDensity(noiseDensity);
     //=======================================
     //Comb Level
     //=======================================
