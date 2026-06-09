@@ -25,7 +25,6 @@ void NoiseVoice::render(float* buffer, const int sampleCount)
     mCombFilter.process(buffer, sampleCount);
     mLPG.processBufferModulated(buffer, sampleCount, [this]{ return mVactrol.tick(); });
     mFunctionGenerator.process(buffer, sampleCount);
-    mGain.process(buffer, sampleCount);
 }
 
 void NoiseVoice::release() { mFunctionGenerator.release(); }

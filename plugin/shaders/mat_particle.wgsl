@@ -50,5 +50,6 @@ fn fs_particle(in: ParticleVertexOutput) -> @location(0) vec4f {
     let dist     = length(centered);
     let alpha    = smoothstep(1.0, 0.2, dist) * in.color.a * 0.05f;
     if alpha < 0.01 { discard; }
-    return vec4f(in.color.rgb * 0.9f, alpha);
+    let sliderMod = u.sliderValue;
+    return vec4f(in.color.rgb * u.sliderValue, alpha); //the 0.1f should be u.noiseLevel
 }

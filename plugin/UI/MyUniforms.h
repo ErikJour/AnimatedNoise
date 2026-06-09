@@ -22,8 +22,8 @@ struct MyUniforms {
     float    aspectRatio;   // offset 16
     float    pad[3];        // offset 32
     uint32_t materialId;    // offset 44
-    float    modelMatrix[16];    // offset 48  ✓
-    float    viewProjMatrix[16]; // offset 112 ✓
+    float    modelMatrix[16];    // offset 48
+    float    viewProjMatrix[16]; // offset 112
 };
 
 static_assert(sizeof(MyUniforms) % 16 == 0);

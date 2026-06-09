@@ -277,7 +277,7 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
     for (uint32_t i = 0; i < 9; ++i) {
         mUniforms.materialId = ids[i];
 
-        if      (ids[i] == MAT_GLOBAL_GAIN_SLIDER) mUniforms.sliderValue = mSliderValues[0];
+        if      (ids[i] == MAT_GLOBAL_GAIN_SLIDER || ids[i] == MAT_PARTICLES) mUniforms.sliderValue = mSliderValues[0];
         else if (ids[i] == MAT_NOIS_DENS_SLIDER)   mUniforms.sliderValue = mSliderValues[1];
         else if (ids[i] == MAT_LPG_REZ_SLIDER)     mUniforms.sliderValue = mSliderValues[2];
         else if (ids[i] == MAT_COMB_AMT_SLIDER)    mUniforms.sliderValue = mSliderValues[3];
@@ -403,11 +403,10 @@ bool Scene::createParticlePipeline()
 
 void Scene::initializeScene()
 {
-    std::cout << "initializeScene called" << std::endl;
-
     initializeFloor();
     initializeSkylight();
     initializeBeams();
+
     InitializeSlider(mNoiseLevelSliderIndexCount,
                     mNoiseLevelSliderVertexBuffer,
                     mNoiseLevelSliderIndexBuffer,
@@ -431,8 +430,6 @@ void Scene::initializeScene()
                     mCombAmtSliderIndexBuffer,
                     0.9f,
                     2.975f);
-
-
 
     initializeParticles();
     // initializePlane();
@@ -650,7 +647,8 @@ void Scene::initializeParticles()
 void Scene::setSliderValue(const int index, const float value)
 {
     mSliderValues[index] = value;
-    mParticleDrawCount = static_cast<uint32_t>(mSliderValues[1] * MAX_PARTICLES) + 100;
+
+    mParticleDrawCount = static_cast<uint32_t>(mSliderValues[1] * MAX_PARTICLES - 100) + 100;
 }
 
 void Scene::initializePlane()

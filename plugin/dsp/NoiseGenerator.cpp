@@ -45,16 +45,18 @@ float NoiseGenerator::getNextSample()
     mHoldCounter--;
 
     const float output = mCurrentNoiseValue * noiseLevel * mAmplitude;
+
     constexpr float reduction = 0.2f;
     return output * reduction;
 }
 
 void NoiseGenerator::setDensity(float newDensity)
 {
-    newDensity *= noiseDensityMod;
-    newDensity = juce::jlimit(0.0f,
-                                        1.0f,
-                                        newDensity);
+    juce::ignoreUnused(newDensity);
+    // newDensity *= noiseDensityMod;
+    // newDensity = juce::jlimit(0.0f,
+    //                                     1.0f,
+    //                                     newDensity);
     densitySmoothed.setTargetValue(newDensity);
 }
 
@@ -69,5 +71,6 @@ void NoiseGenerator::process(float* buffer, const int numSamples)
 {
     for (int i = 0; i < numSamples; i++)
         buffer[i] += getNextSample();
+
 }
 
