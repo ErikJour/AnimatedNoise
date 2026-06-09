@@ -155,7 +155,7 @@ class Scene
         WGPUBuffer                          mLpgRezSliderIndexBuffer  = nullptr;
         uint32_t                            mLpgRezSliderIndexCount   = 0;
 
-        float                               mSliderValues[3] = { 0.0f, 0.0f, 0.0f };
+        float                               mSliderValues[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
         float                               mSliderPos[3]    = { 0.5f, 0.0f, 0.2f };
         static constexpr float              kSpineMinY       = -0.15f;
         static constexpr float              kSpineMaxY       =  0.25f;

@@ -7,6 +7,7 @@ const MAT_PARTICLES:               u32 = 4u;
 const MAT_FLOOR:                   u32 = 5u;
 const MAT_SKYLIGHT:                u32 = 6u;
 const MAT_LPG_REZ_SLIDER:          u32 = 7u;
+const MAT_NOIS_DENS_SLIDER:        u32 = 8u;
 
 // ── Scene constants ───────────────────────────────────────────────────────────
 const FOV_FACTOR:  f32 = 1.5;

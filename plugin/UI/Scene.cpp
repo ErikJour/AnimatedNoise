@@ -92,6 +92,7 @@ bool Scene::createShader()
         dir + "/vs_main.wgsl",
         dir + "/fs_main.wgsl",
         dir + "/mat_lpg_rez_slider.wgsl",
+        dir + "/mat_noise_density_slider.wgsl"
     };
     mLastShaderWriteTime = latestWriteTime(mShaderPaths);
     mShaderModule        = ResourceManager::loadShaderModules(mShaderPaths, mDevice);
@@ -212,7 +213,7 @@ void Scene::renderFrame(const float currentTime)
         setItemBuffers(mBeamsVertexBuffer, mBeamsIndexBuffer, mBeamsIndexCount, MAT_FLOOR, renderPass);
         // Sliders
         setItemBuffers(mNoiseLevelSliderVertexBuffer, mNoiseLevelSliderIndexBuffer, mNoiseLevelSliderIndexCount, MAT_GLOBAL_GAIN_SLIDER, renderPass);
-        setItemBuffers(mNoiseDensitySliderVertexBuffer, mNoiseDensitySliderIndexBuffer, mNoiseDensitySliderIndexCount, MAT_GLOBAL_GAIN_SLIDER, renderPass);
+        setItemBuffers(mNoiseDensitySliderVertexBuffer, mNoiseDensitySliderIndexBuffer, mNoiseDensitySliderIndexCount, MAT_NOIS_DENS_SLIDER, renderPass);
         setItemBuffers(mCombAmtSliderVertexBuffer, mCombAmtSliderIndexBuffer, mCombAmtSliderIndexCount, MAT_COMB_AMT_SLIDER, renderPass);
         setItemBuffers(mLpgRezSliderVertexBuffer, mLpgRezSliderIndexBuffer, mLpgRezSliderIndexCount, MAT_LPG_REZ_SLIDER, renderPass);
         //Plane
@@ -259,7 +260,7 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
 
     updateViewMatrix();
 
-    constexpr uint32_t ids[8] = {
+    constexpr uint32_t ids[9] = {
                                     MAT_CAVE,
                                     MAT_GLOBAL_GAIN_SLIDER,
                                     MAT_COMB_AMT_SLIDER,
@@ -268,16 +269,18 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
                                     MAT_FLOOR,
                                     MAT_SKYLIGHT,
                                     MAT_LPG_REZ_SLIDER,
+                                    MAT_NOIS_DENS_SLIDER
                                 };
 
     std::memcpy(mUniforms.modelMatrix, kIdentity, sizeof(kIdentity));
 
-    for (uint32_t i = 0; i < 8; ++i) {
+    for (uint32_t i = 0; i < 9; ++i) {
         mUniforms.materialId = ids[i];
 
         if      (ids[i] == MAT_GLOBAL_GAIN_SLIDER) mUniforms.sliderValue = mSliderValues[0];
-        else if (ids[i] == MAT_COMB_AMT_SLIDER)    mUniforms.sliderValue = mSliderValues[1];
+        else if (ids[i] == MAT_NOIS_DENS_SLIDER)   mUniforms.sliderValue = mSliderValues[1];
         else if (ids[i] == MAT_LPG_REZ_SLIDER)     mUniforms.sliderValue = mSliderValues[2];
+        else if (ids[i] == MAT_COMB_AMT_SLIDER)    mUniforms.sliderValue = mSliderValues[3];
         else                                       mUniforms.sliderValue = 0.0f;
 
         wgpuQueueWriteBuffer(queue,
@@ -417,17 +420,19 @@ void Scene::initializeScene()
                     0.9f,
                     0.1f);
 
+    InitializeSlider(mLpgRezSliderIndexCount,
+                   mLpgRezSliderVertexBuffer,
+                   mLpgRezSliderIndexBuffer,
+                   0.9f,
+                   1.45f);
+
     InitializeSlider(mCombAmtSliderIndexCount,
                     mCombAmtSliderVertexBuffer,
                     mCombAmtSliderIndexBuffer,
                     0.9f,
                     2.975f);
 
-    InitializeSlider(mLpgRezSliderIndexCount,
-                   mLpgRezSliderVertexBuffer,
-                   mLpgRezSliderIndexBuffer,
-                   0.9f,
-                   1.45f);
+
 
     initializeParticles();
     // initializePlane();
@@ -481,7 +486,7 @@ bool Scene::createPipeline()
     }
 
     WGPUBufferDescriptor bufferDesc = {};
-    bufferDesc.size                 = 8 * mUniformStride;  // one slot per material
+    bufferDesc.size                 = 9 * mUniformStride;  // one slot per material
     bufferDesc.usage                = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
     mUniformBuffer                  = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
 
@@ -645,7 +650,7 @@ void Scene::initializeParticles()
 void Scene::setSliderValue(const int index, const float value)
 {
     mSliderValues[index] = value;
-    mParticleDrawCount = static_cast<uint32_t>(mSliderValues[0] * MAX_PARTICLES) + 100;
+    mParticleDrawCount = static_cast<uint32_t>(mSliderValues[1] * MAX_PARTICLES) + 100;
 }
 
 void Scene::initializePlane()
