@@ -124,12 +124,14 @@ void Scene::terminate()
     if (mBeamsIndexBuffer)              { wgpuBufferRelease(mBeamsIndexBuffer); mBeamsIndexBuffer = nullptr; }
     if (mFloorVertexBuffer)             { wgpuBufferRelease(mFloorVertexBuffer); mFloorVertexBuffer = nullptr; }
     if (mFloorIndexBuffer)              { wgpuBufferRelease(mFloorIndexBuffer); mFloorIndexBuffer = nullptr; }
+    if (mNoiseDensitySliderVertexBuffer){ wgpuBufferRelease(mNoiseDensitySliderVertexBuffer); mNoiseDensitySliderVertexBuffer = nullptr; }
+    if (mNoiseDensitySliderIndexBuffer) { wgpuBufferRelease(mNoiseDensitySliderIndexBuffer); mNoiseDensitySliderIndexBuffer = nullptr; }
     if (mLpgRezSliderVertexBuffer)      { wgpuBufferRelease(mLpgRezSliderVertexBuffer); mLpgRezSliderVertexBuffer = nullptr; }
     if (mLpgRezSliderIndexBuffer)       { wgpuBufferRelease(mLpgRezSliderIndexBuffer); mLpgRezSliderIndexBuffer = nullptr; }
     if (mCombAmtSliderVertexBuffer)     { wgpuBufferRelease(mCombAmtSliderVertexBuffer); mCombAmtSliderVertexBuffer = nullptr; }
     if (mCombAmtSliderIndexBuffer)      { wgpuBufferRelease(mCombAmtSliderIndexBuffer); mCombAmtSliderIndexBuffer = nullptr; }
-    if (mGlobalGainSliderVertexBuffer)  { wgpuBufferRelease(mGlobalGainSliderVertexBuffer); mGlobalGainSliderVertexBuffer = nullptr; }
-    if (mGlobalGainSliderIndexBuffer)   { wgpuBufferRelease(mGlobalGainSliderIndexBuffer); mGlobalGainSliderIndexBuffer = nullptr; }
+    if (mNoiseLevelSliderVertexBuffer)  { wgpuBufferRelease(mNoiseLevelSliderVertexBuffer); mNoiseLevelSliderVertexBuffer = nullptr; }
+    if (mNoiseLevelSliderIndexBuffer)   { wgpuBufferRelease(mNoiseLevelSliderIndexBuffer); mNoiseLevelSliderIndexBuffer = nullptr; }
     if (mPlaneVertexBuffer)             { wgpuBufferRelease(mPlaneVertexBuffer); mPlaneVertexBuffer = nullptr; }
     if (mPlaneIndexBuffer)              { wgpuBufferRelease(mPlaneIndexBuffer); mPlaneIndexBuffer = nullptr; }
     if (mParticleQuadBuffer)            { wgpuBufferRelease(mParticleQuadBuffer); mParticleQuadBuffer = nullptr; }
@@ -209,7 +211,8 @@ void Scene::renderFrame(const float currentTime)
         //Beams
         setItemBuffers(mBeamsVertexBuffer, mBeamsIndexBuffer, mBeamsIndexCount, MAT_FLOOR, renderPass);
         // Sliders
-        setItemBuffers(mGlobalGainSliderVertexBuffer, mGlobalGainSliderIndexBuffer, mGlobalGainSliderIndexCount, MAT_GLOBAL_GAIN_SLIDER, renderPass);
+        setItemBuffers(mNoiseLevelSliderVertexBuffer, mNoiseLevelSliderIndexBuffer, mNoiseLevelSliderIndexCount, MAT_GLOBAL_GAIN_SLIDER, renderPass);
+        setItemBuffers(mNoiseDensitySliderVertexBuffer, mNoiseDensitySliderIndexBuffer, mNoiseDensitySliderIndexCount, MAT_GLOBAL_GAIN_SLIDER, renderPass);
         setItemBuffers(mCombAmtSliderVertexBuffer, mCombAmtSliderIndexBuffer, mCombAmtSliderIndexCount, MAT_COMB_AMT_SLIDER, renderPass);
         setItemBuffers(mLpgRezSliderVertexBuffer, mLpgRezSliderIndexBuffer, mLpgRezSliderIndexCount, MAT_LPG_REZ_SLIDER, renderPass);
         //Plane
@@ -402,11 +405,17 @@ void Scene::initializeScene()
     initializeFloor();
     initializeSkylight();
     initializeBeams();
-    InitializeSlider(mGlobalGainSliderIndexCount,
-                    mGlobalGainSliderVertexBuffer,
-                    mGlobalGainSliderIndexBuffer,
+    InitializeSlider(mNoiseLevelSliderIndexCount,
+                    mNoiseLevelSliderVertexBuffer,
+                    mNoiseLevelSliderIndexBuffer,
                     0.9f,
                     0.0f);
+
+    InitializeSlider(mNoiseDensitySliderIndexCount,
+                    mNoiseDensitySliderVertexBuffer,
+                    mNoiseDensitySliderIndexBuffer,
+                    0.9f,
+                    0.1f);
 
     InitializeSlider(mCombAmtSliderIndexCount,
                     mCombAmtSliderVertexBuffer,

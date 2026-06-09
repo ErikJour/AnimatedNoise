@@ -138,10 +138,14 @@ class Scene
         WGPUFragmentState                   mFragmentState = {};
         WGPUBlendState                      mBlendState = {};
         MyUniforms                          mUniforms = {};
-        //Gain Slider
-        WGPUBuffer                          mGlobalGainSliderVertexBuffer = nullptr;
-        WGPUBuffer                          mGlobalGainSliderIndexBuffer  = nullptr;
-        uint32_t                            mGlobalGainSliderIndexCount   = 0;
+        //Noise Slider
+        WGPUBuffer                          mNoiseLevelSliderVertexBuffer = nullptr;
+        WGPUBuffer                          mNoiseLevelSliderIndexBuffer  = nullptr;
+        uint32_t                            mNoiseLevelSliderIndexCount   = 0;
+        //Noise Density
+        WGPUBuffer                          mNoiseDensitySliderVertexBuffer = nullptr;
+        WGPUBuffer                          mNoiseDensitySliderIndexBuffer  = nullptr;
+        uint32_t                            mNoiseDensitySliderIndexCount   = 0;
         //Comb Amount Slider
         WGPUBuffer                          mCombAmtSliderVertexBuffer = nullptr;
         WGPUBuffer                          mCombAmtSliderIndexBuffer  = nullptr;
