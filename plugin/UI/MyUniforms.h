@@ -24,6 +24,9 @@ struct MyUniforms {
     uint32_t materialId;    // offset 44
     float    modelMatrix[16];    // offset 48
     float    viewProjMatrix[16]; // offset 112
+    float    projMatrix[16];     // offset 176  ← new
+    float morph;           // offset 240
+    float pad2[3];         // offset 244 → sizeof = 256
 };
 
 static_assert(sizeof(MyUniforms) % 16 == 0);

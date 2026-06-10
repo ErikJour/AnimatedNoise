@@ -117,7 +117,7 @@ public:
             p.x = x;
             p.y = y;
             p.z = z;
-            p.size = size;
+            p.size = size * (0.5f + 1.5f * randomFloat());
             p.r = 1.0f; p.g = 1.0f; p.b = 1.0f; p.a = 1.0f;
             p.life = randomFloat();
             p.vx = 0.0f; p.vy = 0.0f; p.vz = 0.0f;

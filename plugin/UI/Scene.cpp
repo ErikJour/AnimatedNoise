@@ -274,13 +274,19 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
 
     std::memcpy(mUniforms.modelMatrix, kIdentity, sizeof(kIdentity));
 
-    for (uint32_t i = 0; i < 9; ++i) {
+    for (uint32_t i = 0; i < 9; ++i)
+    {
         mUniforms.materialId = ids[i];
 
-        if      (ids[i] == MAT_GLOBAL_GAIN_SLIDER || ids[i] == MAT_PARTICLES) mUniforms.sliderValue = mSliderValues[0];
-        else if (ids[i] == MAT_NOIS_DENS_SLIDER)   mUniforms.sliderValue = mSliderValues[1];
-        else if (ids[i] == MAT_LPG_REZ_SLIDER)     mUniforms.sliderValue = mSliderValues[2];
-        else if (ids[i] == MAT_COMB_AMT_SLIDER)    mUniforms.sliderValue = mSliderValues[3];
+        if (ids[i] == MAT_GLOBAL_GAIN_SLIDER || ids[i] == MAT_PARTICLES)
+        {
+            if (ids[i] == MAT_PARTICLES)
+                mUniforms.morph = mSliderValues[3];
+            mUniforms.sliderValue = mSliderValues[0];
+        }
+        else if (ids[i] == MAT_NOIS_DENS_SLIDER) mUniforms.sliderValue = mSliderValues[1];
+        else if (ids[i] == MAT_LPG_REZ_SLIDER) mUniforms.sliderValue = mSliderValues[2];
+        else if (ids[i] == MAT_COMB_AMT_SLIDER) mUniforms.sliderValue = mSliderValues[3];
         else                                       mUniforms.sliderValue = 0.0f;
 
         wgpuQueueWriteBuffer(queue,
@@ -336,40 +342,34 @@ bool Scene::createParticlePipeline()
 {
     if (mParticlePipeline) { wgpuRenderPipelineRelease(mParticlePipeline); mParticlePipeline = nullptr; }
 
-    // ── Slot 0: QuadVertex, per-vertex ──────────────────────────
-    // @location(0) cornerOffset : vec2f   offset 0
-    // @location(1) uv           : vec2f   offset 8
+    mParticleBlendState.color.operation = WGPUBlendOperation_Add;
+    mParticleBlendState.color.srcFactor = WGPUBlendFactor_SrcAlpha;
+    mParticleBlendState.color.dstFactor = WGPUBlendFactor_One;
+    mParticleBlendState.alpha.operation = WGPUBlendOperation_Add;
+    mParticleBlendState.alpha.srcFactor = WGPUBlendFactor_One;
+    mParticleBlendState.alpha.dstFactor = WGPUBlendFactor_One;
+    mParticleColorTarget                = mColorTarget;
+    mParticleColorTarget.blend          = &mParticleBlendState;
     mParticleVertexAttribs[0].shaderLocation = 0;
     mParticleVertexAttribs[0].format         = WGPUVertexFormat_Float32x2;
     mParticleVertexAttribs[0].offset         = 0;
-
     mParticleVertexAttribs[1].shaderLocation = 1;
     mParticleVertexAttribs[1].format         = WGPUVertexFormat_Float32x2;
     mParticleVertexAttribs[1].offset         = 2 * sizeof(float);
-
-    // ── Slot 1: ParticleData, per-instance ──────────────────────
-    // @location(2) pos_size  : vec4f   offset  0  (xyz = world pos, w = size)
-    // @location(3) color     : vec4f   offset 16
-    // @location(4) life_vel  : vec4f   offset 32
     mParticleVertexAttribs[2].shaderLocation = 2;
     mParticleVertexAttribs[2].format         = WGPUVertexFormat_Float32x4;
     mParticleVertexAttribs[2].offset         = 0;
-
     mParticleVertexAttribs[3].shaderLocation = 3;
     mParticleVertexAttribs[3].format         = WGPUVertexFormat_Float32x4;
     mParticleVertexAttribs[3].offset         = 4 * sizeof(float);
-
     mParticleVertexAttribs[4].shaderLocation = 4;
     mParticleVertexAttribs[4].format         = WGPUVertexFormat_Float32x4;
     mParticleVertexAttribs[4].offset         = 8 * sizeof(float);
-
     mParticleVertexBufferLayouts.resize(2);
-
     mParticleVertexBufferLayouts[0].attributeCount = 2;
     mParticleVertexBufferLayouts[0].attributes     = &mParticleVertexAttribs[0];
     mParticleVertexBufferLayouts[0].arrayStride    = sizeof(QuadVertex);
     mParticleVertexBufferLayouts[0].stepMode       = WGPUVertexStepMode_Vertex;
-
     mParticleVertexBufferLayouts[1].attributeCount = 3;
     mParticleVertexBufferLayouts[1].attributes     = &mParticleVertexAttribs[2];
     mParticleVertexBufferLayouts[1].arrayStride    = sizeof(ParticleData);
@@ -387,11 +387,14 @@ bool Scene::createParticlePipeline()
     mParticleFragmentState.module                      = mShaderModule;
     mParticleFragmentState.entryPoint                  = WGPU_STR("fs_particle");
     mParticleFragmentState.targetCount                 = 1;
-    mParticleFragmentState.targets                     = &mColorTarget;
+    mParticleFragmentState.targets =                   &mParticleColorTarget;
     mParticleFragmentState.constants                   = nullptr;
 
-    // Reuse the same fragment state — swap entry point if you want a dedicated one
-    mParticlePipelineDesc.fragment = &mParticleFragmentState;  // separate state
+    mParticlePipelineDesc.fragment = &mParticleFragmentState;
+    mParticleDepthStencil = *mPipelineDesc.depthStencil;
+    mParticleDepthStencil.depthWriteEnabled = WGPUOptionalBool_False;
+
+    mParticlePipelineDesc.depthStencil = &mParticleDepthStencil;
 
     mParticlePipeline = wgpuDeviceCreateRenderPipeline(mDevice, &mParticlePipelineDesc);
     if (!mParticlePipeline) {
@@ -687,6 +690,7 @@ void Scene::updateViewMatrix()
     buildLookAt(view, cameraX, cameraY, cameraZ, tx, cameraY, tz);
     buildPerspective(proj, 1.047f, mUniforms.aspectRatio, 0.1f, 3.0f);
     mulMat4(mUniforms.viewProjMatrix, proj, view);
+    std::memcpy(mUniforms.projMatrix, proj, sizeof(proj));
 }
 
 void Scene::onMouseMove(const float xpos, const float /*ypos*/)

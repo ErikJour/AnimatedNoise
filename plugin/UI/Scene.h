@@ -181,12 +181,15 @@ class Scene
         WGPUBuffer                          mParticleDataBuffer  = nullptr;
         uint32_t                            mParticleCount    = 0;
         // Particle Pipeline
-        WGPURenderPipeline                      mParticlePipeline     = nullptr;
-        WGPURenderPipelineDescriptor            mParticlePipelineDesc {};
-        std::array<WGPUVertexAttribute, 5>      mParticleVertexAttribs {};
-        std::vector<WGPUVertexBufferLayout>     mParticleVertexBufferLayouts;
-        WGPUFragmentState                       mParticleFragmentState     {};   // ← needed for fs_particle
-        uint32_t                                mParticleDrawCount = 500;        // current visible count
+        WGPURenderPipeline                  mParticlePipeline     = nullptr;
+        WGPURenderPipelineDescriptor        mParticlePipelineDesc {};
+        std::array<WGPUVertexAttribute, 5>  mParticleVertexAttribs {};
+        std::vector<WGPUVertexBufferLayout> mParticleVertexBufferLayouts;
+        WGPUFragmentState                   mParticleFragmentState     {};
+        uint32_t                            mParticleDrawCount = 500;
+        WGPUBlendState                      mParticleBlendState{};
+        WGPUColorTargetState                mParticleColorTarget{};
+        WGPUDepthStencilState               mParticleDepthStencil{};
 
         //Camera
         CameraState mCameraState;

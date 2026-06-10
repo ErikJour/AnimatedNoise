@@ -11,10 +11,11 @@ struct ParticleVertexInput {
 }
 
 struct ParticleVertexOutput {
-    @builtin(position) position : vec4f,
-    @location(0)       color    : vec4f,
-    @location(1)       uv       : vec2f,
-    @location(2)       life     : f32,
+    @builtin(position) position  : vec4f,
+    @location(0)       color     : vec4f,
+    @location(1)       uv        : vec2f,
+    @location(2)       life      : f32,
+    @location(3)       viewDepth : f32,
 }
 
 @vertex
@@ -22,34 +23,68 @@ fn vs_particle(in: ParticleVertexInput) -> ParticleVertexOutput {
     var out: ParticleVertexOutput;
 
     let worldPos = in.pos_size.xyz;
-    let size     = in.pos_size.w;
+    let size     = in.pos_size.w * 0.3;
+    let t        = in.life_vel.x;        // ← restored
 
-    let animated = vec3f(
+    // ── BALL: random cloud with latent phyllotaxis order ──
+    let cloud = vec3f(
         worldPos.x + sin(u.time + worldPos.x * 25.0) * 0.005,
-        worldPos.y - 0.85,
+        worldPos.y,
         worldPos.z + sin(u.time + worldPos.x * 25.0) * 0.01
     );
 
-//  let clipPos = u.viewProjMatrix * vec4f(animated, 1.0); //Fixed position in space
-    let clipPos = vec4f(animated, 1.0); //Avatar mode
+    // Fibonacci sphere: golden-angle spiral over a shell, same 0.2 radius as the baked ball
+    let GA    = 2.3999632;                    // golden angle = 2π/φ²
+    let yF    = 1.0 - 2.0 * t;                // -1..1, even latitude coverage
+    let rF    = sqrt(max(0.0, 1.0 - yF * yF));
+    let theta = GA * t * 500.0 + u.time * 0.1;          // slow majestic rotation
+    let shell = vec3f(cos(theta) * rF, yF, sin(theta) * rF) * 0.2;
 
-    let bx = in.cornerOffset.x * size * clipPos.w;
-    let by = in.cornerOffset.y * size * clipPos.w;
+    // crystallization amount: slow breathing, scaled by however much you want
+    let crystal = (0.5 + 0.5 * sin(u.time * 0.35)) * 0.7;
+    let ball    = mix(cloud, shell, crystal);
 
-    out.position = vec4f(clipPos.x + bx, clipPos.y + by  + 0.25, clipPos.z, clipPos.w);
-    out.color    = in.color;
-    out.uv       = in.uv;
-    out.life     = in.life_vel.x;
+    // ── STRING: standing wave with φ-proportioned harmonics ──
+    let PHI   = 1.6180339;
+    let phase = u.time;
+    let waveLength = 0.333;
 
+    let A     = 0.07;
+
+    let mode1 = sin(t * 3.14159) * cos(phase)             * A;
+    let mode2 = sin(t * 6.28318) * cos(phase * 2.0 + 1.3) * A / PHI;
+    let mode3 = sin(t * 9.42478) * cos(phase * 3.0 + 2.1) * A / (PHI * PHI);
+    let yDisp = mode1 + mode2 + mode3;
+
+    let zDisp    = sin(t * 3.14159) * sin(phase) * 0.02;
+    let endTaper = sin(t * 3.14159);
+    let wave = vec3f((t - 0.5) * waveLength, yDisp, zDisp)
+             + worldPos * (0.03 + 0.09 * endTaper);
+
+    // ── morph ──
+    let shaped = mix(ball, wave, u.morph);
+
+
+    let cloudAnchor = vec3f(0.0, -0.113, -0.3);
+    let scaled = 0.2;
+    let viewPos     = shaped * scaled + cloudAnchor;
+    let cornerView  = viewPos + vec3f(in.cornerOffset * size, 0.0);
+
+    out.position  = u.projMatrix * vec4f(cornerView, 1.0);
+    out.viewDepth = -viewPos.z;
+    out.color     = in.color;
+    out.uv        = in.uv;
+    out.life      = in.life_vel.x;
     return out;
 }
 
 @fragment
 fn fs_particle(in: ParticleVertexOutput) -> @location(0) vec4f {
-    let centered = (in.uv - vec2f(0.5)) * 2.0;
-    let dist     = length(centered);
-    let alpha    = smoothstep(1.0, 0.2, dist) * in.color.a * 0.05f;
-    if alpha < 0.01 { discard; }
-    let sliderMod = u.sliderValue;
-    return vec4f(in.color.rgb * u.sliderValue, alpha); //the 0.1f should be u.noiseLevel
+    let distanceToCenter = length(in.uv - 0.5);
+    let glow = clamp(0.05 / distanceToCenter - 0.1, 0.0, 1.0);
+
+    let depthFade = smoothstep(1.0, 1.1, in.viewDepth);
+
+    let alpha = glow * mix(0.3, 1.0, depthFade) * in.color.a;
+    return vec4f(in.color.rgb * u.sliderValue + 0.1, alpha);
 }

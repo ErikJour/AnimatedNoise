@@ -26,6 +26,8 @@ struct Uniforms {
     materialId:     u32,
     modelMatrix:    mat4x4f,
     viewProjMatrix: mat4x4f,
+    projMatrix:     mat4x4f,
+    morph :         f32,
 };
 
 @group(0) @binding(0) var<uniform> u: Uniforms;
