@@ -10,10 +10,10 @@ struct SliderDefinition {
 };
 
 constexpr SliderDefinition kSliderDefinitions[] = {
-    { "noiseLevel",  0.0f   },
-    { "noiseDensity",0.1f   },
-    { "lpgResonance",1.45f  },
-    { "combLevel",   2.975f }
+    { "noiseLevel",   0.0f   },
+    { "noiseDensity", 0.1f   },
+    { "lpgResonance", 1.45f  },
+    { "combLevel",    2.975f }
 };
 
 void SliderManager::initializeSliders()

@@ -21,11 +21,16 @@ public:
     void noteOn(int note, int velocity);
     void noteOff(int note);
     //======================================================================================
-    void setNoiseLevel(const float level)          { voice.mNoiseGenerator.setLevel(level); }
+    void setNoiseLevel(const float level)
+    {
+        voice.mNoiseGenerator.setLevel(level);
+    }
+
     void setNoiseDensity(const float density)      { voice.mNoiseGenerator.setDensity(density); }
     void setCombLevel(const float level)
     {
         voice.mCombFilter.setLevel(level);
+        voice.mNoiseGenerator.setCombLevel(level);
     }
     void setLpgResonance(const float newResonance)
     {

@@ -5,10 +5,11 @@
 #include "NoiseGenerator.h"
 
 
-NoiseGenerator::NoiseGenerator() : mSampleRate(44100), noiseLevel(0.0f), mAmplitude(0.0f)
+NoiseGenerator::NoiseGenerator() : mSampleRate(44100), noiseLevel(0.0f), mAmplitude(0.0f), mCombLevel(0.0f)
 {
     levelSmoothed.reset(mSampleRate, 0.02f);
     densitySmoothed.reset(mSampleRate, 0.05f);
+    combSmoothed.reset(mSampleRate, 0.02f);
     densitySmoothed.setCurrentAndTargetValue(1.0f);
 }
 
@@ -16,6 +17,7 @@ NoiseGenerator::NoiseGenerator() : mSampleRate(44100), noiseLevel(0.0f), mAmplit
 float NoiseGenerator::getNextSample()
 {
     noiseLevel = levelSmoothed.getNextValue();
+    mCombLevel = combSmoothed.getNextValue();
     const float currentDensity = densitySmoothed.getNextValue();
 
     if (currentDensity >= 0.999f)
@@ -44,7 +46,7 @@ float NoiseGenerator::getNextSample()
 
     mHoldCounter--;
 
-    const float output = mCurrentNoiseValue * noiseLevel * mAmplitude;
+    const float output = mCurrentNoiseValue * noiseLevel * mAmplitude * (1.0f - mCombLevel);
 
     constexpr float reduction = 0.2f;
     return output * reduction;
@@ -53,10 +55,6 @@ float NoiseGenerator::getNextSample()
 void NoiseGenerator::setDensity(float newDensity)
 {
     juce::ignoreUnused(newDensity);
-    // newDensity *= noiseDensityMod;
-    // newDensity = juce::jlimit(0.0f,
-    //                                     1.0f,
-    //                                     newDensity);
     densitySmoothed.setTargetValue(newDensity);
 }
 
