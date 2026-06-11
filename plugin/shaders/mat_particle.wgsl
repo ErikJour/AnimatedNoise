@@ -24,46 +24,42 @@ fn vs_particle(in: ParticleVertexInput) -> ParticleVertexOutput {
 
     let worldPos = in.pos_size.xyz;
     let size     = in.pos_size.w * 0.3;
-    let t        = in.life_vel.x;        // ← restored
+    let t        = in.life_vel.x;
 
-    // ── BALL: random cloud with latent phyllotaxis order ──
+    //Noise Cloud Object
     let cloud = vec3f(
         worldPos.x + sin(u.time + worldPos.x * 25.0) * 0.005,
         worldPos.y,
         worldPos.z + sin(u.time + worldPos.x * 25.0) * 0.01
     );
 
-    // Fibonacci sphere: golden-angle spiral over a shell, same 0.2 radius as the baked ball
+    //Sacred Geometrization
     let GA    = 2.3999632;                    // golden angle = 2π/φ²
     let yF    = 1.0 - 2.0 * t;                // -1..1, even latitude coverage
     let rF    = sqrt(max(0.0, 1.0 - yF * yF));
-    let theta = GA * t * 500.0 + u.time * 0.1;          // slow majestic rotation
+    let theta = GA * t * 500.0 + u.time * 0.1;          // slow rotation
     let shell = vec3f(cos(theta) * rF, yF, sin(theta) * rF) * 0.2;
 
-    // crystallization amount: slow breathing, scaled by however much you want
+    // crystallization amount
     let crystal = (0.5 + 0.5 * sin(u.time * 0.35)) * 0.7;
     let ball    = mix(cloud, shell, crystal);
 
-    // ── STRING: standing wave with φ-proportioned harmonics ──
+    //String geometry
     let PHI   = 1.6180339;
-    let phase = u.time;
+    let phase = u.time * 0.3;
     let waveLength = 0.333;
-
     let A     = 0.07;
-
     let mode1 = sin(t * 3.14159) * cos(phase)             * A;
     let mode2 = sin(t * 6.28318) * cos(phase * 2.0 + 1.3) * A / PHI;
     let mode3 = sin(t * 9.42478) * cos(phase * 3.0 + 2.1) * A / (PHI * PHI);
     let yDisp = mode1 + mode2 + mode3;
-
     let zDisp    = sin(t * 3.14159) * sin(phase) * 0.02;
     let endTaper = sin(t * 3.14159);
     let wave = vec3f((t - 0.5) * waveLength, yDisp, zDisp)
              + worldPos * (0.03 + 0.09 * endTaper);
 
-    // ── morph ──
+    //Moprh
     let shaped = mix(ball, wave, u.morph);
-
 
     let cloudAnchor = vec3f(0.0, -0.113, -0.3);
     let scaled = 0.2;

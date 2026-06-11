@@ -29,7 +29,7 @@ inline void buildSliderGeometry(
 
         // ── Leaf / spinal-fin silhouette ──────────────────────────────────────
         const float leafBulge  = std::sinf(v * kPI);
-        const float localSpan  = halfSpan * (0.02f + 0.28f * leafBulge);
+        const float localSpan  = halfSpan * (0.23f * leafBulge);
 
         for (int i = 0; i <= nArc; ++i)
         {
