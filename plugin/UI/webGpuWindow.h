@@ -24,16 +24,15 @@ public:
     bool initialize();
     bool initSurface(void* nativeHandle, uint32_t width, uint32_t height);
     void onResize(uint32_t width, uint32_t height);
-    [[nodiscard]] bool hasSurface() const { return mSurface != nullptr; }
     void terminate();
     static void setFeatures(WGPUAdapter adapter);
     void getAdapter(WGPUAdapter adapter, const WGPUAdapterInfo& properties);
     static void getLimits(WGPUAdapter adapter, WGPUSupportedLimits &limits);
-    Scene& getScene() { return mScene; }
 
+    Scene& getScene() { return mScene; }
+    [[nodiscard]] bool hasSurface() const { return mSurface != nullptr; }
 
 private:
-
     void applySurfaceConfig(const uint32_t width, const uint32_t height)
     {
         if (mSurfaceFormat == WGPUTextureFormat_Undefined) {
@@ -57,8 +56,8 @@ private:
         wgpuSurfaceConfigure(mSurface, &config);
     }
     static void setDefault(WGPULimits &limits);
-    static void setDefault(WGPUStencilFaceState& stencilFaceState);   // ADD
-    static void setDefault(WGPUDepthStencilState& depthStencilState); // ADD
+    static void setDefault(WGPUStencilFaceState& stencilFaceState);
+    static void setDefault(WGPUDepthStencilState& depthStencilState);
     static WGPURequiredLimits GetRequiredLimits(WGPUAdapter adapter);
 
     //====================================
@@ -79,7 +78,7 @@ private:
     WGPUFragmentState              mFragmentState = {};
     WGPUBlendState                 mBlendState = {};
     WGPUColorTargetState           mColorTarget = {};
-    WGPUDepthStencilState          depthStencilState = {};
+    WGPUDepthStencilState          mDepthStencilState = {};
 
     Scene mScene;
 

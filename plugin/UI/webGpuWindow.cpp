@@ -16,8 +16,8 @@ void WebGpuWindow::setWindowColor()
 
 bool WebGpuWindow::createInstance()
 {
-    WGPUInstanceDescriptor descriptor = {}; //The descriptor
-    descriptor.nextInChain            = nullptr; //For custom extensions, usually nullptr
+    WGPUInstanceDescriptor descriptor = {};
+    descriptor.nextInChain            = nullptr;
     WGPUDawnTogglesDescriptor toggles = {};
     toggles.chain.next                = nullptr;
     toggles.chain.sType               = WGPUSType_DawnTogglesDescriptor;
@@ -114,13 +114,13 @@ void WebGpuWindow::configurePipeline()
     mPipelineDesc.primitive.frontFace                = WGPUFrontFace_CCW;
     mPipelineDesc.primitive.cullMode                 = WGPUCullMode_None;
     mPipelineDesc.fragment                           = &mFragmentState;
-    setDefault(depthStencilState);
-    depthStencilState.format                         = WGPUTextureFormat_Depth24Plus;
-    depthStencilState.depthCompare                   = WGPUCompareFunction_Less;
-    depthStencilState.depthWriteEnabled              = WGPUOptionalBool_True;
-    depthStencilState.stencilReadMask                = 0;
-    depthStencilState.stencilWriteMask               = 0;
-    mPipelineDesc.depthStencil                       = &depthStencilState;
+    setDefault(mDepthStencilState);
+    mDepthStencilState.format                         = WGPUTextureFormat_Depth24Plus;
+    mDepthStencilState.depthCompare                   = WGPUCompareFunction_Less;
+    mDepthStencilState.depthWriteEnabled              = WGPUOptionalBool_True;
+    mDepthStencilState.stencilReadMask                = 0;
+    mDepthStencilState.stencilWriteMask               = 0;
+    mPipelineDesc.depthStencil                       = &mDepthStencilState;
     mColorTarget.blend                               = &mBlendState;
     mColorTarget.writeMask                           = WGPUColorWriteMask_All;
     mBlendState.color.srcFactor                      = WGPUBlendFactor_SrcAlpha;
