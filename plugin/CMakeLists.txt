@@ -13,6 +13,16 @@ elseif(WIN32)
 endif()
 
 #==================================
+#Binary assets
+#==================================
+juce_add_binary_data(AnimatedNoiseAssets
+        NAMESPACE BinaryData
+        HEADER_NAME BinaryData.h
+        SOURCES
+        Assets/ERIK-JOURGENSEN_ICON_B_W.png
+)
+
+#==================================
 #Add plugin
 #==================================
 juce_add_plugin(AnimatedNoise
@@ -75,6 +85,8 @@ target_sources(AnimatedNoise
         dsp/NoiseVoice.cpp
         dsp/FunctionGenerator.cpp
         dsp/AnimatedGain.cpp
+        UI/AnimatedLogo.cpp
+
 )
 
 if (APPLE)
@@ -102,6 +114,7 @@ target_include_directories(AnimatedNoise
 target_link_libraries(AnimatedNoise
         PRIVATE
             webgpu
+            AnimatedNoiseAssets
             juce::juce_audio_utils
             juce::juce_gui_extra
             juce::juce_dsp

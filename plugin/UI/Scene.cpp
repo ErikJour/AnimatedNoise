@@ -117,6 +117,7 @@ bool Scene::createShader()
 
 void Scene::terminate()
 {
+    mLogo.terminate();
     if (mDepthTextureView)              { wgpuTextureViewRelease(mDepthTextureView); mDepthTextureView = nullptr; }
     if (mDepthTexture)                  { wgpuTextureDestroy(mDepthTexture); wgpuTextureRelease(mDepthTexture); mDepthTexture = nullptr; }
     if (mSkylightVertexBuffer)          { wgpuBufferRelease(mSkylightVertexBuffer); mSkylightVertexBuffer = nullptr; }
@@ -229,6 +230,8 @@ void Scene::renderFrame(const float currentTime)
             wgpuRenderPassEncoderDraw(renderPass, 6, mParticleDrawCount, 0, 0);
             wgpuRenderPassEncoderSetPipeline(renderPass, mPipeline);
         }
+
+        mLogo.render(renderPass);
 
         wgpuRenderPassEncoderEnd(renderPass);
         wgpuRenderPassEncoderRelease(renderPass);
@@ -506,6 +509,8 @@ bool Scene::createPipeline()
 
     wgpuBindGroupLayoutRelease(bgl);
     if (!createParticlePipeline()) return false;
+    mLogo.init(mDevice, mQueue);
+    if (!mLogo.initialize(mSurfaceFormat, *mPipelineDesc.depthStencil)) return false;
     return true;
 }
 

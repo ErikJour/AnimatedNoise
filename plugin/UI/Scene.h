@@ -18,6 +18,8 @@
 #include "dragState.h"
 #include "yurtBeams.h"
 #include "skylight.h"
+#include "AnimatedLogo.h"
+
 
 
 struct vec3 { float x,y,z; };
@@ -190,6 +192,8 @@ class Scene
         WGPUBlendState                      mParticleBlendState{};
         WGPUColorTargetState                mParticleColorTarget{};
         WGPUDepthStencilState               mParticleDepthStencil{};
+
+        AnimatedLogo mLogo;
 
         //Camera
         CameraState mCameraState;

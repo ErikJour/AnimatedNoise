@@ -1,9 +1,6 @@
 /webgpu
-
 /cmake-build-debug
-
 /.idea
-
 /.DS_Store
-
-/claude.md
+AI/
+*.gguf
