@@ -67,6 +67,7 @@ struct ParticleData {
 class ParticleSystem
 {
 public:
+    float height = -0.25f;
     // Produces 6 QuadVertex entries describing a unit quad in CCW winding.
     // All particles share this single quad via instanced draw.
     //

@@ -198,6 +198,9 @@ class Scene
         double mGreen = {};
         double mBlue = {};
 
+        // WGPURenderPipeline mParticleWorldPipeline = nullptr;
+
+
 };
 
 

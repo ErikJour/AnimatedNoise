@@ -272,15 +272,28 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
 
     std::memcpy(mUniforms.modelMatrix, kIdentity, sizeof(kIdentity));
 
+    const float camA  = mCameraState.angleX;
+    const float camCa = cosf(camA), camSa = sinf(camA);
+    const float billboardBasis[16] = {
+        -camCa, 0.f, -camSa, 0.f,
+          0.f,  1.f,   0.f,  0.f,
+          0.f,  0.f,   0.f,  0.f,
+          0.f,  0.f,   0.f,  1.f
+    };
+
     for (uint32_t i = 0; i < 9; ++i)
     {
         mUniforms.materialId = ids[i];
 
         if (ids[i] == MAT_GLOBAL_GAIN_SLIDER || ids[i] == MAT_PARTICLES)
         {
-            if (ids[i] == MAT_PARTICLES)
-                mUniforms.morph = mSliderValues[3];
+            if (ids[i] == MAT_PARTICLES) {}
+                 mUniforms.morph = mSliderValues[3];
             mUniforms.sliderValue = mSliderValues[0];
+        }
+        else if (ids[i] == MAT_PARTICLES)
+        {
+            std::memcpy(mUniforms.modelMatrix, billboardBasis, sizeof(billboardBasis));
         }
         else if (ids[i] == MAT_NOIS_DENS_SLIDER) mUniforms.sliderValue = mSliderValues[1];
         else if (ids[i] == MAT_LPG_REZ_SLIDER) mUniforms.sliderValue = mSliderValues[2];
@@ -377,7 +390,7 @@ bool Scene::createParticlePipeline()
     // Copy the main desc as a base — shares layout, blend, depth, multisample
     mParticlePipelineDesc                              = mPipelineDesc;
     mParticlePipelineDesc.vertex.module                = mShaderModule;
-    mParticlePipelineDesc.vertex.entryPoint            = WGPU_STR("vs_particle");
+    mParticlePipelineDesc.vertex.entryPoint            = WGPU_STR("vs_particle_world");
     mParticlePipelineDesc.vertex.bufferCount           = 2;
     mParticlePipelineDesc.vertex.buffers               = mParticleVertexBufferLayouts.data();
     mParticlePipelineDesc.vertex.constantCount         = 0;
@@ -622,7 +635,7 @@ void Scene::initializeParticles()
     ParticleSystem::buildQuad(quadVerts);
 
     constexpr float particleSpread = 0.2f;
-    constexpr float particleSize = 0.05f;
+    constexpr float particleSize = 0.035f;
     ParticleSystem::initParticles(particles, MAX_PARTICLES, particleSpread, particleSize);
 
     WGPUBufferDescriptor bd{};
