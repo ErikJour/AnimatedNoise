@@ -14,6 +14,9 @@ struct FloorVertex {
 
 using FloorIndex = uint16_t;
 
+constexpr float PI = 3.14159265358979323846f;
+
+
 class CircularFloor
 {
 public:
@@ -32,7 +35,6 @@ public:
         verts.reserve(1 + static_cast<size_t>(segments));
         indices.reserve(static_cast<size_t>(segments) * 3);
 
-        const float PI = 3.14159265358979323846f;
 
         // 1. Center vertex (Index 0)
         verts.push_back({

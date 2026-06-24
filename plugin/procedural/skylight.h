@@ -4,6 +4,7 @@
 #include <vector>
 #include <cstdint>
 #include <cmath>
+#include "circularFloor.h"
 
 // Vertex layout: position (xyz), normal (xyz), color (rgb)
 struct SkylightVertex {
@@ -43,7 +44,6 @@ public:
         // 2. Outer ring vertices
         for (int s = 0; s < segments; ++s)
         {
-            const float PI = 3.14159265358979323846f;
             const float theta = (static_cast<float>(s) / static_cast<float>(segments)) * 2.0f * PI;
 
             const float px = std::cos(theta) * radius;

@@ -19,6 +19,7 @@
 #include "yurtBeams.h"
 #include "skylight.h"
 #include "AnimatedLogo.h"
+#include "sphereGeometry.h"
 
 
 
@@ -49,13 +50,11 @@ class Scene
         void initializeScene();
         bool createPipeline();
         void initializeFloor();
+        void initializeSphere();
         void initializeSkylight();
-        void initializeBeams();
-
         void InitializeSlider(uint32_t& indexCount, WGPUBuffer& vertexBuffer, WGPUBuffer& indexBuffer, float wallRadius, float angle) const;
         void initializeParticles();
         void setSliderValue(int index, float value);
-        void initializePlane();
         float getSliderValue(const int index) const { return mSliderValues[index]; }
         float sliderTopFraction()       const { return (1.0f - (kSpineMaxY + mSliderPos[1])) * 0.5f; }
         float sliderBottomFraction()    const { return (1.0f - (kSpineMinY + mSliderPos[1])) * 0.5f; }
@@ -166,18 +165,14 @@ class Scene
         WGPUBuffer                          mFloorVertexBuffer  = nullptr;
         WGPUBuffer                          mFloorIndexBuffer  = nullptr;
         uint32_t                            mFloorIndexCount    = 0;
+        //Sphere
+        WGPUBuffer                          mSphereVertexBuffer   = nullptr;
+        WGPUBuffer                          mSphereIndexBuffer    = nullptr;
+        uint32_t                            mSphereIndexCount     = 0;
         //Skylight
         WGPUBuffer                          mSkylightVertexBuffer  = nullptr;
         WGPUBuffer                          mSkylightIndexBuffer  = nullptr;
         uint32_t                            mSkylightIndexCount    = 0;
-        //Beams
-        WGPUBuffer                          mBeamsVertexBuffer  = nullptr;
-        WGPUBuffer                          mBeamsIndexBuffer  = nullptr;
-        uint32_t                            mBeamsIndexCount    = 0;
-        //Plane
-        WGPUBuffer                          mPlaneVertexBuffer  = nullptr;
-        WGPUBuffer                          mPlaneIndexBuffer  = nullptr;
-        uint32_t                            mPlaneIndexCount    = 0;
         //Particle System
         WGPUBuffer                          mParticleQuadBuffer  = nullptr;
         WGPUBuffer                          mParticleDataBuffer  = nullptr;

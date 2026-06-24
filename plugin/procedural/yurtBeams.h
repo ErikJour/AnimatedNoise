@@ -4,6 +4,7 @@
 #include <vector>
 #include <cstdint>
 #include <cmath>
+#include "circularFloor.h"
 
 struct BeamVertex {
     float x, y, z;
@@ -36,7 +37,7 @@ public:
         verts.reserve(static_cast<size_t>(segments) * static_cast<size_t>(stepsAlong) * 16u);
         indices.reserve(static_cast<size_t>(segments) * static_cast<size_t>(stepsAlong) * 24u);
 
-        const float PI = 3.14159265358979323846f;
+        // const float PI = 3.14159265358979323846f;
         const float cr = 0.85f, cg = 0.78f, cb = 0.65f;
         const float w = beamHalfWidth, d = beamHalfDepth;
 

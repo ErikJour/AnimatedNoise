@@ -122,8 +122,8 @@ void Scene::terminate()
     if (mDepthTexture)                  { wgpuTextureDestroy(mDepthTexture); wgpuTextureRelease(mDepthTexture); mDepthTexture = nullptr; }
     if (mSkylightVertexBuffer)          { wgpuBufferRelease(mSkylightVertexBuffer); mSkylightVertexBuffer = nullptr; }
     if (mSkylightIndexBuffer)           { wgpuBufferRelease(mSkylightIndexBuffer); mSkylightIndexBuffer = nullptr; }
-    if (mBeamsVertexBuffer)             { wgpuBufferRelease(mBeamsVertexBuffer); mBeamsVertexBuffer = nullptr; }
-    if (mBeamsIndexBuffer)              { wgpuBufferRelease(mBeamsIndexBuffer); mBeamsIndexBuffer = nullptr; }
+    if (mSphereVertexBuffer)            { wgpuBufferRelease(mSphereVertexBuffer); mSphereVertexBuffer = nullptr; }
+    if (mSphereIndexBuffer)             { wgpuBufferRelease(mSphereIndexBuffer); mSphereIndexBuffer = nullptr; }
     if (mFloorVertexBuffer)             { wgpuBufferRelease(mFloorVertexBuffer); mFloorVertexBuffer = nullptr; }
     if (mFloorIndexBuffer)              { wgpuBufferRelease(mFloorIndexBuffer); mFloorIndexBuffer = nullptr; }
     if (mNoiseDensitySliderVertexBuffer){ wgpuBufferRelease(mNoiseDensitySliderVertexBuffer); mNoiseDensitySliderVertexBuffer = nullptr; }
@@ -134,8 +134,6 @@ void Scene::terminate()
     if (mCombAmtSliderIndexBuffer)      { wgpuBufferRelease(mCombAmtSliderIndexBuffer); mCombAmtSliderIndexBuffer = nullptr; }
     if (mNoiseLevelSliderVertexBuffer)  { wgpuBufferRelease(mNoiseLevelSliderVertexBuffer); mNoiseLevelSliderVertexBuffer = nullptr; }
     if (mNoiseLevelSliderIndexBuffer)   { wgpuBufferRelease(mNoiseLevelSliderIndexBuffer); mNoiseLevelSliderIndexBuffer = nullptr; }
-    if (mPlaneVertexBuffer)             { wgpuBufferRelease(mPlaneVertexBuffer); mPlaneVertexBuffer = nullptr; }
-    if (mPlaneIndexBuffer)              { wgpuBufferRelease(mPlaneIndexBuffer); mPlaneIndexBuffer = nullptr; }
     if (mParticleQuadBuffer)            { wgpuBufferRelease(mParticleQuadBuffer); mParticleQuadBuffer = nullptr; }
     if (mParticleDataBuffer)            { wgpuBufferRelease(mParticleDataBuffer); mParticleDataBuffer = nullptr; }
     if (mParticlePipeline)              { wgpuRenderPipelineRelease(mParticlePipeline); mParticlePipeline = nullptr; }
@@ -208,17 +206,14 @@ void Scene::renderFrame(const float currentTime)
         wgpuRenderPassEncoderSetPipeline(renderPass, mPipeline);
         //Floor
         setItemBuffers(mFloorVertexBuffer, mFloorIndexBuffer, mFloorIndexCount, MAT_FLOOR, renderPass);
+        setItemBuffers(mSphereVertexBuffer, mSphereIndexBuffer, mSphereIndexCount, MAT_FLOOR, renderPass);
         //Skylight
         setItemBuffers(mSkylightVertexBuffer, mSkylightIndexBuffer, mSkylightIndexCount, MAT_FLOOR, renderPass);
-        //Beams
-        setItemBuffers(mBeamsVertexBuffer, mBeamsIndexBuffer, mBeamsIndexCount, MAT_FLOOR, renderPass);
         // Sliders
         setItemBuffers(mNoiseLevelSliderVertexBuffer, mNoiseLevelSliderIndexBuffer, mNoiseLevelSliderIndexCount, MAT_GLOBAL_GAIN_SLIDER, renderPass);
         setItemBuffers(mNoiseDensitySliderVertexBuffer, mNoiseDensitySliderIndexBuffer, mNoiseDensitySliderIndexCount, MAT_NOIS_DENS_SLIDER, renderPass);
         setItemBuffers(mCombAmtSliderVertexBuffer, mCombAmtSliderIndexBuffer, mCombAmtSliderIndexCount, MAT_COMB_AMT_SLIDER, renderPass);
         setItemBuffers(mLpgRezSliderVertexBuffer, mLpgRezSliderIndexBuffer, mLpgRezSliderIndexCount, MAT_LPG_REZ_SLIDER, renderPass);
-        //Plane
-        setItemBuffers(mPlaneVertexBuffer, mPlaneIndexBuffer, mPlaneIndexCount, MAT_PLANE, renderPass);
         // Particles
         if (mParticleQuadBuffer && mParticleDataBuffer && mParticleCount > 0)
         {
@@ -410,8 +405,8 @@ bool Scene::createParticlePipeline()
 void Scene::initializeScene()
 {
     initializeFloor();
+    initializeSphere();
     initializeSkylight();
-    initializeBeams();
 
     InitializeSlider(mNoiseLevelSliderIndexCount,
                     mNoiseLevelSliderVertexBuffer,
@@ -438,7 +433,6 @@ void Scene::initializeScene()
                     2.975f);
 
     initializeParticles();
-    // initializePlane();
 }
 
 bool Scene::createPipeline()
@@ -560,6 +554,28 @@ void Scene::initializeFloor()
     wgpuQueueWriteBuffer(mQueue, mFloorIndexBuffer, 0, indices.data(), bd.size);
 }
 
+void Scene::initializeSphere()
+{
+    std::cout << "Initializing Sphere" << std::endl;
+    std::vector<SphereVertex> vertices;
+    std::vector<SphereIndex>  indices;
+
+    SphereGeometry::buildSphere(vertices, indices);
+
+    mSphereIndexCount = static_cast<uint32_t>(indices.size());
+
+    WGPUBufferDescriptor bd{};
+    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
+    bd.size  = vertices.size() * sizeof(SphereVertex);
+    mSphereVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mSphereVertexBuffer, 0, vertices.data(), bd.size);
+
+    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
+    bd.size  = (indices.size() * sizeof(FloorIndex) + 3) & ~3ULL;
+    mSphereIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mSphereIndexBuffer, 0, indices.data(), bd.size);
+}
+
 void Scene::initializeSkylight()
 {
     std::vector<SkylightVertex> vertices;
@@ -579,37 +595,6 @@ void Scene::initializeSkylight()
     bd.size  = (indices.size() * sizeof(SkylightIndex) + 3) & ~3ULL;
     mSkylightIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
     wgpuQueueWriteBuffer(mQueue, mSkylightIndexBuffer, 0, indices.data(), bd.size);
-}
-
-void Scene::initializeBeams()
-{
-    std::vector<BeamVertex> vertices;
-    std::vector<BeamIndex>  indices;
-
-    YurtBeams::buildBeams(vertices,
-                            indices,
-                    0.95f,
-                    -0.15f,
-                    0.15f,
-                    0.75f,
-                    48,
-                    0.04f,
-                    0.025f,
-                    64,
-                    0.5f);
-
-    mBeamsIndexCount = static_cast<uint32_t>(indices.size());
-
-    WGPUBufferDescriptor bd{};
-    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
-    bd.size  = vertices.size() * sizeof(BeamVertex);
-    mBeamsVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-    wgpuQueueWriteBuffer(mQueue, mBeamsVertexBuffer, 0, vertices.data(), bd.size);
-
-    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
-    bd.size  = (indices.size() * sizeof(BeamIndex) + 3) & ~3ULL;
-    mBeamsIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-    wgpuQueueWriteBuffer(mQueue, mBeamsIndexBuffer, 0, indices.data(), bd.size);
 }
 
 void Scene::InitializeSlider(uint32_t& indexCount, WGPUBuffer& vertexBuffer, WGPUBuffer& indexBuffer, const float wallRadius = 0.9f, const float angle = 2.975f) const
@@ -659,26 +644,6 @@ void Scene::setSliderValue(const int index, const float value)
     mParticleDrawCount = static_cast<uint32_t>(mSliderValues[1] * MAX_PARTICLES - 100) + 100;
 }
 
-void Scene::initializePlane()
-{
-    std::vector<PlaneVertex> vertices;
-    std::vector<PlaneIndex>  indices;
-
-    Plane::buildPlane(vertices, indices, 0.15f, 0.25f, 32, 32);
-
-    mPlaneIndexCount = static_cast<uint32_t>(indices.size());
-
-    WGPUBufferDescriptor bd{};
-    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
-    bd.size  = vertices.size() * sizeof(PlaneVertex);
-    mPlaneVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-    wgpuQueueWriteBuffer(mQueue, mPlaneVertexBuffer, 0, vertices.data(), bd.size);
-
-    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
-    bd.size  = (indices.size() * sizeof(PlaneIndex) + 3) & ~3ULL;
-    mPlaneIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-    wgpuQueueWriteBuffer(mQueue, mPlaneIndexBuffer, 0, indices.data(), bd.size);
-}
 
 void Scene::updateViewMatrix()
 {
