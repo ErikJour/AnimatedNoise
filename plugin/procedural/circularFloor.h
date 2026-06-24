@@ -34,11 +34,11 @@ public:
 
         verts.reserve(1 + static_cast<size_t>(segments));
         indices.reserve(static_cast<size_t>(segments) * 3);
-
+        constexpr float floorHeight = -0.35f;
 
         // 1. Center vertex (Index 0)
         verts.push_back({
-            0.0f, -0.15f, 0.0f, // position
+            0.0f, floorHeight, 0.0f, // position
             0.0f, 1.0f, 0.0f, // normal (+Y, facing up)
             1.0f, 1.0f, 1.0f
         });
@@ -52,7 +52,7 @@ public:
             const float pz = std::sin(theta) * radius; // ← renamed from py
 
             verts.push_back({
-                px,   -0.15f, pz,   // ← y=0, z gets the sin value
+                px,   floorHeight, pz,   // ← y=0, z gets the sin value
                 0.0f, 1.0f, 0.0f, // ← normal +Y
                 1.0f, 1.0f, 1.0f
             });

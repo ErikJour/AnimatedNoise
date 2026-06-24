@@ -406,7 +406,7 @@ void Scene::initializeScene()
 {
     initializeFloor();
     initializeSphere();
-    initializeSkylight();
+    // initializeSkylight();
 
     InitializeSlider(mNoiseLevelSliderIndexCount,
                     mNoiseLevelSliderVertexBuffer,
@@ -620,7 +620,10 @@ void Scene::initializeParticles()
     std::vector<ParticleData> particles;
 
     ParticleSystem::buildQuad(quadVerts);
-    ParticleSystem::initParticles(particles, MAX_PARTICLES, 0.2f, 0.01f);
+
+    constexpr float particleSpread = 0.2f;
+    constexpr float particleSize = 0.05f;
+    ParticleSystem::initParticles(particles, MAX_PARTICLES, particleSpread, particleSize);
 
     WGPUBufferDescriptor bd{};
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
@@ -655,10 +658,12 @@ void Scene::updateViewMatrix()
     // Look target one unit ahead in the yaw direction
     const float tx = cameraX + sinf(yaw);
     const float tz = cameraZ - cosf(yaw);
+    constexpr float near = 0.1f;
+    constexpr float far = 8.0f;
 
     float view[16], proj[16];
     buildLookAt(view, cameraX, cameraY, cameraZ, tx, cameraY, tz);
-    buildPerspective(proj, 1.047f, mUniforms.aspectRatio, 0.1f, 3.0f);
+    buildPerspective(proj, 1.047f, mUniforms.aspectRatio, near, far);
     mulMat4(mUniforms.viewProjMatrix, proj, view);
     std::memcpy(mUniforms.projMatrix, proj, sizeof(proj));
 }

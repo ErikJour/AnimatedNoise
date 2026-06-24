@@ -22,7 +22,7 @@ public:
     void configurePipeline();
 
     bool initialize();
-    bool initSurface(void* nativeHandle, uint32_t width, uint32_t height);
+    bool initSurface(double contentsScale, uint32_t width, uint32_t height);
     void onResize(uint32_t width, uint32_t height);
     void terminate();
     static void setFeatures(WGPUAdapter adapter);
@@ -31,6 +31,8 @@ public:
 
     Scene& getScene() { return mScene; }
     [[nodiscard]] bool hasSurface() const { return mSurface != nullptr; }
+    [[nodiscard]] void* getNativeView() const { return mNativeView; }
+
 
 private:
     void applySurfaceConfig(const uint32_t width, const uint32_t height)
@@ -66,6 +68,7 @@ private:
     mutable double mRed = {};
     double mGreen = {};
     double mBlue = {};
+    void*                          mNativeView        = nullptr;
     WGPUInstance                   mInstance     = nullptr;
     WGPUAdapterInfo                mInitProperties = {};
     WGPUAdapter                    mAdapter      = nullptr;

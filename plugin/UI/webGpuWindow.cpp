@@ -150,10 +150,12 @@ bool WebGpuWindow::initialize()
     return true;
 }
 
-bool WebGpuWindow::initSurface(void* nativeHandle, const uint32_t width, const uint32_t height)
+bool WebGpuWindow::initSurface(const double contentsScale, const uint32_t width, const uint32_t height)
 {
     std::cout << "initSurface called: " << width << "x" << height << std::endl;
-    mSurface = createMetalSurface(mInstance, nativeHandle);
+    const MetalSurface metal = createMetalSurface(mInstance, contentsScale);
+    mSurface    = metal.surface;
+    mNativeView = metal.view;
     if (!mSurface) { std::cerr << "Surface creation failed" << std::endl; return false; }
 
     applySurfaceConfig(width, height);

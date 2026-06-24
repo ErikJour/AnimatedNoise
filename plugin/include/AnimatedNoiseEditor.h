@@ -49,6 +49,15 @@ private:
     //Sliders
     SliderManager mSliderManager;
 
+#if JUCE_MAC
+    juce::NSViewComponent mMetalView;
+#endif
+
+    double mStartTimeMs = 0.0;
+    double mLastFrameMs = 0.0;
+    double mElapsed     = 0.0;
+    bool   mStartTimeSet = false;
+
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AnimatedNoiseProcessorEditor)
 };

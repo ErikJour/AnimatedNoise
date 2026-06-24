@@ -27,24 +27,41 @@ void AnimatedNoiseProcessorEditor::parentHierarchyChanged()
     AudioProcessorEditor::parentHierarchyChanged();
 
     if (!webGpuWindow.hasSurface() && getPeer() != nullptr) {
-        if (void* handle = getWindowHandle()) {
-            const auto width = static_cast<uint32_t>(getWidth());
-            const auto height = static_cast<uint32_t>(getHeight());
-            webGpuWindow.initSurface(handle, width, height);
-            mConfiguredW = width;
-            mConfiguredH = height;
-            webGpuWindow.getScene().setCameraState(processorRef.savedCameraState);
-            mSliderManager.initializeSliders();
-            startTimerHz(60);
-            juce::MessageManager::callAsync([this]() {
-                setResizable(true, true);
-                setResizeLimits(200,
-                                113,
-                                3200,
-                                1800);
-                getConstrainer()->setFixedAspectRatio(800.0 / 450.0);
-            });
-        }
+        const auto* primaryDisplay = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay();
+        const double scale = primaryDisplay ? primaryDisplay->scale : 1.0;
+        const auto width  = static_cast<uint32_t>(std::round(static_cast<double>(getWidth())  * scale));
+        const auto height = static_cast<uint32_t>(std::round(static_cast<double>(getHeight()) * scale));
+
+        if (!webGpuWindow.initSurface(scale, width, height))
+            return;
+
+#if JUCE_MAC
+        // The Metal layer lives in its own NSView, confined to this editor, so
+        // it never paints over the standalone window's title bar.
+        // The native view's -hitTest: returns nil so AppKit hands mouse events to
+        // JUCE's peer; this makes JUCE's own routing skip the overlay component too,
+        // so mouseDown reaches the editor (slider/text hit-testing) instead of dying
+        // in the NSViewComponent. (mouseWheel already bubbles to the parent.)
+        mMetalView.setInterceptsMouseClicks(false, false);
+        addAndMakeVisible(mMetalView);
+        mMetalView.setView(webGpuWindow.getNativeView());
+        mMetalView.setBounds(getLocalBounds());
+#endif
+
+        mStartTimeMs = juce::Time::getMillisecondCounterHiRes();
+        mStartTimeSet = true;
+        mConfiguredW = width;
+        mConfiguredH = height;
+        webGpuWindow.getScene().setCameraState(processorRef.savedCameraState);
+        startTimerHz(60);
+        juce::MessageManager::callAsync([this]() {
+            setResizable(true, true);
+            setResizeLimits(200,
+                            113,
+                            3200,
+                            1800);
+            getConstrainer()->setFixedAspectRatio(800.0 / 450.0);
+        });
     }
 }
 
@@ -76,8 +93,13 @@ void AnimatedNoiseProcessorEditor::setResizeReady()
 void AnimatedNoiseProcessorEditor::resized()
 {
     if (!webGpuWindow.hasSurface()) return;
-    mPendingW = static_cast<uint32_t>(getWidth());
-    mPendingH = static_cast<uint32_t>(getHeight());
+#if JUCE_MAC
+    mMetalView.setBounds(getLocalBounds());
+#endif
+    const auto* primaryDisplay = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay();
+    const float scale = primaryDisplay ? static_cast<float>(primaryDisplay->scale) : 1.0f;
+    mPendingW = static_cast<uint32_t>(std::round(static_cast<float>(getWidth())  * scale));
+    mPendingH = static_cast<uint32_t>(std::round(static_cast<float>(getHeight()) * scale));
     mResizePending = true;
 }
 
