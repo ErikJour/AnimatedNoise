@@ -53,6 +53,7 @@ void AnimatedNoiseProcessorEditor::parentHierarchyChanged()
         mConfiguredW = width;
         mConfiguredH = height;
         webGpuWindow.getScene().setCameraState(processorRef.savedCameraState);
+        mSliderManager.initializeSliders();
         startTimerHz(60);
         juce::MessageManager::callAsync([this]() {
             setResizable(true, true);
