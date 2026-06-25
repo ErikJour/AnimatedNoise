@@ -15,9 +15,9 @@ inline void buildSliderGeometry(
     std::vector<SliderIndex>&  indices,
     const float wallRadius  = 0.9f,
     const float centerAngle = 0.0f,
-    const float halfSpan    = 0.1f,
-    const float yBottom     = 0.15f,
-    const float yTop        = 0.25f,
+    const float halfSpan    = 0.2f,
+    const float yBottom     = 0.0f,
+    const float yTop        = 0.1f,
     const int   nArc        = 10,
     const int   nY          = 40)
 {

@@ -7,13 +7,6 @@
 WebGpuWindow::WebGpuWindow()    = default;
 WebGpuWindow::~WebGpuWindow()   = default;
 
-void WebGpuWindow::setWindowColor()
-{
-    mRed    = 0.2;
-    mGreen  = 0.25;
-    mBlue   = 0.2;
-}
-
 bool WebGpuWindow::createInstance()
 {
     WGPUInstanceDescriptor descriptor = {};
@@ -137,7 +130,6 @@ void WebGpuWindow::configurePipeline()
 
 bool WebGpuWindow::initialize()
 {
-    setWindowColor();
     if (!createInstance())      return false;
     if (!createAdapter())       return false;
     if (!createDevice())        return false;

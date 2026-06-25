@@ -14,7 +14,6 @@ public:
     WebGpuWindow();
     ~WebGpuWindow();
 
-    void setWindowColor();
     bool createInstance();
     bool createAdapter();
     bool createDevice();
@@ -65,9 +64,6 @@ private:
     //====================================
     //Variables
     //====================================
-    mutable double mRed = {};
-    double mGreen = {};
-    double mBlue = {};
     void*                          mNativeView        = nullptr;
     WGPUInstance                   mInstance     = nullptr;
     WGPUAdapterInfo                mInitProperties = {};
