@@ -20,8 +20,8 @@
 #include "skylight.h"
 #include "AnimatedLogo.h"
 #include "sphereGeometry.h"
-
-
+#include <juce_audio_processors/juce_audio_processors.h>
+#include "AnimatedSlider.h"
 
 struct vec3 { float x,y,z; };
 
@@ -54,7 +54,6 @@ class Scene
         void initializeSkylight();
         void InitializeSlider(uint32_t& indexCount, WGPUBuffer& vertexBuffer, WGPUBuffer& indexBuffer, float wallRadius, float angle) const;
         void initializeParticles();
-        void setSliderValue(int index, float value);
         float getSliderValue(const int index) const { return mSliderValues[index]; }
         float sliderTopFraction()       const { return (1.0f - (kSpineMaxY + mSliderPos[1])) * 0.5f; }
         float sliderBottomFraction()    const { return (1.0f - (kSpineMinY + mSliderPos[1])) * 0.5f; }
@@ -73,34 +72,36 @@ class Scene
         CameraState getCameraState() const { return mCameraState; }
         void setCameraState(const CameraState& s) { mCameraState = s; updateViewMatrix(); }
 
-        void projectSliderBounds(const float screenW, const float screenH,
-                         float& outCenterX, float& outTopY, float& outBottomY, const float angle) const
+    void projectSliderBounds(const float screenW, const float screenH,
+                 juce::Point<float>& outTop,
+                 juce::Point<float>& outBottom,
+                 const float angle) const
         {
-            // Constants must match buildSliderGeometry
-            const float wx = 0.9f * std::cos(angle);   // wallRadius * cos(centerAngle=0)
-            const float wz = 0.9f * std::sin(angle);    // wallRadius * sin(centerAngle=0)
-            constexpr float yTop    =  0.25f;
-            constexpr float yBottom = -0.15f;
-            constexpr float yMid    = (yTop + yBottom) * 0.5f;
+            outTop    = projectSliderPoint(screenW, screenH, 1.0f, angle);
+            outBottom = projectSliderPoint(screenW, screenH, 0.0f, angle);
+        }
+    void setSliderList(const std::vector<AnimatedSlider>& list) { mSliderList = &list; }
 
-            auto project = [&](const float x,
-                                const float y,
-                                const float z,
-                                float& sx,
-                                float& sy)
-            {
-                const float* m = mUniforms.viewProjMatrix;
-                const float cx = m[0]*x + m[4]*y + m[8]*z  + m[12];
-                const float cy = m[1]*x + m[5]*y + m[9]*z  + m[13];
-                const float cw = m[3]*x + m[7]*y + m[11]*z + m[15];
-                sx = ( cx/cw * 0.5f + 0.5f)        * screenW;
-                sy = (1.0f - (cy/cw * 0.5f + 0.5f)) * screenH;
-            };
+    // Project the spine centerline at height-fraction v (0 = bottom, 1 = top)
+    // to screen pixels. v maps to the SAME world-y span the geometry is built
+    // over (buildSliderGeometry yBottom/yTop), so the bead/tube hit positions
+    // track the rendered tube exactly — including perspective foreshortening,
+    // which a straight screen-space lerp between the endpoints does not.
+    juce::Point<float> projectSliderPoint(const float screenW, const float screenH,
+                                          const float v, const float angle) const
+        {
+            const float wx = 0.9f * std::cos(angle);
+            const float wz = 0.9f * std::sin(angle);
+            constexpr float yTop    =  0.28125f;
+            constexpr float yBottom = -0.01875f;
+            const float y = yBottom + v * (yTop - yBottom);
 
-            float dummy;
-            project(wx, yMid,    wz, outCenterX, dummy);
-            project(wx, yTop,    wz, dummy,      outTopY);
-            project(wx, yBottom, wz, dummy,      outBottomY);
+            const float* m = mUniforms.viewProjMatrix;
+            const float cx = m[0]*wx + m[4]*y + m[8]*wz  + m[12];
+            const float cy = m[1]*wx + m[5]*y + m[9]*wz  + m[13];
+            const float cw = m[3]*wx + m[7]*y + m[11]*wz + m[15];
+            return { (cx/cw * 0.5f + 0.5f)        * screenW,
+                     (1.0f - (cy/cw * 0.5f + 0.5f)) * screenH };
         }
 
     private:
@@ -197,6 +198,9 @@ class Scene
         mutable double mRed = {};
         double mGreen = {};
         double mBlue = {};
+
+        const std::vector<AnimatedSlider>* mSliderList = nullptr;  // borrowed from SliderManager
+
 
         // WGPURenderPipeline mParticleWorldPipeline = nullptr;
 

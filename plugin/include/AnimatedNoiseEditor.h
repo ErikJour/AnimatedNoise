@@ -26,7 +26,7 @@ private:
     void timerCallback() override;
     void setResizeReady();
     void mouseWheelMove(const juce::MouseEvent& e, const juce::MouseWheelDetails& wheel) override;
-    void syncParameters();
+    // void syncParameters();
 
     AnimatedNoiseProcessor& processorRef;
     WebGpuWindow webGpuWindow;

@@ -82,7 +82,7 @@ void AnimatedNoiseProcessorEditor::timerCallback()
 
     webGpuWindow.getScene().renderFrame(static_cast<float>(elapsed));
 
-    syncParameters();
+    // syncParameters();
 }
 
 void AnimatedNoiseProcessorEditor::setResizeReady()
@@ -154,7 +154,7 @@ void AnimatedNoiseProcessorEditor::mouseWheelMove(const juce::MouseEvent& e,
     webGpuWindow.getScene().onScroll(wheel.deltaX, wheel.deltaY);
 }
 
-void AnimatedNoiseProcessorEditor::syncParameters()
-{
-    mSliderManager.syncFromApvts();
-}
+// void AnimatedNoiseProcessorEditor::syncParameters()
+// {
+//     mSliderManager.syncFromApvts();
+// }

@@ -16,8 +16,8 @@ inline void buildSliderGeometry(
     const float wallRadius  = 0.9f,
     const float centerAngle = 0.0f,
     const float halfSpan    = 0.2f,
-    const float yBottom     = 0.0f,
-    const float yTop        = 0.1f,
+    const float yBottom     = 0.1f,
+    const float yTop        = 0.2f,
     const int   nArc        = 10,
     const int   nY          = 40)
 {

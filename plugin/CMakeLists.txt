@@ -91,6 +91,7 @@ target_sources(AnimatedNoise
         dsp/FunctionGenerator.cpp
         dsp/AnimatedGain.cpp
         UI/AnimatedLogo.cpp
+        ui/sliderCatalog.cpp
 
 )
 

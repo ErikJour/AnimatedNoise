@@ -1,108 +1,111 @@
-//
-// Created by Erik Jourgensen on 6/3/26.
-//
-
 #include "SliderManager.h"
-
-struct SliderDefinition {
-    const char* paramId;
-    float       angle;
-};
-
-constexpr SliderDefinition kSliderDefinitions[] = {
-    { "noiseLevel",   0.0f   },
-    { "noiseDensity", 0.1f   },
-    { "lpgResonance", 1.45f  },
-    { "combLevel",    2.975f }
-};
+#include "sliderCatalog.h"
+#include <iostream>
 
 void SliderManager::initializeSliders()
 {
-    for (const auto& [paramId, angle] : kSliderDefinitions)
-        mSliders.push_back(AnimatedSlider{ angle, paramId, 0.0f });
-    syncFromApvts();
+    const auto& defs = sliderDefinitions();
+    mSliders.clear();
+    mSliders.reserve(defs.size());
+
+    for (const auto& def : defs)
+    {
+        auto& s        = mSliders.emplace_back();
+        s.paramID      = def.paramID;
+        s.angle        = def.angle;
+        s.curveVariant = def.curveVariant;
+        s.materialId   = def.materialId;
+        s.glowIndex    = def.glowIndex;
+
+        auto* param = mApvts.getParameter(def.paramID.getParamID());
+        jassert(param != nullptr);
+
+        s.attachment = std::make_unique<juce::ParameterAttachment>(
+            *param,
+            [&s](float newValue) { s.value = newValue; });
+
+        s.attachment->sendInitialUpdate();
+    }
+
+    mScene.setSliderList(mSliders);
 }
 
-bool SliderManager::handleMouseDown(const juce::MouseEvent& event, const int width, const int height)
+bool SliderManager::handleMouseDown(const juce::MouseEvent& event, int width, int height)
 {
-    const auto screenWidth      = static_cast<float>(width);
-    const auto screenHeight     = static_cast<float>(height);
-    const auto     ey           = static_cast<float>(event.y);
-    const auto     ex           = static_cast<float>(event.x);
-    constexpr float kHitRadiusX = 24.0f;
+    const auto screenW               = static_cast<float>(width);
+    const auto screenH               = static_cast<float>(height);
+    const juce::Point<float> mouse{ (float)event.x, (float)event.y };
+    constexpr float kHitRadius       = 24.0f;   // distance to the tube segment
+    constexpr float kIndicatorRadius = 28.0f;   // radial grab around the bead
+    constexpr float kIndicatorHalfH  = 0.048f;  // must match shader halfH (shadeSpineTube)
 
-    for (size_t i = 0; i < mSliders.size(); ++i)
+
+    for (auto& s : mSliders)
     {
-        float centerX, topY, bottomY;
+        juce::Point<float> top, bottom;
+        mScene.projectSliderBounds(screenW, screenH, top, bottom, s.angle);
 
-        mScene.projectSliderBounds(screenWidth,
-                                                screenHeight,
-                                                centerX,
-                                                topY,
-                                                bottomY,
-                                                mSliders[i].angle);
+        const juce::Point<float> axis = top - bottom;
+        const float axisLen2 = axis.x * axis.x + axis.y * axis.y;
 
-        if (ey >= topY && ey <= bottomY && std::abs(ex - centerX) <= kHitRadiusX)
+        const float tRaw  = (mouse - bottom).getDotProduct(axis) / axisLen2;
+        const float tClmp = juce::jlimit(0.0f, 1.0f, tRaw);
+
+        const float beadV = juce::jlimit(kIndicatorHalfH, 1.0f - kIndicatorHalfH, s.value);
+        // Project the true world position at the bead/tube height (perspective-correct),
+        // rather than lerping the projected endpoints — a screen-space lerp drifts off
+        // the rendered tube toward the foreshortened (low-value) end. See Scene::projectSliderPoint.
+        const juce::Point<float> bead    = mScene.projectSliderPoint(screenW, screenH, beadV, s.angle);
+        const juce::Point<float> nearest = mScene.projectSliderPoint(screenW, screenH, tClmp, s.angle);
+
+        const bool onIndicator = mouse.getDistanceFrom(bead)    <= kIndicatorRadius;
+        const bool onTube      = mouse.getDistanceFrom(nearest) <= kHitRadius;
+
+        if (onIndicator || onTube)
         {
-            mActiveSlider = static_cast<int>(i);
-            mDragOffset   = ey - (bottomY - mSliders[i].value * (bottomY - topY));
+            mActiveSlider = static_cast<int>(&s - mSliders.data());
+            mDragOffsetT  = tRaw - s.value;   // so first drag frame is a no-op
             mDragging     = true;
+            s.pressed     = true;
 
-            float v = (bottomY - (ey - mDragOffset)) / (bottomY - topY);
-            v = juce::jlimit(0.0f, 1.0f, v);
-            mSliders[i].value = v;
-            mScene.setSliderValue(mActiveSlider, v);
-
-            if (auto* param = mApvts.getParameter(mSliders[i].paramID))
-                param->setValueNotifyingHost(v);
-
+            const float v = juce::jlimit(0.0f, 1.0f, tRaw - mDragOffsetT);
+            s.attachment->beginGesture();
+            s.attachment->setValueAsPartOfGesture(v);
             return true;
         }
     }
     return false;
 }
-bool SliderManager::handleMouseDrag(const juce::MouseEvent& event, const int width, const int height)
+
+bool SliderManager::handleMouseDrag(const juce::MouseEvent& event, int width, int height) const
 {
     if (!mDragging) return false;
+    auto& s = mSliders[static_cast<size_t>(mActiveSlider)];
 
-    const auto w = static_cast<float>(width);
-    const auto h = static_cast<float>(height);
-    auto& slider  = mSliders[static_cast<size_t>(mActiveSlider)];
+    juce::Point<float> top, bottom;
+    mScene.projectSliderBounds(static_cast<float>(width), static_cast<float>(height),
+                               top, bottom, s.angle);
 
-    float centerX, topY, bottomY;
+    const juce::Point<float> axis = top - bottom;
+    const float axisLen2 = axis.x * axis.x + axis.y * axis.y;
+    const juce::Point<float> mouse{ (float)event.x, (float)event.y };
 
-    mScene.projectSliderBounds(w, h, centerX, topY, bottomY, slider.angle);
-
-    float v = (bottomY - (static_cast<float>(event.y) - mDragOffset)) / (bottomY - topY);
-    v = juce::jlimit(0.0f, 1.0f, v);
-    slider.value = v;
-    mScene.setSliderValue(mActiveSlider, v);
-
-    if (auto* param = mApvts.getParameter(slider.paramID))
-        param->setValueNotifyingHost(v);
+    float t = (mouse - bottom).getDotProduct(axis) / axisLen2;
+    const float v = juce::jlimit(0.0f, 1.0f, t - mDragOffsetT);
+    s.attachment->setValueAsPartOfGesture(v);
     return true;
 }
 
 bool SliderManager::handleMouseUp()
 {
-    mDragging       = false;
-    mDragOffset     = 0.0f;
-    return true;
-}
-
-void SliderManager::syncFromApvts()
-{
-    for (size_t i = 0; i < mSliders.size(); ++i)
+    if (mActiveSlider >= 0)
     {
-        auto& slider = mSliders[i];
-        if (const auto* param = mApvts.getParameter(slider.paramID))
-        {
-            const float v = param->getValue();
-            if (std::abs(v - slider.value) > 0.001f)
-            {
-                slider.value = v;
-                mScene.setSliderValue(static_cast<int>(i), v);
-            }
-        }
+        auto& s = mSliders[static_cast<size_t>(mActiveSlider)];
+        s.pressed = false;
+        s.attachment->endGesture();
     }
+    mDragging     = false;
+    mDragOffsetT  = 0.0f;
+    mActiveSlider = -1;
+    return true;
 }

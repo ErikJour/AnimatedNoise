@@ -653,14 +653,6 @@ void Scene::initializeParticles()
     mParticleDrawCount = mParticleCount;
 }
 
-void Scene::setSliderValue(const int index, const float value)
-{
-    mSliderValues[index] = value;
-
-    mParticleDrawCount = static_cast<uint32_t>(mSliderValues[1] * MAX_PARTICLES - 100) + 100;
-}
-
-
 void Scene::updateViewMatrix()
 {
     const float yaw          = mCameraState.angleX;
