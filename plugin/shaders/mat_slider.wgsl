@@ -1,62 +1,83 @@
-const PANEL_ASPECT : f32 = 0.22;
-const TRACK_HALF_W : f32 = 0.04;
+// ── Shared bioluminescent tube shader — used by all four slider materials ─────
+//
+// in.color.xy = (u, v)  — u around tube, v = normalised height [0..1]
+// in.color.z  = pad     — 0: spine tube,  1: indicator ring
+// in.normal   = tube surface normal (outward from spine centre)
+//
+fn shadeSpineTube(in: VertexOutput) -> vec4f {
+    let cream      = vec3f(0.92, 0.86, 0.72);   // filled / below value
+    let grey       = vec3f(0.28, 0.27, 0.25);   // empty  / above value
+    let v          = in.color.y;
+    let isIndicator = in.color.z > 0.5;
 
-//===============================
-//Vertex
-//===============================
+    // ── Indicator ring branch ─────────────────────────────────────────────────
+    // Wider tube, only visible near sliderValue. Paints the FULL circumference so
+    // the bead wraps all the way around the tendril — depth-testing hides the far
+    // side, so it reads as a glowing ring you can see (and grab) from any angle.
+    if (isIndicator) {
+        let halfH = 0.048;
+        // Clamp the indicator centre so it always has a full halfH of geometry on both sides.
+        // Without this, the half of the indicator that would fall outside [0,1] has no
+        // geometry to render on and disappears at the top and bottom of the slider range.
+        let indicatorCenter = clamp(u.sliderValue, halfH, 1.0 - halfH);
+        let dCenter = abs(v - indicatorCenter);        // distance from bead centre in v
+        if (dCenter > halfH) { discard; }
+
+        // Bead alpha — brightest at the value height, fading out toward the rounded
+        // cap edges. No front-face gating: the whole ring around the tube lights up.
+        let baseAlpha = smoothstep(halfH, 0.0, dCenter);
+        var alpha     = baseAlpha * 0.95;
+        if (alpha < 0.01) { discard; }
+
+        // Gentle rim so the ring still reads as a rounded 3D surface as it wraps.
+        let rim = 1.0 - abs(in.normal.y);
+
+        let pulse         = sin(u.time * 4.0) * 0.15 + 0.85;
+        let restColor     = vec3f(1.0, 0.38, 0.06);
+        let pressedColor  = vec3f(1.0, 0.82, 0.50);   // bright warm-white when held
+        let indicatorColor = mix(restColor, pressedColor, u.pressed) * pulse
+                           * (0.85 + 0.15 * rim * rim);
+        let pressedAlpha  = mix(alpha, min(alpha * 1.25, 1.0), u.pressed);
+        return vec4f(indicatorColor, pressedAlpha);
+    }
+
+    // ── Spine tube branch ─────────────────────────────────────────────────────
+
+    // Sharp fill boundary — tight transition for a crisp rising-fluid look
+    let fillEdge = smoothstep(u.sliderValue - 0.03, u.sliderValue + 0.01, v);
+
+    // Animated bioluminescent pulse only below fill level
+    let pulse     = sin(u.time * 2.0 + v * 6.0) * 0.15 + 0.85;
+    let pulseMask = 1.0 - step(u.sliderValue, v);
+    let animPulse = mix(1.0, pulse, pulseMask);
+
+    // Cream below fill level, grey above
+    let creamWithPulse = cream * animPulse * 0.90;
+    var finalColor     = mix(creamWithPulse, grey, fillEdge);
+
+    // Rim highlight on the filled section
+    let rim = 1.0 - abs(in.normal.y);
+    finalColor += cream * (rim * rim) * 0.18 * (1.0 - fillEdge);
+
+    // Meniscus: bright cream edge right at the fluid surface.
+    // step(0.0, meniscusDist) gates it to zero above the fill level —
+    // without it, the inverted smoothstep returns 1 for all v > sliderValue,
+    // which floods the grey zone with cream.
+    let meniscusDist = u.sliderValue - v;
+    let meniscus     = smoothstep(0.025, 0.0, meniscusDist) * step(0.0, meniscusDist);
+    finalColor      += cream * meniscus * 0.60;
+
+    // Alpha: opaque while glowing, more transparent when dark/empty
+    let alpha = mix(0.90, 0.35, fillEdge);
+
+    return vec4f(finalColor, alpha);
+}
+
+// ── Noise Level (Gain) Slider — teal ─────────────────────────────────────────
 fn vsGainSlider(pos: ptr<function, vec3f>, color: vec3f) -> vec4f {
     return u.viewProjMatrix * vec4f(*pos, 1.0);
 }
 
-//===============================
-//Fragment
-//===============================
 fn shadeGainSlider(in: VertexOutput) -> vec4f {
-    let uv = in.color.xy;
-
-    //===============================
-    //Undulation
-    //===============================
-    let spineWobble = sin(uv.y * 31.415) * 0.015;
-    let trackCenter = 0.5 + spineWobble;
-    //===============================
-    //Tapering
-    //===============================
-    let dynamicWidth = TRACK_HALF_W * (1.5 - uv.y * 0.8);
-    let baseTrackSDF = abs(uv.x - trackCenter) - dynamicWidth;
-    //===============================
-    //Maybe remove this
-    //===============================
-    let segments = sin(uv.y * 120.0) * 0.008;
-    let trackSDF = baseTrackSDF + segments;
-    //===============================
-    //Distance
-    //===============================
-    let d = trackSDF;
-    let alpha = smoothstep(0.015, -0.005, d) * 0.85;
-    //===============================
-    //Waviness
-    //===============================
-    let edge = min(min(uv.x, 1.0 - uv.x), min(uv.y, 1.0 - uv.y));
-    let wavyEdge = edge + sin(uv.y * 25.0) * 0.015;
-    let vignette = smoothstep(0.0, 0.12, wavyEdge);
-    //===============================
-    //Colors
-    //===============================
-    let filled   = uv.y < u.sliderValue;
-    // Moss green for the empty channel
-    let groove   = vec3f(0.06, 0.12, 0.08);
-    // Teal for the filled fluid
-    let filledC  = vec3f(0.15, 0.65, 0.55) * 0.9;
-    // Base color
-    var base = select(groove, filledC, filled);
-    // Interior glow
-    if (filled) {
-        let veinPulse = (sin(uv.y * 60.0) * 0.5 + 0.5) * 0.2;
-        base = base + vec3f(0.1, 0.3, 0.2) * veinPulse;
-        let meniscus = smoothstep(0.02, 0.0, u.sliderValue - uv.y);
-        base = base + (vec3f(0.2, 0.8, 0.6) * meniscus * 0.5);
-    }
-
-    return vec4f(base * vignette, alpha);
+    return shadeSpineTube(in);
 }
