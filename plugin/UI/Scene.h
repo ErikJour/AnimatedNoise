@@ -47,6 +47,7 @@ class Scene
         void ConfigureVertexLayout();
         bool createParticlePipeline();
         void initializeScene();
+        void initializeSliders();
         bool createPipeline();
         void initializeFloor();
         void initializeSphere();

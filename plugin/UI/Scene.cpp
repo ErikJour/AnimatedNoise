@@ -158,9 +158,6 @@ void Scene::renderFrame(const float currentTime)
         cmdDesc.label = WGPU_STR("Frame command buffer");
         const WGPUCommandBuffer command = wgpuCommandEncoderFinish(encoder, &cmdDesc);
         wgpuCommandEncoderRelease(encoder);
-        //==============================================
-        //Process the frame
-        //==============================================
         wgpuQueueSubmit(mQueue, 1, &command);
         wgpuCommandBufferRelease(command);
         wgpuTextureViewRelease(targetView);
@@ -180,7 +177,6 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
 
     updateViewMatrix();
 
-    // Named slider lookups for particle coupling (dependency 4).
     const AnimatedSlider* noiseLevel = findSlider(ParameterID::noiseLevel);
     const AnimatedSlider* combLevel  = findSlider(ParameterID::combLevel);
     const float gainVal  = noiseLevel ? noiseLevel->value : 0.0f;
@@ -199,7 +195,6 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
                                     MAT_NOIS_DENS_SLIDER
                                 };
 
-    // Pre-index sliders by materialId so each material's slot pulls its own value.
     auto sliderForMaterial = [&](uint32_t mat) -> const AnimatedSlider* {
         if (mSliderList)
             for (const auto& s : *mSliderList)
@@ -207,19 +202,19 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
         return nullptr;
     };
 
-    for (uint32_t i = 0; i < 9; ++i)
+    for (const unsigned int id : ids)
     {
-        mUniforms.materialId = ids[i];
+        mUniforms.materialId = id;
 
             std::memcpy(mUniforms.modelMatrix, kIdentity, sizeof(kIdentity));
 
-            if (ids[i] == MAT_PARTICLES)
+            if (id == MAT_PARTICLES)
             {
                 mUniforms.morph       = morphVal;
                 mUniforms.sliderValue = gainVal;
                 mUniforms.pressed     = gainHeld ? 1.0f : 0.0f;
             }
-            else if (const AnimatedSlider* s = sliderForMaterial(ids[i]))
+            else if (const AnimatedSlider* s = sliderForMaterial(id))
             {
                 mUniforms.sliderValue = s->value;
                 mUniforms.pressed     = s->pressed ? 1.0f : 0.0f;
@@ -235,7 +230,7 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
             mParticleDrawCount = static_cast<uint32_t>(dens->value * MAX_PARTICLES - 100) + 100;
 
         wgpuQueueWriteBuffer(queue, uniformBuffer,
-                             ids[i] * mUniformStride, &mUniforms, sizeof(MyUniforms));
+                             id * mUniformStride, &mUniforms, sizeof(MyUniforms));
     }
 }
 
@@ -279,29 +274,29 @@ bool Scene::createParticlePipeline()
 {
     if (mParticlePipeline) { wgpuRenderPipelineRelease(mParticlePipeline); mParticlePipeline = nullptr; }
 
-    mParticleBlendState.color.operation = WGPUBlendOperation_Add;
-    mParticleBlendState.color.srcFactor = WGPUBlendFactor_SrcAlpha;
-    mParticleBlendState.color.dstFactor = WGPUBlendFactor_One;
-    mParticleBlendState.alpha.operation = WGPUBlendOperation_Add;
-    mParticleBlendState.alpha.srcFactor = WGPUBlendFactor_One;
-    mParticleBlendState.alpha.dstFactor = WGPUBlendFactor_One;
-    mParticleColorTarget                = mColorTarget;
-    mParticleColorTarget.blend          = &mParticleBlendState;
-    mParticleVertexAttribs[0].shaderLocation = 0;
-    mParticleVertexAttribs[0].format         = WGPUVertexFormat_Float32x2;
-    mParticleVertexAttribs[0].offset         = 0;
-    mParticleVertexAttribs[1].shaderLocation = 1;
-    mParticleVertexAttribs[1].format         = WGPUVertexFormat_Float32x2;
-    mParticleVertexAttribs[1].offset         = 2 * sizeof(float);
-    mParticleVertexAttribs[2].shaderLocation = 2;
-    mParticleVertexAttribs[2].format         = WGPUVertexFormat_Float32x4;
-    mParticleVertexAttribs[2].offset         = 0;
-    mParticleVertexAttribs[3].shaderLocation = 3;
-    mParticleVertexAttribs[3].format         = WGPUVertexFormat_Float32x4;
-    mParticleVertexAttribs[3].offset         = 4 * sizeof(float);
-    mParticleVertexAttribs[4].shaderLocation = 4;
-    mParticleVertexAttribs[4].format         = WGPUVertexFormat_Float32x4;
-    mParticleVertexAttribs[4].offset         = 8 * sizeof(float);
+    mParticleBlendState.color.operation            = WGPUBlendOperation_Add;
+    mParticleBlendState.color.srcFactor            = WGPUBlendFactor_SrcAlpha;
+    mParticleBlendState.color.dstFactor            = WGPUBlendFactor_One;
+    mParticleBlendState.alpha.operation            = WGPUBlendOperation_Add;
+    mParticleBlendState.alpha.srcFactor            = WGPUBlendFactor_One;
+    mParticleBlendState.alpha.dstFactor            = WGPUBlendFactor_One;
+    mParticleColorTarget                           = mColorTarget;
+    mParticleColorTarget.blend                     = &mParticleBlendState;
+    mParticleVertexAttribs[0].shaderLocation       = 0;
+    mParticleVertexAttribs[0].format               = WGPUVertexFormat_Float32x2;
+    mParticleVertexAttribs[0].offset               = 0;
+    mParticleVertexAttribs[1].shaderLocation       = 1;
+    mParticleVertexAttribs[1].format               = WGPUVertexFormat_Float32x2;
+    mParticleVertexAttribs[1].offset               = 2 * sizeof(float);
+    mParticleVertexAttribs[2].shaderLocation       = 2;
+    mParticleVertexAttribs[2].format               = WGPUVertexFormat_Float32x4;
+    mParticleVertexAttribs[2].offset               = 0;
+    mParticleVertexAttribs[3].shaderLocation       = 3;
+    mParticleVertexAttribs[3].format               = WGPUVertexFormat_Float32x4;
+    mParticleVertexAttribs[3].offset               = 4 * sizeof(float);
+    mParticleVertexAttribs[4].shaderLocation       = 4;
+    mParticleVertexAttribs[4].format               = WGPUVertexFormat_Float32x4;
+    mParticleVertexAttribs[4].offset               = 8 * sizeof(float);
     mParticleVertexBufferLayouts.resize(2);
     mParticleVertexBufferLayouts[0].attributeCount = 2;
     mParticleVertexBufferLayouts[0].attributes     = &mParticleVertexAttribs[0];
@@ -344,34 +339,10 @@ void Scene::initializeScene()
 {
     initializeFloor();
     initializeSphere();
-    // initializeSkylight();
-
-    InitializeSlider(mNoiseLevelSliderIndexCount,
-                    mNoiseLevelSliderVertexBuffer,
-                    mNoiseLevelSliderIndexBuffer,
-                    0.9f,
-                    0.0f);
-
-    InitializeSlider(mNoiseDensitySliderIndexCount,
-                    mNoiseDensitySliderVertexBuffer,
-                    mNoiseDensitySliderIndexBuffer,
-                    0.9f,
-                    0.1f);
-
-    InitializeSlider(mLpgRezSliderIndexCount,
-                   mLpgRezSliderVertexBuffer,
-                   mLpgRezSliderIndexBuffer,
-                   0.9f,
-                   1.45f);
-
-    InitializeSlider(mCombAmtSliderIndexCount,
-                    mCombAmtSliderVertexBuffer,
-                    mCombAmtSliderIndexBuffer,
-                    0.9f,
-                    2.975f);
-
+    initializeSliders();
     initializeParticles();
 }
+
 
 bool Scene::createPipeline()
 {
@@ -550,6 +521,33 @@ void Scene::InitializeSlider(uint32_t& indexCount, WGPUBuffer& vertexBuffer, WGP
     bd.size  = (indices.size() * sizeof(SliderIndex) + 3) & ~3ULL;
     indexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
     wgpuQueueWriteBuffer(mQueue, indexBuffer, 0, indices.data(), bd.size);
+}
+
+void Scene::initializeSliders()
+{
+    InitializeSlider(mNoiseLevelSliderIndexCount,
+                   mNoiseLevelSliderVertexBuffer,
+                   mNoiseLevelSliderIndexBuffer,
+                   0.9f,
+                   0.0f);
+
+    InitializeSlider(mNoiseDensitySliderIndexCount,
+                    mNoiseDensitySliderVertexBuffer,
+                    mNoiseDensitySliderIndexBuffer,
+                    0.9f,
+                    0.1f);
+
+    InitializeSlider(mLpgRezSliderIndexCount,
+                   mLpgRezSliderVertexBuffer,
+                   mLpgRezSliderIndexBuffer,
+                   0.9f,
+                   1.45f);
+
+    InitializeSlider(mCombAmtSliderIndexCount,
+                    mCombAmtSliderVertexBuffer,
+                    mCombAmtSliderIndexBuffer,
+                    0.9f,
+                    2.975f);
 }
 
 void Scene::initializeParticles()
