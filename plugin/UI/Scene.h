@@ -23,6 +23,8 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "AnimatedSlider.h"
 #include "ParamIds.h"
+#include "cameraHelper.h"
+#include "shaderPaths.h"
 
 static constexpr uint32_t MAX_PARTICLES = 2000;
 #define WGPU_STR(s) WGPUStringView{s, sizeof(s) - 1}

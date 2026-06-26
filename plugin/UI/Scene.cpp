@@ -6,106 +6,27 @@
 #include <cmath>
 #include <sliderCatalog.h>
 
-namespace {
-
-void buildLookAt(float out[16],
-                        const float ex, float ey, float ez,
-                        float tx, float ty, float tz)
-{
-    float fx = tx-ex, fy = ty-ey, fz = tz-ez;
-    const float fl = sqrtf(fx*fx + fy*fy + fz*fz);
-    fx/=fl; fy/=fl; fz/=fl;
-
-    // right = cross(worldUp=(0,1,0), forward)
-    float rx = fz, ry = 0.0f, rz = -fx;
-    const float rl = sqrtf(rx*rx + ry*ry + rz*rz);
-    rx/=rl; ry/=rl; rz/=rl;
-
-    // corrected up = cross(forward, right)
-    const float ux = fy*rz - fz*ry;
-    const float uy = fz*rx - fx*rz;
-    float uz = fx*ry - fy*rx;
-
-    // column-major: out[col*4+row]
-    out[0]=rx;   out[4]=ux;   out[8] =-fx;  out[12]=-(rx*ex+ry*ey+rz*ez);
-    out[1]=ry;   out[5]=uy;   out[9] =-fy;  out[13]=-(ux*ex+uy*ey+uz*ez);
-    out[2]=rz;   out[6]=uz;   out[10]=-fz;  out[14]=  fx*ex+fy*ey+fz*ez;
-    out[3]=0.0f; out[7]=0.0f; out[11]=0.0f; out[15]=1.0f;
-}
-
-// Right-handed perspective, Z maps to [0, 1] (WebGPU NDC)
-void buildPerspective(float out[16], float fovY, float aspect, float zNear, float zFar)
-{
-    const float f = 1.0f / tanf(fovY * 0.5f);
-    std::memset(out, 0, 64);
-    out[0]  = f / aspect;
-    out[5]  = f;
-    out[10] = zFar / (zNear - zFar);
-    out[11] = -1.0f;
-    out[14] = (zNear * zFar) / (zNear - zFar);
-}
-
-void mulMat4(float out[16], const float a[16], const float b[16])
-{
-    for (int col = 0; col < 4; ++col)
-        for (int row = 0; row < 4; ++row) {
-            float v = 0.0f;
-            for (int k = 0; k < 4; ++k)
-                v += a[k*4+row] * b[col*4+k];
-            out[col*4+row] = v;
-        }
-}
-}
-
-//==============================================
+//================================================================================================
 Scene::Scene() = default;
 
 Scene::~Scene() = default;
 
-void Scene::init(const WGPUDevice device, WGPUQueue queue)
-{
-    mDevice = device;
-    mQueue  = queue;
-}
+//================================================================================================
+void Scene::init(const WGPUDevice device, WGPUQueue queue) { mDevice = device; mQueue  = queue; }
 
-void Scene::setSurface(WGPUSurface surface)
-{
-    mSurface = surface;
-}
-void Scene::setSurfaceSize(const uint32_t width, const uint32_t height)
-{
-    mWidth = width; mHeight = height;
-}
+void Scene::setSurface(WGPUSurface surface) { mSurface = surface; }
 
-void Scene::setShaderModule(const WGPUShaderModule shaderModule)
-{
-    mShaderModule = shaderModule;
-}
+void Scene::setSurfaceSize(const uint32_t width, const uint32_t height) { mWidth = width; mHeight = height; }
 
-void Scene::setPipelineDesc(WGPURenderPipelineDescriptor pipelineDesc)
-{
-    mPipelineDesc = pipelineDesc;
-}
+void Scene::setShaderModule(const WGPUShaderModule shaderModule) { mShaderModule = shaderModule; }
 
+void Scene::setPipelineDesc(WGPURenderPipelineDescriptor pipelineDesc) { mPipelineDesc = pipelineDesc; }
+
+//================================================================================================
 bool Scene::createShader()
 {
 #ifdef DEBUG
-    const std::string dir = DEBUG_SHADER_DIR;
-    mShaderPaths = {
-        dir + "/common.wgsl",
-        dir + "/lighting.wgsl",
-        dir + "/mat_cave.wgsl",
-        dir + "/mat_slider.wgsl",
-        dir + "/mat_comb_slider.wgsl",
-        dir + "/mat_plane.wgsl",
-        dir + "/mat_particle.wgsl",
-        dir + "/mat_floor.wgsl",
-        dir + "/mat_skylight.wgsl",
-        dir + "/vs_main.wgsl",
-        dir + "/fs_main.wgsl",
-        dir + "/mat_lpg_rez_slider.wgsl",
-        dir + "/mat_noise_density_slider.wgsl"
-    };
+    mShaderPaths = getShaderPaths();
     mLastShaderWriteTime = latestWriteTime(mShaderPaths);
     mShaderModule        = ResourceManager::loadShaderModules(mShaderPaths, mDevice);
 #else
@@ -125,7 +46,6 @@ bool Scene::createShader()
     }
     return true;
 }
-
 
 void Scene::terminate()
 {
@@ -179,26 +99,18 @@ void Scene::renderFrame(const float currentTime)
         viewDesc.mipLevelCount = 1;
         viewDesc.arrayLayerCount = 1;
         viewDesc.aspect = WGPUTextureAspect_All;
-        //=====================================
-        //Push into buffer / fill buffer
-        //=====================================
         setUniforms(mQueue, mUniformBuffer, currentTime);
         const WGPUTextureView targetView = wgpuTextureCreateView(surfaceTexture.texture, &viewDesc);
         wgpuTextureRelease(surfaceTexture.texture);
-
         WGPUCommandEncoderDescriptor encoderDesc = {};
         encoderDesc.label = WGPU_STR("Frame encoder");
         WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(mDevice, &encoderDesc);
-        //======================================================
-        //Color Attachment
-        //======================================================
         WGPURenderPassColorAttachment colorAttachment = {};
         colorAttachment.view       = targetView;
         colorAttachment.loadOp     = WGPULoadOp_Clear;
         colorAttachment.storeOp    = WGPUStoreOp_Store;
         colorAttachment.clearValue = WGPUColor{ mRed, mGreen, mBlue, 1.0 };
         colorAttachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
-
         WGPURenderPassDescriptor renderPassDesc = {};
         renderPassDesc.colorAttachmentCount     = 1;
         renderPassDesc.colorAttachments         = &colorAttachment;
@@ -212,7 +124,6 @@ void Scene::renderFrame(const float currentTime)
         depthStencilAttachment.stencilStoreOp   = WGPUStoreOp_Undefined;
         depthStencilAttachment.stencilReadOnly  = true;
         renderPassDesc.depthStencilAttachment = &depthStencilAttachment;
-
         const WGPURenderPassEncoder renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
 
         wgpuRenderPassEncoderSetPipeline(renderPass, mPipeline);
@@ -259,7 +170,6 @@ void Scene::renderFrame(const float currentTime)
 
 void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const float time)
 {
-
     mUniforms.time         = time;
     mUniforms.frequency    = 10.0f;
     mUniforms.amplitude    = 0.5f;
@@ -289,8 +199,6 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
                                     MAT_NOIS_DENS_SLIDER
                                 };
 
-    std::memcpy(mUniforms.modelMatrix, kIdentity, sizeof(kIdentity));
-
     // Pre-index sliders by materialId so each material's slot pulls its own value.
     auto sliderForMaterial = [&](uint32_t mat) -> const AnimatedSlider* {
         if (mSliderList)
@@ -299,7 +207,7 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
         return nullptr;
     };
 
-    for (uint32_t i = 0; i < 11; ++i)
+    for (uint32_t i = 0; i < 9; ++i)
     {
         mUniforms.materialId = ids[i];
 
@@ -313,7 +221,6 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
             }
             else if (const AnimatedSlider* s = sliderForMaterial(ids[i]))
             {
-                // Dependency 2: per-material slider data, keyed by materialId.
                 mUniforms.sliderValue = s->value;
                 mUniforms.pressed     = s->pressed ? 1.0f : 0.0f;
             }
@@ -334,27 +241,22 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
 
 void Scene::ConfigureVertexLayout()
 {
-    // Attribute 0 — Position (location 0)
-    mVertexAttribs[0].shaderLocation = 0;
-    mVertexAttribs[0].format         = WGPUVertexFormat_Float32x3;
-    mVertexAttribs[0].offset         = 0;
-    // Attribute 1 — Normal (location 2)
-    mVertexAttribs[1].shaderLocation = 2;
-    mVertexAttribs[1].format         = WGPUVertexFormat_Float32x3;
-    mVertexAttribs[1].offset         = 3 * sizeof(float);
-    // Attribute 2 — Color (location 1)
-    mVertexAttribs[2].shaderLocation = 1;
-    mVertexAttribs[2].format         = WGPUVertexFormat_Float32x3;
-    mVertexAttribs[2].offset         = 6 * sizeof(float);
-
+    mVertexAttribs[0].shaderLocation        = 0;
+    mVertexAttribs[0].format                = WGPUVertexFormat_Float32x3;
+    mVertexAttribs[0].offset                = 0;
+    mVertexAttribs[1].shaderLocation        = 2;
+    mVertexAttribs[1].format                = WGPUVertexFormat_Float32x3;
+    mVertexAttribs[1].offset                = 3 * sizeof(float);
+    mVertexAttribs[2].shaderLocation        = 1;
+    mVertexAttribs[2].format                = WGPUVertexFormat_Float32x3;
+    mVertexAttribs[2].offset                = 6 * sizeof(float);
     mVertexBufferLayouts.resize(1);
-    mVertexBufferLayouts[0].attributeCount = 3;
-    mVertexBufferLayouts[0].attributes     = mVertexAttribs.data();
-    mVertexBufferLayouts[0].arrayStride    = 9 * sizeof(float);
-    mVertexBufferLayouts[0].stepMode       = WGPUVertexStepMode_Vertex;
-
-    mPipelineDesc.vertex.bufferCount = 1;
-    mPipelineDesc.vertex.buffers     = mVertexBufferLayouts.data();
+    mVertexBufferLayouts[0].attributeCount  = 3;
+    mVertexBufferLayouts[0].attributes      = mVertexAttribs.data();
+    mVertexBufferLayouts[0].arrayStride     = 9 * sizeof(float);
+    mVertexBufferLayouts[0].stepMode        = WGPUVertexStepMode_Vertex;
+    mPipelineDesc.vertex.bufferCount        = 1;
+    mPipelineDesc.vertex.buffers            = mVertexBufferLayouts.data();
 }
 
 #ifdef DEBUG
