@@ -107,15 +107,15 @@ void AnimatedNoiseProcessorEditor::resized()
 //==============================================================================
 void AnimatedNoiseProcessorEditor::mouseDown(const juce::MouseEvent& event)
 {
+    const auto fx = static_cast<float>(event.x);
+    const auto fy = static_cast<float>(event.y);
+
     if (!mSliderManager.handleMouseDown(event, getWidth(), getHeight()))
     {
         mCameraDragging = true;
-        mLastMouseX     = static_cast<float>(event.x);
-        mLastMouseY     = static_cast<float>(event.y);
-        webGpuWindow.getScene().onMouseButton(0,
-                                    true,
-                                        static_cast<float>(event.x),
-                                        static_cast<float>(event.y));
+        mLastMouseX     = fx;
+        mLastMouseY     = fy;
+        webGpuWindow.getScene().onMouseButton(0, true, fx, fy);
     }
 }
 
@@ -153,8 +153,3 @@ void AnimatedNoiseProcessorEditor::mouseWheelMove(const juce::MouseEvent& e,
     juce::ignoreUnused(e);
     webGpuWindow.getScene().onScroll(wheel.deltaX, wheel.deltaY);
 }
-
-// void AnimatedNoiseProcessorEditor::syncParameters()
-// {
-//     mSliderManager.syncFromApvts();
-// }

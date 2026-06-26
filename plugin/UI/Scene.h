@@ -22,7 +22,7 @@
 #include "sphereGeometry.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "AnimatedSlider.h"
-
+#include "ParamIds.h"
 
 static constexpr uint32_t MAX_PARTICLES = 2000;
 #define WGPU_STR(s) WGPUStringView{s, sizeof(s) - 1}
@@ -34,10 +34,9 @@ class Scene
         ~Scene();
         void init(WGPUDevice device, WGPUQueue queue);
         void setSurface(WGPUSurface surface);
-        void setSurfaceSize(uint32_t width, uint32_t height) { mWidth = width; mHeight = height; }
+        void setSurfaceSize(uint32_t width, uint32_t height);
         void setShaderModule(WGPUShaderModule shaderModule);
         void setPipelineDesc(WGPURenderPipelineDescriptor pipelineDesc);
-        void setWindowColor();
         bool createShader();
         void terminate();
         void reloadShader();
@@ -52,55 +51,51 @@ class Scene
         void initializeSkylight();
         void InitializeSlider(uint32_t& indexCount, WGPUBuffer& vertexBuffer, WGPUBuffer& indexBuffer, float wallRadius, float angle) const;
         void initializeParticles();
-        float getSliderValue(const int index) const { return mSliderValues[index]; }
-        float sliderTopFraction()       const { return (1.0f - (kSpineMaxY + mSliderPos[1])) * 0.5f; }
-        float sliderBottomFraction()    const { return (1.0f - (kSpineMinY + mSliderPos[1])) * 0.5f; }
-        float sliderXFraction()         const { return (mSliderPos[0] + 1.0f) * 0.5f; }
-        static float indicatorHalfFraction()   { return kIndicatorHalfY * 0.5f; }
-        void setSurfaceFormat(WGPUTextureFormat format) { mSurfaceFormat = format; }
-        WGPUTextureView getDepthTextureView() const { return mDepthTextureView; }
-        WGPUColorTargetState getColorTarget() const { return mColorTarget; }
-        WGPUFragmentState getFragmentState() const { return mFragmentState; }
-        WGPUBlendState getBlendState() const { return mBlendState; }
+        void setSurfaceFormat(WGPUTextureFormat format);
+        void setCameraState(CameraState& s);
+        float getSliderValue(int index) const;
+        float sliderTopFraction() const;
+        float sliderBottomFraction() const;
+        float sliderXFraction() const;
+        static float indicatorHalfFraction();
         void updateDepthTexture(uint32_t width, uint32_t height);
         void updateViewMatrix();
         void onMouseButton(int button, bool isPressed, float xpos, float ypos);
         void onMouseMove(float xpos, float ypos);
         void onScroll(float deltaX, float deltaY);
-        CameraState getCameraState() const { return mCameraState; }
-        void setCameraState(const CameraState& s) { mCameraState = s; updateViewMatrix(); }
 
-    void projectSliderBounds(const float screenW, const float screenH,
-                 juce::Point<float>& outTop,
-                 juce::Point<float>& outBottom,
-                 const float angle) const
-        {
-            outTop    = projectSliderPoint(screenW, screenH, 1.0f, angle);
-            outBottom = projectSliderPoint(screenW, screenH, 0.0f, angle);
-        }
-    void setSliderList(const std::vector<AnimatedSlider>& list) { mSliderList = &list; }
+        void projectSliderBounds(const float screenW, const float screenH,
+                     juce::Point<float>& outTop,
+                     juce::Point<float>& outBottom,
+                     const float angle) const
+            {
+                outTop    = projectSliderPoint(screenW, screenH, 1.0f, angle);
+                outBottom = projectSliderPoint(screenW, screenH, 0.0f, angle);
+            }
+        void setSliderList(const std::vector<AnimatedSlider>& list) { mSliderList = &list; }
 
-    // Project the spine centerline at height-fraction v (0 = bottom, 1 = top)
-    // to screen pixels. v maps to the SAME world-y span the geometry is built
-    // over (buildSliderGeometry yBottom/yTop), so the bead/tube hit positions
-    // track the rendered tube exactly — including perspective foreshortening,
-    // which a straight screen-space lerp between the endpoints does not.
-    juce::Point<float> projectSliderPoint(const float screenW, const float screenH,
-                                          const float v, const float angle) const
-        {
-            const float wx = 0.9f * std::cos(angle);
-            const float wz = 0.9f * std::sin(angle);
-            constexpr float yTop    =  0.28125f;
-            constexpr float yBottom = -0.01875f;
-            const float y = yBottom + v * (yTop - yBottom);
+        juce::Point<float> projectSliderPoint(const float screenW, const float screenH,
+                                              const float v, const float angle) const
+            {
+                const float wx = 0.9f * std::cos(angle);
+                const float wz = 0.9f * std::sin(angle);
+                constexpr float yTop    =  0.28125f;
+                constexpr float yBottom = -0.01875f;
+                const float y = yBottom + v * (yTop - yBottom);
 
-            const float* m = mUniforms.viewProjMatrix;
-            const float cx = m[0]*wx + m[4]*y + m[8]*wz  + m[12];
-            const float cy = m[1]*wx + m[5]*y + m[9]*wz  + m[13];
-            const float cw = m[3]*wx + m[7]*y + m[11]*wz + m[15];
-            return { (cx/cw * 0.5f + 0.5f)        * screenW,
-                     (1.0f - (cy/cw * 0.5f + 0.5f)) * screenH };
-        }
+                const float* m = mUniforms.viewProjMatrix;
+                const float cx = m[0]*wx + m[4]*y + m[8]*wz  + m[12];
+                const float cy = m[1]*wx + m[5]*y + m[9]*wz  + m[13];
+                const float cw = m[3]*wx + m[7]*y + m[11]*wz + m[15];
+                return { (cx/cw * 0.5f + 0.5f)        * screenW,
+                         (1.0f - (cy/cw * 0.5f + 0.5f)) * screenH };
+            }
+
+        WGPUTextureView getDepthTextureView() const { return mDepthTextureView; }
+        WGPUColorTargetState getColorTarget() const { return mColorTarget; }
+        WGPUFragmentState getFragmentState()  const { return mFragmentState; }
+        WGPUBlendState getBlendState()        const { return mBlendState; }
+        CameraState getCameraState()          const { return mCameraState; }
 
     private:
         void setItemBuffers(WGPUBuffer vertexBuffer, WGPUBuffer indexBuffer, uint32_t indexCount, uint32_t material, WGPURenderPassEncoder renderPass) const
@@ -200,7 +195,14 @@ class Scene
         const std::vector<AnimatedSlider>* mSliderList = nullptr;  // borrowed from SliderManager
 
 
-        // WGPURenderPipeline mParticleWorldPipeline = nullptr;
+        const AnimatedSlider* findSlider(const juce::ParameterID& id) const
+        {
+            if (!mSliderList) return nullptr;
+            for (const auto& s : *mSliderList)
+                if (s.paramID.getParamID() == id.getParamID())
+                    return &s;
+            return nullptr;
+        }
 
 
 };

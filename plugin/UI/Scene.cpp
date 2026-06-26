@@ -4,6 +4,7 @@
 
 #include "Scene.h"
 #include <cmath>
+#include <sliderCatalog.h>
 
 namespace {
 
@@ -67,13 +68,24 @@ void Scene::init(const WGPUDevice device, WGPUQueue queue)
     mQueue  = queue;
 }
 
-//==============================================
-//Setters
-//==============================================
-void Scene::setSurface(WGPUSurface surface) { mSurface = surface; }
-void Scene::setShaderModule(const WGPUShaderModule shaderModule) { mShaderModule = shaderModule; }
-void Scene::setPipelineDesc(WGPURenderPipelineDescriptor pipelineDesc) { mPipelineDesc = pipelineDesc; }
-void Scene::setWindowColor() { mRed    = 0.2; mGreen  = 0.25; mBlue   = 0.2; }
+void Scene::setSurface(WGPUSurface surface)
+{
+    mSurface = surface;
+}
+void Scene::setSurfaceSize(const uint32_t width, const uint32_t height)
+{
+    mWidth = width; mHeight = height;
+}
+
+void Scene::setShaderModule(const WGPUShaderModule shaderModule)
+{
+    mShaderModule = shaderModule;
+}
+
+void Scene::setPipelineDesc(WGPURenderPipelineDescriptor pipelineDesc)
+{
+    mPipelineDesc = pipelineDesc;
+}
 
 bool Scene::createShader()
 {
@@ -258,6 +270,13 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
 
     updateViewMatrix();
 
+    // Named slider lookups for particle coupling (dependency 4).
+    const AnimatedSlider* noiseLevel = findSlider(ParameterID::noiseLevel);
+    const AnimatedSlider* combLevel  = findSlider(ParameterID::combLevel);
+    const float gainVal  = noiseLevel ? noiseLevel->value : 0.0f;
+    const float morphVal = combLevel  ? combLevel->value  : 0.0f;
+    const bool  gainHeld = noiseLevel ? noiseLevel->pressed : false;
+
     constexpr uint32_t ids[9] = {
                                     MAT_CAVE,
                                     MAT_GLOBAL_GAIN_SLIDER,
@@ -272,39 +291,44 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
 
     std::memcpy(mUniforms.modelMatrix, kIdentity, sizeof(kIdentity));
 
-    const float camA  = mCameraState.angleX;
-    const float camCa = cosf(camA), camSa = sinf(camA);
-    const float billboardBasis[16] = {
-        -camCa, 0.f, -camSa, 0.f,
-          0.f,  1.f,   0.f,  0.f,
-          0.f,  0.f,   0.f,  0.f,
-          0.f,  0.f,   0.f,  1.f
+    // Pre-index sliders by materialId so each material's slot pulls its own value.
+    auto sliderForMaterial = [&](uint32_t mat) -> const AnimatedSlider* {
+        if (mSliderList)
+            for (const auto& s : *mSliderList)
+                if (s.materialId == mat) return &s;
+        return nullptr;
     };
 
-    for (uint32_t i = 0; i < 9; ++i)
+    for (uint32_t i = 0; i < 11; ++i)
     {
         mUniforms.materialId = ids[i];
 
-        if (ids[i] == MAT_GLOBAL_GAIN_SLIDER || ids[i] == MAT_PARTICLES)
-        {
-            if (ids[i] == MAT_PARTICLES) {}
-                 mUniforms.morph = mSliderValues[3];
-            mUniforms.sliderValue = mSliderValues[0];
-        }
-        else if (ids[i] == MAT_PARTICLES)
-        {
-            std::memcpy(mUniforms.modelMatrix, billboardBasis, sizeof(billboardBasis));
-        }
-        else if (ids[i] == MAT_NOIS_DENS_SLIDER) mUniforms.sliderValue = mSliderValues[1];
-        else if (ids[i] == MAT_LPG_REZ_SLIDER) mUniforms.sliderValue = mSliderValues[2];
-        else if (ids[i] == MAT_COMB_AMT_SLIDER) mUniforms.sliderValue = mSliderValues[3];
-        else                                       mUniforms.sliderValue = 0.0f;
+            std::memcpy(mUniforms.modelMatrix, kIdentity, sizeof(kIdentity));
 
-        wgpuQueueWriteBuffer(queue,
-                            uniformBuffer,
-                            ids[i] * mUniformStride,
-                            &mUniforms,
-                            sizeof(MyUniforms));
+            if (ids[i] == MAT_PARTICLES)
+            {
+                mUniforms.morph       = morphVal;
+                mUniforms.sliderValue = gainVal;
+                mUniforms.pressed     = gainHeld ? 1.0f : 0.0f;
+            }
+            else if (const AnimatedSlider* s = sliderForMaterial(ids[i]))
+            {
+                // Dependency 2: per-material slider data, keyed by materialId.
+                mUniforms.sliderValue = s->value;
+                mUniforms.pressed     = s->pressed ? 1.0f : 0.0f;
+            }
+            else
+            {
+                mUniforms.sliderValue = 0.0f;
+                mUniforms.pressed     = 0.0f;
+            }
+
+
+        if (const AnimatedSlider* dens = findSlider(ParameterID::noiseDensity))
+            mParticleDrawCount = static_cast<uint32_t>(dens->value * MAX_PARTICLES - 100) + 100;
+
+        wgpuQueueWriteBuffer(queue, uniformBuffer,
+                             ids[i] * mUniformStride, &mUniforms, sizeof(MyUniforms));
     }
 }
 
@@ -387,7 +411,6 @@ bool Scene::createParticlePipeline()
     mParticleVertexBufferLayouts[1].stepMode       = WGPUVertexStepMode_Instance;
 
     // ── Pipeline descriptor ─────────────────────────────────────
-    // Copy the main desc as a base — shares layout, blend, depth, multisample
     mParticlePipelineDesc                              = mPipelineDesc;
     mParticlePipelineDesc.vertex.module                = mShaderModule;
     mParticlePipelineDesc.vertex.entryPoint            = WGPU_STR("vs_particle_world");
@@ -653,6 +676,41 @@ void Scene::initializeParticles()
     mParticleDrawCount = mParticleCount;
 }
 
+void Scene::setSurfaceFormat(const WGPUTextureFormat format)
+{
+    mSurfaceFormat = format;
+}
+
+void Scene::setCameraState(CameraState& s)
+
+{
+    mCameraState = s; updateViewMatrix();
+}
+
+float Scene::getSliderValue(const int index) const
+{
+    return mSliderValues[index];
+}
+
+float Scene::sliderTopFraction() const
+{
+    return (1.0f - (kSpineMaxY + mSliderPos[1])) * 0.5f;
+}
+
+float Scene::sliderBottomFraction() const
+{
+    return (1.0f - (kSpineMinY + mSliderPos[1])) * 0.5f;
+}
+
+float Scene::sliderXFraction() const
+{
+    return (mSliderPos[0] + 1.0f) * 0.5f;
+}
+
+float Scene::indicatorHalfFraction()
+{
+    return kIndicatorHalfY * 0.5f;
+}
 void Scene::updateViewMatrix()
 {
     const float yaw          = mCameraState.angleX;
