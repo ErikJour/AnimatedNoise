@@ -3,10 +3,12 @@
 
 //==============================================================================
 AnimatedNoiseProcessorEditor::AnimatedNoiseProcessorEditor (AnimatedNoiseProcessor& p)
-    : AudioProcessorEditor(&p), processorRef(p), mSliderManager(webGpuWindow.getScene(), processorRef.apvts)
+    : AudioProcessorEditor(&p), processorRef(p),
+                                mSliderManager(webGpuWindow.getScene(), processorRef.apvts)
 {
     juce::ignoreUnused(processorRef);
-    constexpr int initWidth = 800;
+
+    constexpr int initWidth  = 800;
     constexpr int initHeight = 450;
 
     setSize(initWidth, initHeight);
@@ -26,38 +28,45 @@ void AnimatedNoiseProcessorEditor::parentHierarchyChanged()
 {
     AudioProcessorEditor::parentHierarchyChanged();
 
-    if (!webGpuWindow.hasSurface() && getPeer() != nullptr) {
-        const auto* primaryDisplay = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay();
-        const double scale = primaryDisplay ? primaryDisplay->scale : 1.0;
-        const auto width  = static_cast<uint32_t>(std::round(static_cast<double>(getWidth())  * scale));
-        const auto height = static_cast<uint32_t>(std::round(static_cast<double>(getHeight()) * scale));
+    if (webGpuWindow.hasSurface() || getPeer() == nullptr)
+        return;
 
-        if (!webGpuWindow.initSurface(scale, width, height))
-            return;
+    const auto*  primaryDisplay = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay();
+    const double scale = primaryDisplay ? primaryDisplay->scale : 1.0;
+
+    const auto   width  = static_cast<uint32_t>(std::round(static_cast<double>(getWidth())  * scale));
+    const auto   height = static_cast<uint32_t>(std::round(static_cast<double>(getHeight()) * scale));
+
+    if (!webGpuWindow.initSurface(scale, width, height))
+        return;
 
 #if JUCE_MAC
-        mMetalView.setInterceptsMouseClicks(false, false);
-        addAndMakeVisible(mMetalView);
-        mMetalView.setView(webGpuWindow.getNativeView());
-        mMetalView.setBounds(getLocalBounds());
+    mMetalView.setInterceptsMouseClicks(false, false);
+    addAndMakeVisible(mMetalView);
+    mMetalView.setView(webGpuWindow.getNativeView());
+    mMetalView.setBounds(getLocalBounds());
 #endif
 
-        mStartTimeMs = juce::Time::getMillisecondCounterHiRes();
-        mStartTimeSet = true;
-        mConfiguredW = width;
-        mConfiguredH = height;
-        webGpuWindow.getScene().setCameraState(processorRef.savedCameraState);
-        mSliderManager.initializeSliders();
-        startTimerHz(60);
-        juce::MessageManager::callAsync([this]() {
-            setResizable(true, true);
-            setResizeLimits(200,
-                            113,
-                            3200,
-                            1800);
-            getConstrainer()->setFixedAspectRatio(800.0 / 450.0);
-        });
-    }
+    mStartTimeMs  = juce::Time::getMillisecondCounterHiRes();
+    mStartTimeSet = true;
+    mConfiguredW  = width;
+    mConfiguredH  = height;
+
+    webGpuWindow.getScene().setCameraState(processorRef.savedCameraState);
+    mSliderManager.initializeSliders();
+    startTimerHz(60);
+
+    juce::Component::SafePointer<AnimatedNoiseProcessorEditor> safeThis (this);
+    juce::MessageManager::callAsync([safeThis]()
+    {
+        if (safeThis == nullptr) return;
+
+        safeThis->setResizable(true, true);
+        safeThis->setResizeLimits(200, 113, 3200, 1800);
+
+        if (auto* constrainer = safeThis->getConstrainer())
+            constrainer->setFixedAspectRatio(800.0 / 450.0);
+    });
 }
 
 void AnimatedNoiseProcessorEditor::timerCallback()
@@ -71,12 +80,11 @@ void AnimatedNoiseProcessorEditor::timerCallback()
         mResizePending = false;
     }
 
-    static auto startTime = juce::Time::getMillisecondCounterHiRes();
-    const double elapsed        = (juce::Time::getMillisecondCounterHiRes() - startTime) * 0.001;
-
-    webGpuWindow.getScene().renderFrame(static_cast<float>(elapsed));
-
-    // syncParameters();
+    if (mStartTimeSet)
+    {
+        const double elapsed = (juce::Time::getMillisecondCounterHiRes() - mStartTimeMs) * 0.001;
+        webGpuWindow.getScene().renderFrame(static_cast<float>(elapsed));
+    }
 }
 
 void AnimatedNoiseProcessorEditor::setResizeReady()
@@ -92,41 +100,38 @@ void AnimatedNoiseProcessorEditor::resized()
     mMetalView.setBounds(getLocalBounds());
 #endif
     const auto* primaryDisplay = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay();
-    const float scale = primaryDisplay ? static_cast<float>(primaryDisplay->scale) : 1.0f;
+    const float scale          = primaryDisplay ? static_cast<float>(primaryDisplay->scale) : 1.0f;
     mPendingW = static_cast<uint32_t>(std::round(static_cast<float>(getWidth())  * scale));
     mPendingH = static_cast<uint32_t>(std::round(static_cast<float>(getHeight()) * scale));
     mResizePending = true;
 }
-
 //==============================================================================
-void AnimatedNoiseProcessorEditor::mouseDown(const juce::MouseEvent& event)
+void AnimatedNoiseProcessorEditor::mouseDown(const juce::MouseEvent& e)
 {
-    const auto fx = static_cast<float>(event.x);
-    const auto fy = static_cast<float>(event.y);
+    const auto currentX = static_cast<float>(e.x);
+    const auto currentY = static_cast<float>(e.y);
 
-    DBG("click x: " << fx);
-    DBG("click y: " << fy);
-
-    if (!mSliderManager.handleMouseDown(event, getWidth(), getHeight()))
+    if (!mSliderManager.handleMouseDown(e, getWidth(), getHeight()))
     {
         mCameraDragging = true;
-        mLastMouseX     = fx;
-        mLastMouseY     = fy;
-        webGpuWindow.getScene().onMouseButton(0, true, fx, fy);
+        mLastMouseX     = currentX;
+        mLastMouseY     = currentY;
+        webGpuWindow.getScene().onMouseButton(0, true, currentX, currentY);
     }
 }
 
-void AnimatedNoiseProcessorEditor::mouseDrag(const juce::MouseEvent& event)
+void AnimatedNoiseProcessorEditor::mouseDrag(const juce::MouseEvent& e)
 {
-    if (!mSliderManager.handleMouseDrag(event, getWidth(), getHeight()))
+    if (!mSliderManager.handleMouseDrag(e, getWidth(), getHeight()))
     {
         if (mCameraDragging)
         {
-            const auto x = static_cast<float>(event.x);
-            const auto y = static_cast<float>(event.y);
-            webGpuWindow.getScene().onMouseMove(x, y);
-            mLastMouseX = x;
-            mLastMouseY = y;
+            const auto currentX = static_cast<float>(e.x);
+            const auto currentY = static_cast<float>(e.y);
+
+            webGpuWindow.getScene().onMouseMove(currentX, currentY);
+            mLastMouseX = currentX;
+            mLastMouseY = currentY;
         }
     }
 }
