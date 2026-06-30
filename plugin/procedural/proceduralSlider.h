@@ -17,7 +17,7 @@ inline void buildSliderGeometry(
     const float wallRadius     = 0.9f,
     const float wallAngle      = 0.0f,
     const int   curveVariant   = 0,
-    const float roomX          = 0.0f,   // world-space room center offset
+    const float roomX          = 0.0f,
     const float roomZ          = 0.0f,
     const float yBottom        = -0.1875f,
     const float yTop           =  0.38125f,

@@ -13,13 +13,9 @@ Scene::~Scene() = default;
 
 //================================================================================================
 void Scene::init(const WGPUDevice device, WGPUQueue queue) { mDevice = device; mQueue  = queue; }
-
 void Scene::setSurface(WGPUSurface surface) { mSurface = surface; }
-
 void Scene::setSurfaceSize(const uint32_t width, const uint32_t height) { mWidth = width; mHeight = height; }
-
 void Scene::setShaderModule(const WGPUShaderModule shaderModule) { mShaderModule = shaderModule; }
-
 void Scene::setPipelineDesc(WGPURenderPipelineDescriptor pipelineDesc) { mPipelineDesc = pipelineDesc; }
 
 //================================================================================================
@@ -58,14 +54,13 @@ void Scene::terminate()
     if (mSphereIndexBuffer)             { wgpuBufferRelease(mSphereIndexBuffer); mSphereIndexBuffer = nullptr; }
     if (mFloorVertexBuffer)             { wgpuBufferRelease(mFloorVertexBuffer); mFloorVertexBuffer = nullptr; }
     if (mFloorIndexBuffer)              { wgpuBufferRelease(mFloorIndexBuffer); mFloorIndexBuffer = nullptr; }
-    if (mNoiseDensitySliderVertexBuffer){ wgpuBufferRelease(mNoiseDensitySliderVertexBuffer); mNoiseDensitySliderVertexBuffer = nullptr; }
-    if (mNoiseDensitySliderIndexBuffer) { wgpuBufferRelease(mNoiseDensitySliderIndexBuffer); mNoiseDensitySliderIndexBuffer = nullptr; }
-    if (mLpgRezSliderVertexBuffer)      { wgpuBufferRelease(mLpgRezSliderVertexBuffer); mLpgRezSliderVertexBuffer = nullptr; }
-    if (mLpgRezSliderIndexBuffer)       { wgpuBufferRelease(mLpgRezSliderIndexBuffer); mLpgRezSliderIndexBuffer = nullptr; }
-    if (mCombAmtSliderVertexBuffer)     { wgpuBufferRelease(mCombAmtSliderVertexBuffer); mCombAmtSliderVertexBuffer = nullptr; }
-    if (mCombAmtSliderIndexBuffer)      { wgpuBufferRelease(mCombAmtSliderIndexBuffer); mCombAmtSliderIndexBuffer = nullptr; }
-    if (mNoiseLevelSliderVertexBuffer)  { wgpuBufferRelease(mNoiseLevelSliderVertexBuffer); mNoiseLevelSliderVertexBuffer = nullptr; }
-    if (mNoiseLevelSliderIndexBuffer)   { wgpuBufferRelease(mNoiseLevelSliderIndexBuffer); mNoiseLevelSliderIndexBuffer = nullptr; }
+
+    for (auto& m : mSliderMeshes)
+    {
+        if (m.vertexBuffer) { wgpuBufferRelease(m.vertexBuffer); m.vertexBuffer = nullptr; }
+        if (m.indexBuffer)  { wgpuBufferRelease(m.indexBuffer);  m.indexBuffer  = nullptr; }
+    }
+
     if (mParticleQuadBuffer)            { wgpuBufferRelease(mParticleQuadBuffer); mParticleQuadBuffer = nullptr; }
     if (mParticleDataBuffer)            { wgpuBufferRelease(mParticleDataBuffer); mParticleDataBuffer = nullptr; }
     if (mParticlePipeline)              { wgpuRenderPipelineRelease(mParticlePipeline); mParticlePipeline = nullptr; }
@@ -132,11 +127,9 @@ void Scene::renderFrame(const float currentTime)
         setItemBuffers(mSphereVertexBuffer, mSphereIndexBuffer, mSphereIndexCount, MAT_FLOOR, renderPass);
         //Skylight
         setItemBuffers(mSkylightVertexBuffer, mSkylightIndexBuffer, mSkylightIndexCount, MAT_FLOOR, renderPass);
-        // Sliders
-        setItemBuffers(mNoiseLevelSliderVertexBuffer, mNoiseLevelSliderIndexBuffer, mNoiseLevelSliderIndexCount, MAT_GLOBAL_GAIN_SLIDER, renderPass);
-        setItemBuffers(mNoiseDensitySliderVertexBuffer, mNoiseDensitySliderIndexBuffer, mNoiseDensitySliderIndexCount, MAT_NOIS_DENS_SLIDER, renderPass);
-        setItemBuffers(mCombAmtSliderVertexBuffer, mCombAmtSliderIndexBuffer, mCombAmtSliderIndexCount, MAT_COMB_AMT_SLIDER, renderPass);
-        setItemBuffers(mLpgRezSliderVertexBuffer, mLpgRezSliderIndexBuffer, mLpgRezSliderIndexCount, MAT_LPG_REZ_SLIDER, renderPass);
+        // Sliders — one draw per catalog mesh, each bound to its own material slot
+        for (const auto& m : mSliderMeshes)
+            setItemBuffers(m.vertexBuffer, m.indexBuffer, m.indexCount, m.materialId, renderPass);
         // Particles
         if (mParticleQuadBuffer && mParticleDataBuffer && mParticleCount > 0)
         {
@@ -339,7 +332,21 @@ void Scene::initializeScene()
 {
     initializeFloor();
     initializeSphere();
-    initializeSliders();
+    //================================================
+    mSliderMeshes.clear();
+    mSliderMeshes.reserve(sliderDefinitions().size());
+    for (const auto& def : sliderDefinitions())
+    {
+        constexpr float kSliderWallRadius = 0.9f;
+        SliderMesh mesh;
+        mesh.materialId = def.materialId;
+
+        InitializeSlider(mesh.indexCount, mesh.vertexBuffer, mesh.indexBuffer,
+                         kSliderWallRadius, def.angle);
+
+        mSliderMeshes.push_back(mesh);
+    }
+    //================================================
     initializeParticles();
 }
 
@@ -523,33 +530,6 @@ void Scene::InitializeSlider(uint32_t& indexCount, WGPUBuffer& vertexBuffer, WGP
     wgpuQueueWriteBuffer(mQueue, indexBuffer, 0, indices.data(), bd.size);
 }
 
-void Scene::initializeSliders()
-{
-    InitializeSlider(mNoiseLevelSliderIndexCount,
-                   mNoiseLevelSliderVertexBuffer,
-                   mNoiseLevelSliderIndexBuffer,
-                   0.9f,
-                   0.0f);
-
-    InitializeSlider(mNoiseDensitySliderIndexCount,
-                    mNoiseDensitySliderVertexBuffer,
-                    mNoiseDensitySliderIndexBuffer,
-                    0.9f,
-                    0.1f);
-
-    InitializeSlider(mLpgRezSliderIndexCount,
-                   mLpgRezSliderVertexBuffer,
-                   mLpgRezSliderIndexBuffer,
-                   0.9f,
-                   1.45f);
-
-    InitializeSlider(mCombAmtSliderIndexCount,
-                    mCombAmtSliderVertexBuffer,
-                    mCombAmtSliderIndexBuffer,
-                    0.9f,
-                    2.975f);
-}
-
 void Scene::initializeParticles()
 {
     std::vector<QuadVertex>   quadVerts;
@@ -576,41 +556,6 @@ void Scene::initializeParticles()
     mParticleDrawCount = mParticleCount;
 }
 
-void Scene::setSurfaceFormat(const WGPUTextureFormat format)
-{
-    mSurfaceFormat = format;
-}
-
-void Scene::setCameraState(CameraState& s)
-
-{
-    mCameraState = s; updateViewMatrix();
-}
-
-float Scene::getSliderValue(const int index) const
-{
-    return mSliderValues[index];
-}
-
-float Scene::sliderTopFraction() const
-{
-    return (1.0f - (kSpineMaxY + mSliderPos[1])) * 0.5f;
-}
-
-float Scene::sliderBottomFraction() const
-{
-    return (1.0f - (kSpineMinY + mSliderPos[1])) * 0.5f;
-}
-
-float Scene::sliderXFraction() const
-{
-    return (mSliderPos[0] + 1.0f) * 0.5f;
-}
-
-float Scene::indicatorHalfFraction()
-{
-    return kIndicatorHalfY * 0.5f;
-}
 void Scene::updateViewMatrix()
 {
     const float yaw          = mCameraState.angleX;
@@ -662,12 +607,9 @@ void Scene::onScroll(const float deltaX, const float deltaY)
     const float yaw     = mCameraState.angleX;
     const float speed   = mDrag.scrollSensitivity;
 
-    // Vertical scroll: walk forward/backward
     mCameraState.posX +=  sinf(yaw) * deltaY * speed;
     mCameraState.posZ += -cosf(yaw) * deltaY * speed;
-    // Horizontal scroll: turn left/right
     mCameraState.angleX += deltaX * mDrag.turnSensitivity * speed;
-    // Clamp to the circular wall
     const float r = sqrtf(mCameraState.posX * mCameraState.posX +
                           mCameraState.posZ * mCameraState.posZ);
     if (r > CameraState::kWallRadius)
@@ -676,6 +618,19 @@ void Scene::onScroll(const float deltaX, const float deltaY)
         mCameraState.posX *= inv;
         mCameraState.posZ *= inv;
     }
-
     updateViewMatrix();
 }
+
+void Scene::setSurfaceFormat(const WGPUTextureFormat format) { mSurfaceFormat = format; }
+
+void Scene::setCameraState(CameraState& s) { mCameraState = s; updateViewMatrix(); }
+
+float Scene::getSliderValue(const int index) const { return mSliderValues[index]; }
+
+float Scene::sliderTopFraction() const { return (1.0f - (kSpineMaxY + mSliderPos[1])) * 0.5f; }
+
+float Scene::sliderBottomFraction() const { return (1.0f - (kSpineMinY + mSliderPos[1])) * 0.5f; }
+
+float Scene::sliderXFraction() const { return (mSliderPos[0] + 1.0f) * 0.5f; }
+
+float Scene::indicatorHalfFraction() { return kIndicatorHalfY * 0.5f; }

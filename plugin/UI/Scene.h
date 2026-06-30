@@ -47,7 +47,6 @@ class Scene
         void ConfigureVertexLayout();
         bool createParticlePipeline();
         void initializeScene();
-        void initializeSliders();
         bool createPipeline();
         void initializeFloor();
         void initializeSphere();
@@ -67,31 +66,33 @@ class Scene
         void onMouseMove(float xpos, float ypos);
         void onScroll(float deltaX, float deltaY);
 
+        void setSliderList(const std::vector<AnimatedSlider>& list) { mSliderList = &list; }
+
         void projectSliderBounds(const float screenW, const float screenH,
-                     juce::Point<float>& outTop,
-                     juce::Point<float>& outBottom,
-                     const float angle) const
+                                                        juce::Point<float>& outTop,
+                                                        juce::Point<float>& outBottom,
+                                                        const float angle) const
             {
                 outTop    = projectSliderPoint(screenW, screenH, 1.0f, angle);
                 outBottom = projectSliderPoint(screenW, screenH, 0.0f, angle);
             }
-        void setSliderList(const std::vector<AnimatedSlider>& list) { mSliderList = &list; }
 
         juce::Point<float> projectSliderPoint(const float screenW, const float screenH,
                                               const float v, const float angle) const
             {
-                const float wx = 0.9f * std::cos(angle);
-                const float wz = 0.9f * std::sin(angle);
-                constexpr float yTop    =  0.28125f;
-                constexpr float yBottom = -0.01875f;
-                const float y = yBottom + v * (yTop - yBottom);
+                const float wx                 = 0.9f * std::cos(angle);
+                const float wz                 = 0.9f * std::sin(angle);
+                constexpr float yBottom        = -0.1875f;
+                constexpr float yTop           =  0.38125f;
+                const float y                  = yBottom + v * (yTop - yBottom);
 
                 const float* m = mUniforms.viewProjMatrix;
                 const float cx = m[0]*wx + m[4]*y + m[8]*wz  + m[12];
                 const float cy = m[1]*wx + m[5]*y + m[9]*wz  + m[13];
                 const float cw = m[3]*wx + m[7]*y + m[11]*wz + m[15];
+
                 return { (cx/cw * 0.5f + 0.5f)        * screenW,
-                         (1.0f - (cy/cw * 0.5f + 0.5f)) * screenH };
+                         (1.0f - (cy/cw * 0.5f + 0.5f))  * screenH };
             }
 
         WGPUTextureView getDepthTextureView() const { return mDepthTextureView; }
@@ -136,24 +137,16 @@ class Scene
         WGPUFragmentState                   mFragmentState = {};
         WGPUBlendState                      mBlendState = {};
         MyUniforms                          mUniforms = {};
-        //Noise Slider
-        WGPUBuffer                          mNoiseLevelSliderVertexBuffer = nullptr;
-        WGPUBuffer                          mNoiseLevelSliderIndexBuffer  = nullptr;
-        uint32_t                            mNoiseLevelSliderIndexCount   = 0;
-        //Noise Density
-        WGPUBuffer                          mNoiseDensitySliderVertexBuffer = nullptr;
-        WGPUBuffer                          mNoiseDensitySliderIndexBuffer  = nullptr;
-        uint32_t                            mNoiseDensitySliderIndexCount   = 0;
-        //Comb Amount Slider
-        WGPUBuffer                          mCombAmtSliderVertexBuffer = nullptr;
-        WGPUBuffer                          mCombAmtSliderIndexBuffer  = nullptr;
-        uint32_t                            mCombAmtSliderIndexCount   = 0;
-        //LPG Resonance Slider
-        WGPUBuffer                          mLpgRezSliderVertexBuffer = nullptr;
-        WGPUBuffer                          mLpgRezSliderIndexBuffer  = nullptr;
-        uint32_t                            mLpgRezSliderIndexCount   = 0;
 
         float                               mSliderValues[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+        struct SliderMesh {
+            WGPUBuffer vertexBuffer = nullptr;
+            WGPUBuffer indexBuffer  = nullptr;
+            uint32_t   indexCount   = 0;
+            uint32_t   materialId   = 0;
+        };
+        std::vector<SliderMesh>             mSliderMeshes;
         float                               mSliderPos[3]    = { 0.5f, 0.0f, 0.2f };
         static constexpr float              kSpineMinY       = -0.15f;
         static constexpr float              kSpineMaxY       =  0.25f;

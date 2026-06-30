@@ -6,10 +6,10 @@
 const std::vector<SliderDef>& sliderDefinitions()
 {
     static const std::vector<SliderDef> defs = {
-        { ParameterID::noiseLevel,   0.5f,  0, MAT_GLOBAL_GAIN_SLIDER, 0 },
-        { ParameterID::noiseDensity, 5.75f, 1, MAT_NOIS_DENS_SLIDER,   1 },
-        { ParameterID::lpgResonance, 1.55f, 2, MAT_LPG_REZ_SLIDER,   2 },
-        { ParameterID::combLevel,    2.55f,  3, MAT_COMB_AMT_SLIDER,  3 },
+        { ParameterID::noiseLevel,   0.0f,  0, MAT_GLOBAL_GAIN_SLIDER, 0 },
+        { ParameterID::noiseDensity, 0.1f, 1, MAT_NOIS_DENS_SLIDER,   1 },
+        { ParameterID::lpgResonance, 1.45f, 2, MAT_LPG_REZ_SLIDER,   2 },
+        { ParameterID::combLevel,    2.975f,  3, MAT_COMB_AMT_SLIDER,  3 },
     };
     return defs;
 }

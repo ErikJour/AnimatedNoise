@@ -36,12 +36,6 @@ void AnimatedNoiseProcessorEditor::parentHierarchyChanged()
             return;
 
 #if JUCE_MAC
-        // The Metal layer lives in its own NSView, confined to this editor, so
-        // it never paints over the standalone window's title bar.
-        // The native view's -hitTest: returns nil so AppKit hands mouse events to
-        // JUCE's peer; this makes JUCE's own routing skip the overlay component too,
-        // so mouseDown reaches the editor (slider/text hit-testing) instead of dying
-        // in the NSViewComponent. (mouseWheel already bubbles to the parent.)
         mMetalView.setInterceptsMouseClicks(false, false);
         addAndMakeVisible(mMetalView);
         mMetalView.setView(webGpuWindow.getNativeView());
@@ -109,6 +103,9 @@ void AnimatedNoiseProcessorEditor::mouseDown(const juce::MouseEvent& event)
 {
     const auto fx = static_cast<float>(event.x);
     const auto fy = static_cast<float>(event.y);
+
+    DBG("click x: " << fx);
+    DBG("click y: " << fy);
 
     if (!mSliderManager.handleMouseDown(event, getWidth(), getHeight()))
     {
