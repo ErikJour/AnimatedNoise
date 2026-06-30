@@ -21,8 +21,8 @@ bool AnimatedLogo::initialize(WGPUTextureFormat surfaceFormat, const WGPUDepthSt
     // Texture, sampler, and geometry — upload once
     if (!mTexture)
     {
-        juce::MemoryInputStream stream(BinaryData::ERIKJOURGENSEN_ICON_B_W_png,
-                                       static_cast<size_t>(BinaryData::ERIKJOURGENSEN_ICON_B_W_pngSize),
+        juce::MemoryInputStream stream(BinaryData::ERIKJOURGENSEN_ICON_B_SMALL_png,
+                                       static_cast<size_t>(BinaryData::ERIKJOURGENSEN_ICON_B_SMALL_pngSize),
                                        false);
         auto image = juce::PNGImageFormat().decodeImage(stream);
         if (!image.isValid()) { std::cerr << "Logo PNG decode failed." << std::endl; return false; }

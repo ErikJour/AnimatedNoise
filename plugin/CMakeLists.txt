@@ -19,7 +19,7 @@ juce_add_binary_data(AnimatedNoiseAssets
         NAMESPACE BinaryData
         HEADER_NAME BinaryData.h
         SOURCES
-        Assets/ERIK-JOURGENSEN_ICON_B_W.png
+        Assets/ERIK-JOURGENSEN_ICON_B_SMALL.png
 )
 
 #==================================
