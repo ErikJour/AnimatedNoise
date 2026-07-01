@@ -54,8 +54,6 @@ void Scene::terminate()
     if (mSphereIndexBuffer)             { wgpuBufferRelease(mSphereIndexBuffer); mSphereIndexBuffer = nullptr; }
     if (mFloorVertexBuffer)             { wgpuBufferRelease(mFloorVertexBuffer); mFloorVertexBuffer = nullptr; }
     if (mFloorIndexBuffer)              { wgpuBufferRelease(mFloorIndexBuffer); mFloorIndexBuffer = nullptr; }
-    if (mPlaneVertexBuffer)             { wgpuBufferRelease(mPlaneVertexBuffer); mPlaneVertexBuffer = nullptr; }
-    if (mPlaneIndexBuffer)              { wgpuBufferRelease(mPlaneIndexBuffer); mPlaneIndexBuffer = nullptr; }
     for (auto& m : mSliderMeshes)
     {
         if (m.vertexBuffer) { wgpuBufferRelease(m.vertexBuffer); m.vertexBuffer = nullptr; }
@@ -125,7 +123,6 @@ void Scene::renderFrame(const float currentTime)
         //Floor
         setItemBuffers(mFloorVertexBuffer, mFloorIndexBuffer, mFloorIndexCount, MAT_FLOOR, renderPass);
         setItemBuffers(mSphereVertexBuffer, mSphereIndexBuffer, mSphereIndexCount, MAT_FLOOR, renderPass);
-        setItemBuffers(mPlaneVertexBuffer, mPlaneIndexBuffer, mPlaneIndexCount, MAT_PLANE, renderPass);
         //Skylight
         setItemBuffers(mSkylightVertexBuffer, mSkylightIndexBuffer, mSkylightIndexCount, MAT_FLOOR, renderPass);
         // Sliders
@@ -329,7 +326,6 @@ void Scene::initializeScene()
 {
     initializeFloor();
     initializeSphere();
-    initializePlane();
     //================================================
     mSliderMeshes.clear();
     mSliderMeshes.reserve(sliderDefinitions().size());
@@ -552,27 +548,6 @@ void Scene::initializeParticles()
 
     mParticleCount = static_cast<uint32_t>(particles.size());
     mParticleDrawCount = mParticleCount;
-}
-
-void Scene::initializePlane()
-{
-    std::vector<PlaneVertex> vertices;
-    std::vector<PlaneIndex>  indices;
-
-    Plane::buildPlane(vertices, indices, 0.1f, 0.35f);
-
-    mPlaneIndexCount = static_cast<uint32_t>(indices.size());
-
-    WGPUBufferDescriptor bd{};
-    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
-    bd.size  = vertices.size() * sizeof(PlaneVertex);
-    mPlaneVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-    wgpuQueueWriteBuffer(mQueue, mPlaneVertexBuffer, 0, vertices.data(), bd.size);
-
-    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
-    bd.size  = (indices.size() * sizeof(FloorIndex) + 3) & ~3ULL;
-    mPlaneIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-    wgpuQueueWriteBuffer(mQueue, mPlaneIndexBuffer, 0, indices.data(), bd.size);
 }
 
 //==========================================================================
