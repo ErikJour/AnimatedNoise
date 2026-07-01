@@ -53,6 +53,8 @@ class Scene
         void initializeSkylight();
         void InitializeSlider(uint32_t& indexCount, WGPUBuffer& vertexBuffer, WGPUBuffer& indexBuffer, float wallRadius, float angle) const;
         void initializeParticles();
+        void initializePlane();
+
         void setSurfaceFormat(WGPUTextureFormat format);
         void setCameraState(CameraState& s);
         float getSliderValue(int index) const;
@@ -151,6 +153,10 @@ class Scene
         static constexpr float              kSpineMinY       = -0.15f;
         static constexpr float              kSpineMaxY       =  0.25f;
         static constexpr float              kIndicatorHalfY  =  0.025f;
+        //Plane
+        WGPUBuffer                          mPlaneVertexBuffer   = nullptr;
+        WGPUBuffer                          mPlaneIndexBuffer    = nullptr;
+        uint32_t                            mPlaneIndexCount     = 0;
         //Floor
         WGPUBuffer                          mFloorVertexBuffer  = nullptr;
         WGPUBuffer                          mFloorIndexBuffer  = nullptr;

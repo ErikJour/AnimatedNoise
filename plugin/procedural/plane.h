@@ -53,7 +53,7 @@ public:
                 const float px = (s - 0.5f) * width;
 
                 PlaneVertex vert{};
-                vert.x  = px;   vert.y  = py;   vert.z  = 0.0f;
+                vert.x  = px - 0.9f;   vert.y  = py + 0.6f;   vert.z  = 0.15f;
                 vert.nx = 0.0f; vert.ny = 0.0f; vert.nz = 1.0f;
                 vert.r  = 0.0f;    vert.g  = 0.0f;  vert.b = 0.0f;
 
