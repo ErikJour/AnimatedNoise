@@ -9,16 +9,16 @@ void SliderManager::initializeSliders()
     mSliders.clear();
     mSliders.reserve(defs.size());
 
-    for (const auto& def : defs)
+    for (const auto& [paramID, angle, curveVariant, materialId, glowIndex] : defs)
     {
         auto& s        = mSliders.emplace_back();
-        s.paramID      = def.paramID;
-        s.angle        = def.angle;
-        s.curveVariant = def.curveVariant;
-        s.materialId   = def.materialId;
-        s.glowIndex    = def.glowIndex;
+        s.paramID      = paramID;
+        s.angle        = angle;
+        s.curveVariant = curveVariant;
+        s.materialId   = materialId;
+        s.glowIndex    = glowIndex;
 
-        auto* param = mApvts.getParameter(def.paramID.getParamID());
+        auto* param = mApvts.getParameter(paramID.getParamID());
         jassert(param != nullptr);
 
         s.attachment = std::make_unique<juce::ParameterAttachment>(
@@ -36,14 +36,14 @@ bool SliderManager::handleMouseDown(const juce::MouseEvent& event, int width, in
     const auto screenW               = static_cast<float>(width);
     const auto screenH               = static_cast<float>(height);
     const juce::Point<float> mouse{ (float)event.x, (float)event.y };
-    constexpr float kHitRadius       = 12.0f;   // distance to the tube segment
-    constexpr float kIndicatorRadius = 14.0f;   // radial grab around the bead
-    constexpr float kIndicatorHalfH  = 0.048f;  // must match shader halfH (shadeSpineTube)
+    constexpr float kHitRadius       = 12.0f;
+    constexpr float kIndicatorRadius = 14.0f;
+    constexpr float kIndicatorHalfH  = 0.048f;
 
 
-     int   bestIndex = -1;
+     int   bestIndex  = -1;
      float bestDepth  = FLT_MAX;
-     float bestTRaw  = 0.0f;
+     float bestTRaw   = 0.0f;
 
     for (auto& s : mSliders)
     {
@@ -59,7 +59,7 @@ bool SliderManager::handleMouseDown(const juce::MouseEvent& event, int width, in
         const float beadV = juce::jlimit(kIndicatorHalfH, 1.0f - kIndicatorHalfH, s.value);
 
         const juce::Point<float> bead    = mScene.projectSliderPoint(screenW, screenH, beadV, s.angle);
-        float hitDepth = mScene.getDepthValue();
+        const float hitDepth = mScene.getDepthValue();
         const juce::Point<float> nearest = mScene.projectSliderPoint(screenW, screenH, tClmp, s.angle);
 
         const bool onIndicator = mouse.getDistanceFrom(bead)    <= kIndicatorRadius;
@@ -73,6 +73,7 @@ bool SliderManager::handleMouseDown(const juce::MouseEvent& event, int width, in
             bestTRaw = tRaw;
         }
     }
+
     if (bestIndex < 0) return false;
     auto& s = mSliders[static_cast<size_t>(bestIndex)];
     mActiveSlider = bestIndex;

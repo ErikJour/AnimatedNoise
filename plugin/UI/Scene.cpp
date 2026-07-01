@@ -329,7 +329,7 @@ void Scene::initializeScene()
 {
     initializeFloor();
     initializeSphere();
-    // initializePlane();
+    initializePlane();
     //================================================
     mSliderMeshes.clear();
     mSliderMeshes.reserve(sliderDefinitions().size());

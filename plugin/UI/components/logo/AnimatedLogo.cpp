@@ -18,7 +18,6 @@ void AnimatedLogo::init(WGPUDevice device, WGPUQueue queue)
 
 bool AnimatedLogo::initialize(WGPUTextureFormat surfaceFormat, const WGPUDepthStencilState& depthStencilTemplate)
 {
-    // Texture, sampler, and geometry — upload once
     if (!mTexture)
     {
         juce::MemoryInputStream stream(BinaryData::ERIKJOURGENSEN_ICON_B_SMALL_png,
