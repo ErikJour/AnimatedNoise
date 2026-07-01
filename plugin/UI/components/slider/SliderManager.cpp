@@ -36,8 +36,8 @@ bool SliderManager::handleMouseDown(const juce::MouseEvent& event, int width, in
     const auto screenW               = static_cast<float>(width);
     const auto screenH               = static_cast<float>(height);
     const juce::Point<float> mouse{ (float)event.x, (float)event.y };
-    constexpr float kHitRadius       = 24.0f;   // distance to the tube segment
-    constexpr float kIndicatorRadius = 28.0f;   // radial grab around the bead
+    constexpr float kHitRadius       = 12.0f;   // distance to the tube segment
+    constexpr float kIndicatorRadius = 14.0f;   // radial grab around the bead
     constexpr float kIndicatorHalfH  = 0.048f;  // must match shader halfH (shadeSpineTube)
 
 
