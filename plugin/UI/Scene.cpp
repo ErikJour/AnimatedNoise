@@ -4,7 +4,7 @@
 
 #include "Scene.h"
 #include <cmath>
-#include <sliderCatalog.h>
+#include <components/slider/sliderCatalog.h>
 
 //================================================================================================
 Scene::Scene() = default;
@@ -54,14 +54,13 @@ void Scene::terminate()
     if (mSphereIndexBuffer)             { wgpuBufferRelease(mSphereIndexBuffer); mSphereIndexBuffer = nullptr; }
     if (mFloorVertexBuffer)             { wgpuBufferRelease(mFloorVertexBuffer); mFloorVertexBuffer = nullptr; }
     if (mFloorIndexBuffer)              { wgpuBufferRelease(mFloorIndexBuffer); mFloorIndexBuffer = nullptr; }
-    if (mPlaneVertexBuffer)             { wgpuBufferRelease(mFloorVertexBuffer); mFloorVertexBuffer = nullptr; }
-    if (mPlaneIndexBuffer)              { wgpuBufferRelease(mFloorIndexBuffer); mFloorIndexBuffer = nullptr; }
+    if (mPlaneVertexBuffer)             { wgpuBufferRelease(mPlaneVertexBuffer); mPlaneVertexBuffer = nullptr; }
+    if (mPlaneIndexBuffer)              { wgpuBufferRelease(mPlaneIndexBuffer); mPlaneIndexBuffer = nullptr; }
     for (auto& m : mSliderMeshes)
     {
         if (m.vertexBuffer) { wgpuBufferRelease(m.vertexBuffer); m.vertexBuffer = nullptr; }
         if (m.indexBuffer)  { wgpuBufferRelease(m.indexBuffer);  m.indexBuffer  = nullptr; }
     }
-
     if (mParticleQuadBuffer)            { wgpuBufferRelease(mParticleQuadBuffer); mParticleQuadBuffer = nullptr; }
     if (mParticleDataBuffer)            { wgpuBufferRelease(mParticleDataBuffer); mParticleDataBuffer = nullptr; }
     if (mParticlePipeline)              { wgpuRenderPipelineRelease(mParticlePipeline); mParticlePipeline = nullptr; }
@@ -129,7 +128,7 @@ void Scene::renderFrame(const float currentTime)
         setItemBuffers(mPlaneVertexBuffer, mPlaneIndexBuffer, mPlaneIndexCount, MAT_PLANE, renderPass);
         //Skylight
         setItemBuffers(mSkylightVertexBuffer, mSkylightIndexBuffer, mSkylightIndexCount, MAT_FLOOR, renderPass);
-        // Sliders — one draw per catalog mesh, each bound to its own material slot
+        // Sliders
         for (const auto& m : mSliderMeshes)
             setItemBuffers(m.vertexBuffer, m.indexBuffer, m.indexCount, m.materialId, renderPass);
         // Particles
@@ -269,40 +268,38 @@ bool Scene::createParticlePipeline()
 {
     if (mParticlePipeline) { wgpuRenderPipelineRelease(mParticlePipeline); mParticlePipeline = nullptr; }
 
-    mParticleBlendState.color.operation            = WGPUBlendOperation_Add;
-    mParticleBlendState.color.srcFactor            = WGPUBlendFactor_SrcAlpha;
-    mParticleBlendState.color.dstFactor            = WGPUBlendFactor_One;
-    mParticleBlendState.alpha.operation            = WGPUBlendOperation_Add;
-    mParticleBlendState.alpha.srcFactor            = WGPUBlendFactor_One;
-    mParticleBlendState.alpha.dstFactor            = WGPUBlendFactor_One;
-    mParticleColorTarget                           = mColorTarget;
-    mParticleColorTarget.blend                     = &mParticleBlendState;
-    mParticleVertexAttribs[0].shaderLocation       = 0;
-    mParticleVertexAttribs[0].format               = WGPUVertexFormat_Float32x2;
-    mParticleVertexAttribs[0].offset               = 0;
-    mParticleVertexAttribs[1].shaderLocation       = 1;
-    mParticleVertexAttribs[1].format               = WGPUVertexFormat_Float32x2;
-    mParticleVertexAttribs[1].offset               = 2 * sizeof(float);
-    mParticleVertexAttribs[2].shaderLocation       = 2;
-    mParticleVertexAttribs[2].format               = WGPUVertexFormat_Float32x4;
-    mParticleVertexAttribs[2].offset               = 0;
-    mParticleVertexAttribs[3].shaderLocation       = 3;
-    mParticleVertexAttribs[3].format               = WGPUVertexFormat_Float32x4;
-    mParticleVertexAttribs[3].offset               = 4 * sizeof(float);
-    mParticleVertexAttribs[4].shaderLocation       = 4;
-    mParticleVertexAttribs[4].format               = WGPUVertexFormat_Float32x4;
-    mParticleVertexAttribs[4].offset               = 8 * sizeof(float);
+    mParticleBlendState.color.operation                = WGPUBlendOperation_Add;
+    mParticleBlendState.color.srcFactor                = WGPUBlendFactor_SrcAlpha;
+    mParticleBlendState.color.dstFactor                = WGPUBlendFactor_One;
+    mParticleBlendState.alpha.operation                = WGPUBlendOperation_Add;
+    mParticleBlendState.alpha.srcFactor                = WGPUBlendFactor_One;
+    mParticleBlendState.alpha.dstFactor                = WGPUBlendFactor_One;
+    mParticleColorTarget                               = mColorTarget;
+    mParticleColorTarget.blend                         = &mParticleBlendState;
+    mParticleVertexAttribs[0].shaderLocation           = 0;
+    mParticleVertexAttribs[0].format                   = WGPUVertexFormat_Float32x2;
+    mParticleVertexAttribs[0].offset                   = 0;
+    mParticleVertexAttribs[1].shaderLocation           = 1;
+    mParticleVertexAttribs[1].format                   = WGPUVertexFormat_Float32x2;
+    mParticleVertexAttribs[1].offset                   = 2 * sizeof(float);
+    mParticleVertexAttribs[2].shaderLocation           = 2;
+    mParticleVertexAttribs[2].format                   = WGPUVertexFormat_Float32x4;
+    mParticleVertexAttribs[2].offset                   = 0;
+    mParticleVertexAttribs[3].shaderLocation           = 3;
+    mParticleVertexAttribs[3].format                   = WGPUVertexFormat_Float32x4;
+    mParticleVertexAttribs[3].offset                   = 4 * sizeof(float);
+    mParticleVertexAttribs[4].shaderLocation           = 4;
+    mParticleVertexAttribs[4].format                   = WGPUVertexFormat_Float32x4;
+    mParticleVertexAttribs[4].offset                   = 8 * sizeof(float);
     mParticleVertexBufferLayouts.resize(2);
-    mParticleVertexBufferLayouts[0].attributeCount = 2;
-    mParticleVertexBufferLayouts[0].attributes     = &mParticleVertexAttribs[0];
-    mParticleVertexBufferLayouts[0].arrayStride    = sizeof(QuadVertex);
-    mParticleVertexBufferLayouts[0].stepMode       = WGPUVertexStepMode_Vertex;
-    mParticleVertexBufferLayouts[1].attributeCount = 3;
-    mParticleVertexBufferLayouts[1].attributes     = &mParticleVertexAttribs[2];
-    mParticleVertexBufferLayouts[1].arrayStride    = sizeof(ParticleData);
-    mParticleVertexBufferLayouts[1].stepMode       = WGPUVertexStepMode_Instance;
-
-    // ── Pipeline descriptor ─────────────────────────────────────
+    mParticleVertexBufferLayouts[0].attributeCount     = 2;
+    mParticleVertexBufferLayouts[0].attributes         = &mParticleVertexAttribs[0];
+    mParticleVertexBufferLayouts[0].arrayStride        = sizeof(QuadVertex);
+    mParticleVertexBufferLayouts[0].stepMode           = WGPUVertexStepMode_Vertex;
+    mParticleVertexBufferLayouts[1].attributeCount     = 3;
+    mParticleVertexBufferLayouts[1].attributes         = &mParticleVertexAttribs[2];
+    mParticleVertexBufferLayouts[1].arrayStride        = sizeof(ParticleData);
+    mParticleVertexBufferLayouts[1].stepMode           = WGPUVertexStepMode_Instance;
     mParticlePipelineDesc                              = mPipelineDesc;
     mParticlePipelineDesc.vertex.module                = mShaderModule;
     mParticlePipelineDesc.vertex.entryPoint            = WGPU_STR("vs_particle_world");
@@ -315,12 +312,10 @@ bool Scene::createParticlePipeline()
     mParticleFragmentState.targetCount                 = 1;
     mParticleFragmentState.targets =                   &mParticleColorTarget;
     mParticleFragmentState.constants                   = nullptr;
-
-    mParticlePipelineDesc.fragment = &mParticleFragmentState;
-    mParticleDepthStencil = *mPipelineDesc.depthStencil;
-    mParticleDepthStencil.depthWriteEnabled = WGPUOptionalBool_False;
-
-    mParticlePipelineDesc.depthStencil = &mParticleDepthStencil;
+    mParticlePipelineDesc.fragment                     = &mParticleFragmentState;
+    mParticleDepthStencil                              = *mPipelineDesc.depthStencil;
+    mParticleDepthStencil.depthWriteEnabled            = WGPUOptionalBool_False;
+    mParticlePipelineDesc.depthStencil                 = &mParticleDepthStencil;
 
     mParticlePipeline = wgpuDeviceCreateRenderPipeline(mDevice, &mParticlePipelineDesc);
     if (!mParticlePipeline) {
@@ -406,11 +401,11 @@ bool Scene::createPipeline()
     bufferDesc.usage                = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
     mUniformBuffer                  = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
 
-    WGPUBindGroupEntry entry = {};
-    entry.binding            = 0;
-    entry.buffer             = mUniformBuffer;
-    entry.offset             = 0;
-    entry.size               = sizeof(MyUniforms);
+    WGPUBindGroupEntry entry       = {};
+    entry.binding                  = 0;
+    entry.buffer                   = mUniformBuffer;
+    entry.offset                   = 0;
+    entry.size                     = sizeof(MyUniforms);
 
     WGPUBindGroupDescriptor bgDesc = {};
     bgDesc.layout                  = bgl;
@@ -648,14 +643,14 @@ void Scene::onScroll(const float deltaX, const float deltaY)
 
 void Scene::setSurfaceFormat(const WGPUTextureFormat format) { mSurfaceFormat = format; }
 
-void Scene::setCameraState(CameraState& s) { mCameraState = s; updateViewMatrix(); }
+void Scene::setCameraState(const CameraState& s)             { mCameraState = s; updateViewMatrix(); }
 
-float Scene::getSliderValue(const int index) const { return mSliderValues[index]; }
+float Scene::getSliderValue(const int index) const           { return mSliderValues[index]; }
 
-float Scene::sliderTopFraction() const { return (1.0f - (kSpineMaxY + mSliderPos[1])) * 0.5f; }
+float Scene::sliderTopFraction() const                       { return (1.0f - (kSpineMaxY + mSliderPos[1])) * 0.5f; }
 
-float Scene::sliderBottomFraction() const { return (1.0f - (kSpineMinY + mSliderPos[1])) * 0.5f; }
+float Scene::sliderBottomFraction() const                    { return (1.0f - (kSpineMinY + mSliderPos[1])) * 0.5f; }
 
-float Scene::sliderXFraction() const { return (mSliderPos[0] + 1.0f) * 0.5f; }
+float Scene::sliderXFraction() const                         { return (mSliderPos[0] + 1.0f) * 0.5f; }
 
-float Scene::indicatorHalfFraction() { return kIndicatorHalfY * 0.5f; }
+float Scene::indicatorHalfFraction()                         { return kIndicatorHalfY * 0.5f; }

@@ -4,7 +4,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <cstdint>
 #include <vector>
-#include "MyUniforms.h"   // MAT_* material slots
+#include "../../../shaders/MyUniforms.h"
 
 
 // ─────────────────────────────────────────────────────────────────────────────

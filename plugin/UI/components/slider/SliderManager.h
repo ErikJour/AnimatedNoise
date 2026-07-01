@@ -1,6 +1,6 @@
 #ifndef ANIMATEDNOISE_SLIDERMANAGER_H
 #define ANIMATEDNOISE_SLIDERMANAGER_H
-#include "Scene.h"
+#include "../../Scene.h"
 #include "AnimatedSlider.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <vector>

@@ -4,7 +4,7 @@
 #include "AnimatedNoiseProcessor.h"
 #include "utilityHelper.h"
 #include "webGpuWindow.h"
-#include "SliderManager.h"
+#include "../UI/components/slider/SliderManager.h"
 #include "Scene.h"
 
 //==============================================================================

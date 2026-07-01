@@ -9,19 +9,19 @@
     {
         const std::string dir = DEBUG_SHADER_DIR;
         std::vector<std::filesystem::path> shaderPaths = {
-            dir + "/common.wgsl",
-            dir + "/lighting.wgsl",
-            dir + "/mat_cave.wgsl",
-            dir + "/mat_slider.wgsl",
-            dir + "/mat_comb_slider.wgsl",
-            dir + "/mat_plane.wgsl",
-            dir + "/mat_particle.wgsl",
-            dir + "/mat_floor.wgsl",
-            dir + "/mat_skylight.wgsl",
-            dir + "/vs_main.wgsl",
-            dir + "/fs_main.wgsl",
-            dir + "/mat_lpg_rez_slider.wgsl",
-            dir + "/mat_noise_density_slider.wgsl"
+            dir + "/shader_materials/common.wgsl",
+            dir + "/shader_materials/lighting.wgsl",
+            dir + "/shader_materials/mat_cave.wgsl",
+            dir + "/shader_materials/mat_slider.wgsl",
+            dir + "/shader_materials/mat_comb_slider.wgsl",
+            dir + "/shader_materials/mat_plane.wgsl",
+            dir + "/shader_materials/mat_particle.wgsl",
+            dir + "/shader_materials/mat_floor.wgsl",
+            dir + "/shader_materials/mat_skylight.wgsl",
+            dir + "/shader_materials/vs_main.wgsl",
+            dir + "/shader_materials/fs_main.wgsl",
+            dir + "/shader_materials/mat_lpg_rez_slider.wgsl",
+            dir + "/shader_materials/mat_noise_density_slider.wgsl"
         };
         return shaderPaths;
     }

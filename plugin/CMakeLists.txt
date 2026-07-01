@@ -83,16 +83,15 @@ target_sources(AnimatedNoise
         UI/webGpuWindow.cpp
         UI/ResourceManager.cpp
         UI/Scene.cpp
-        UI/SliderManager.cpp
+        UI/components/slider/SliderManager.cpp
         dsp/NoiseSynth.cpp
         dsp/NoiseGenerator.cpp
         dsp/CombFilter.cpp
         dsp/NoiseVoice.cpp
         dsp/FunctionGenerator.cpp
         dsp/AnimatedGain.cpp
-        UI/AnimatedLogo.cpp
-        ui/sliderCatalog.cpp
-
+        UI/components/logo/AnimatedLogo.cpp
+        UI/components/slider/sliderCatalog.cpp
 )
 
 if (APPLE)
@@ -108,10 +107,15 @@ target_include_directories(AnimatedNoise
         include
         source
         UI
-        procedural
+        geometries
         shaders
         dsp
         utilities
+        UI/components
+        UI/components/logo
+        UI/components/slider
+        UI/components/camera
+        UI/components/mouse
 )
 
 #==================================
@@ -158,13 +162,13 @@ endif()
 # Shader files (concatenated in order)
 #==================================
 set(SHADER_FILES
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/common.wgsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/lighting.wgsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/mat_cave.wgsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/mat_slider.wgsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/mat_plane.wgsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/vs_main.wgsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/fs_main.wgsl"
+        "shaders/shader_materials/common.wgsl"
+        "shaders/shader_materials/lighting.wgsl"
+        "shaders/shader_materials/mat_cave.wgsl"
+        "shaders/shader_materials/mat_slider.wgsl"
+        "shaders/shader_materials/mat_plane.wgsl"
+        "shaders/shader_materials/vs_main.wgsl"
+        "shaders/shader_materials/fs_main.wgsl"
 )
 
 set(SHADER_SOURCE "")
@@ -174,7 +178,7 @@ foreach(SHADER_FILE ${SHADER_FILES})
 endforeach()
 
 configure_file(
-        "${CMAKE_CURRENT_SOURCE_DIR}/UI/shader.wgsl.h.in"
+        "shaders/shader.wgsl.h.in"
         "${CMAKE_CURRENT_BINARY_DIR}/shader.wgsl.h"
 )
 

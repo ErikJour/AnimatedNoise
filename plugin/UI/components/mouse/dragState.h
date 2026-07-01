@@ -2,7 +2,7 @@
 // Created by Erik Jourgensen on 5/21/26.
 //
 #pragma once
-#include "cameraState.h"
+#include "../camera/cameraState.h"
 
 struct DragState {
     bool  active            = false;

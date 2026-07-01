@@ -1,6 +1,7 @@
 #include "SliderManager.h"
 #include "sliderCatalog.h"
 #include <iostream>
+#include <cfloat>
 
 void SliderManager::initializeSliders()
 {
@@ -40,6 +41,10 @@ bool SliderManager::handleMouseDown(const juce::MouseEvent& event, int width, in
     constexpr float kIndicatorHalfH  = 0.048f;  // must match shader halfH (shadeSpineTube)
 
 
+     int   bestIndex = -1;
+     float bestDepth  = FLT_MAX;
+     float bestTRaw  = 0.0f;
+
     for (auto& s : mSliders)
     {
         juce::Point<float> top, bottom;
@@ -52,29 +57,33 @@ bool SliderManager::handleMouseDown(const juce::MouseEvent& event, int width, in
         const float tClmp = juce::jlimit(0.0f, 1.0f, tRaw);
 
         const float beadV = juce::jlimit(kIndicatorHalfH, 1.0f - kIndicatorHalfH, s.value);
-        // Project the true world position at the bead/tube height (perspective-correct),
-        // rather than lerping the projected endpoints — a screen-space lerp drifts off
-        // the rendered tube toward the foreshortened (low-value) end. See Scene::projectSliderPoint.
+
         const juce::Point<float> bead    = mScene.projectSliderPoint(screenW, screenH, beadV, s.angle);
+        float hitDepth = mScene.getDepthValue();
         const juce::Point<float> nearest = mScene.projectSliderPoint(screenW, screenH, tClmp, s.angle);
 
         const bool onIndicator = mouse.getDistanceFrom(bead)    <= kIndicatorRadius;
         const bool onTube      = mouse.getDistanceFrom(nearest) <= kHitRadius;
 
-        if (onIndicator || onTube)
-        {
-            mActiveSlider = static_cast<int>(&s - mSliders.data());
-            mDragOffsetT  = tRaw - s.value;   // so first drag frame is a no-op
-            mDragging     = true;
-            s.pressed     = true;
 
-            const float v = juce::jlimit(0.0f, 1.0f, tRaw - mDragOffsetT);
-            s.attachment->beginGesture();
-            s.attachment->setValueAsPartOfGesture(v);
-            return true;
+        if ((onIndicator || onTube) && hitDepth < bestDepth)
+        {
+            bestDepth = hitDepth;
+            bestIndex = static_cast<int>(&s - mSliders.data());
+            bestTRaw = tRaw;
         }
     }
-    return false;
+    if (bestIndex < 0) return false;
+    auto& s = mSliders[static_cast<size_t>(bestIndex)];
+    mActiveSlider = bestIndex;
+    mDragOffsetT  = bestTRaw - s.value;
+    mDragging     = true;
+    s.pressed     = true;
+
+    const float v = juce::jlimit(0.0f, 1.0f, bestTRaw - mDragOffsetT);
+    s.attachment->beginGesture();
+    s.attachment->setValueAsPartOfGesture(v);
+    return true;
 }
 
 bool SliderManager::handleMouseDrag(const juce::MouseEvent& event, int width, int height) const

@@ -11,19 +11,19 @@
 #include "ResourceManager.h"
 #include "plane.h"
 #include "particleSystem.h"
-#include "MyUniforms.h"
+#include "../shaders/MyUniforms.h"
 #include "proceduralSlider.h"
 #include "circularFloor.h"
-#include "cameraState.h"
-#include "dragState.h"
+#include "components/camera/cameraState.h"
+#include "components/mouse/dragState.h"
 #include "yurtBeams.h"
 #include "skylight.h"
-#include "AnimatedLogo.h"
+#include "components/logo/AnimatedLogo.h"
 #include "sphereGeometry.h"
 #include <juce_audio_processors/juce_audio_processors.h>
-#include "AnimatedSlider.h"
+#include "components/slider/AnimatedSlider.h"
 #include "ParamIds.h"
-#include "cameraHelper.h"
+#include "components/camera/cameraHelper.h"
 #include "shaderPaths.h"
 
 static constexpr uint32_t MAX_PARTICLES = 2000;
@@ -56,7 +56,7 @@ class Scene
         void initializePlane();
 
         void setSurfaceFormat(WGPUTextureFormat format);
-        void setCameraState(CameraState& s);
+        void setCameraState(const CameraState& s);
         float getSliderValue(int index) const;
         float sliderTopFraction() const;
         float sliderBottomFraction() const;
@@ -69,18 +69,19 @@ class Scene
         void onScroll(float deltaX, float deltaY);
 
         void setSliderList(const std::vector<AnimatedSlider>& list) { mSliderList = &list; }
+        float getDepthValue() const { return mDepthValue; }
 
         void projectSliderBounds(const float screenW, const float screenH,
                                                         juce::Point<float>& outTop,
                                                         juce::Point<float>& outBottom,
-                                                        const float angle) const
+                                                        const float angle)
             {
                 outTop    = projectSliderPoint(screenW, screenH, 1.0f, angle);
                 outBottom = projectSliderPoint(screenW, screenH, 0.0f, angle);
             }
 
         juce::Point<float> projectSliderPoint(const float screenW, const float screenH,
-                                              const float v, const float angle) const
+                                              const float v, const float angle)
             {
                 const float wx                 = 0.9f * std::cos(angle);
                 const float wz                 = 0.9f * std::sin(angle);
@@ -92,6 +93,8 @@ class Scene
                 const float cx = m[0]*wx + m[4]*y + m[8]*wz  + m[12];
                 const float cy = m[1]*wx + m[5]*y + m[9]*wz  + m[13];
                 const float cw = m[3]*wx + m[7]*y + m[11]*wz + m[15];
+
+                mDepthValue = cw;
 
                 return { (cx/cw * 0.5f + 0.5f)        * screenW,
                          (1.0f - (cy/cw * 0.5f + 0.5f))  * screenH };
@@ -141,6 +144,7 @@ class Scene
         MyUniforms                          mUniforms = {};
 
         float                               mSliderValues[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+        float                               mDepthValue      = 0.0f;
 
         struct SliderMesh {
             WGPUBuffer vertexBuffer = nullptr;

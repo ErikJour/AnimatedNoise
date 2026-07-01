@@ -2,7 +2,7 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "NoiseSynth.h"
-#include "cameraState.h"
+#include "../UI/components/camera/cameraState.h"
 #include "ParamIds.h"
 
 //==============================================================================

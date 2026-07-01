@@ -20,7 +20,7 @@ struct SphereVertex
     public:
         static void buildSphere(std::vector<SphereVertex>& vertices,
                                  std::vector<SphereIndex>& indices,
-                                    const float radius = 2.0f,
+                                    const float radius = 2.25f,
                                     int widthSegments = 64,
                                     int heightSegments = 32,
                                     const float phiStart = 0.0f,
@@ -47,7 +47,7 @@ struct SphereVertex
                 const float v = static_cast<float>(iy) / static_cast<float>(heightSegments);
 
 
-                for (int ix = 0; ix <= widthSegments; ix++) //must be nested inside iy loop
+                for (int ix = 0; ix <= widthSegments; ix++)
                 {
                     const float u = static_cast<float>(ix) / static_cast<float>(widthSegments);
 

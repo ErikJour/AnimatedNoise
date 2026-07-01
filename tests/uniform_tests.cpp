@@ -1,5 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
-#include "MyUniforms.h"
+#include "../plugin/shaders/MyUniforms.h"
 
 TEST_CASE("MyUniforms layout satisfies WebGPU 16-byte alignment") {
     STATIC_REQUIRE(sizeof(MyUniforms) % 16 == 0);

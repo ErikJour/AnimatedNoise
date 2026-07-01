@@ -4,7 +4,7 @@
 
 #pragma once
 #include <webgpu/webgpu.h>
-#include "shaderLoader.h"
+#include "../shaders/shaderLoader.h"
 #include "Scene.h"
 
 
