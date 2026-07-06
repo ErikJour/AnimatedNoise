@@ -28,7 +28,7 @@ struct MyUniforms {
     float    morph;
     float    pressed;
     uint32_t materialId;
-    float    pad2;
+    float    resonate;
 };
 
 static_assert(sizeof(MyUniforms) % 16 == 0);

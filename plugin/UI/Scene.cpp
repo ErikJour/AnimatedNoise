@@ -168,11 +168,15 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
 
     updateViewMatrix();
 
-    const AnimatedSlider* noiseLevel = findSlider(ParameterID::noiseLevel);
-    const AnimatedSlider* combLevel  = findSlider(ParameterID::combLevel);
-    const float gainVal  = noiseLevel ? noiseLevel->value : 0.0f;
-    const float morphVal = combLevel  ? combLevel->value  : 0.0f;
-    const bool  gainHeld = noiseLevel ? noiseLevel->pressed : false;
+    const AnimatedSlider* noiseLevel    = findSlider(ParameterID::noiseLevel);
+    const AnimatedSlider* combLevel     = findSlider(ParameterID::combLevel);
+    const AnimatedSlider* lpgResonance  = findSlider(ParameterID::lpgResonance);
+
+    const float resonanceVal    = lpgResonance ? lpgResonance->value : 0.0f;
+    juce::ignoreUnused(resonanceVal);
+    const float gainVal         = noiseLevel ? noiseLevel->value : 0.0f;
+    const float morphVal        = combLevel  ? combLevel->value  : 0.0f;
+    const bool  gainHeld        = noiseLevel ? noiseLevel->pressed : false;
 
     constexpr uint32_t ids[9] = {
                                     MAT_CAVE,
@@ -186,7 +190,7 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
                                     MAT_NOIS_DENS_SLIDER
                                 };
 
-    auto sliderForMaterial = [&](uint32_t mat) -> const AnimatedSlider* {
+    auto sliderForMaterial = [&](const uint32_t mat) -> const AnimatedSlider* {
         if (mSliderList)
             for (const auto& s : *mSliderList)
                 if (s.materialId == mat) return &s;
@@ -204,6 +208,7 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
                 mUniforms.morph       = morphVal;
                 mUniforms.sliderValue = gainVal;
                 mUniforms.pressed     = gainHeld ? 1.0f : 0.0f;
+                mUniforms.resonate     = resonanceVal;
             }
             else if (const AnimatedSlider* s = sliderForMaterial(id))
             {

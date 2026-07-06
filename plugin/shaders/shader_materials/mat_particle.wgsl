@@ -117,5 +117,7 @@ fn fs_particle(in: ParticleVertexOutput) -> @location(0) vec4f {
     let depthFade = smoothstep(1.0, 1.1, in.viewDepth);
 
     let alpha = glow * mix(0.3, 1.0, depthFade) * in.color.a;
-    return vec4f((in.color.rgb * u.sliderValue + 0.1) * 0.75, alpha * 0.33);
+//    return vec4f((in.color.rgb * u.sliderValue + 0.1) * 0.75, alpha * 0.33);
+    return vec4f(in.color.r * u.resonate, in.color.g, in.color.b * u.sliderValue, alpha * 0.33);
+
 }
