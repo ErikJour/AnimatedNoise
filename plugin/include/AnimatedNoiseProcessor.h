@@ -4,6 +4,7 @@
 #include "NoiseSynth.h"
 #include "../UI/components/camera/cameraState.h"
 #include "ParamIds.h"
+#include "../UI/components/text/FontReader.h"
 
 //==============================================================================
 

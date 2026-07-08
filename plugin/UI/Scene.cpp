@@ -54,6 +54,8 @@ void Scene::terminate()
     if (mSphereIndexBuffer)             { wgpuBufferRelease(mSphereIndexBuffer); mSphereIndexBuffer = nullptr; }
     if (mFloorVertexBuffer)             { wgpuBufferRelease(mFloorVertexBuffer); mFloorVertexBuffer = nullptr; }
     if (mFloorIndexBuffer)              { wgpuBufferRelease(mFloorIndexBuffer); mFloorIndexBuffer = nullptr; }
+    if (mGlyphVertexBuffer)             { wgpuBufferRelease(mGlyphVertexBuffer); mGlyphVertexBuffer = nullptr; }
+    if (mGlyphIndexBuffer)              { wgpuBufferRelease(mGlyphIndexBuffer); mGlyphIndexBuffer = nullptr; }
     for (auto& m : mSliderMeshes)
     {
         if (m.vertexBuffer) { wgpuBufferRelease(m.vertexBuffer); m.vertexBuffer = nullptr; }
@@ -140,6 +142,9 @@ void Scene::renderFrame(const float currentTime)
             wgpuRenderPassEncoderSetPipeline(renderPass, mPipeline);
         }
 
+        setItemBuffers(mGlyphVertexBuffer, mGlyphIndexBuffer, mGlyphIndexCount, MAT_CAVE, renderPass);
+
+
         mLogo.render(renderPass);
 
         wgpuRenderPassEncoderEnd(renderPass);
@@ -200,6 +205,29 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
         mUniforms.materialId = id;
 
             std::memcpy(mUniforms.modelMatrix, kIdentity, sizeof(kIdentity));
+
+            if (id == MAT_CAVE)
+            {
+                // HUD overlay: vsCave does projMatrix * modelMatrix (no view), so this
+                // matrix alone places the em-sized glyphs in camera space. To pin the
+                // text to the bottom-left corner we compute the visible half-extents at
+                // the text's depth (perspective, so they scale with aspect) and anchor
+                // the string origin there with a small margin.
+                constexpr float kTextScale = 0.15f;   // 25%
+                constexpr float kDist      = 1.0f;     // units in front of the camera
+                constexpr float kFovY      = 1.047f;   // must match updateViewMatrix()
+                constexpr float kMargin    = 0.06f;    // gap from the screen edge
+
+                const float halfH = kDist * std::tan(kFovY * 0.5f);
+                const float halfW = halfH * mUniforms.aspectRatio;
+                const float tx    = -halfW + kMargin;  // left edge
+                const float ty    = -halfH + kMargin;  // bottom edge (baseline)
+
+                const auto textModel = GlyphGeometry::makeTextModel(
+                    kTextScale, kTextScale, kTextScale, tx, ty, -kDist);
+                std::memcpy(mUniforms.modelMatrix, textModel.data(),
+                            sizeof(mUniforms.modelMatrix));
+            }
 
             if (id == MAT_PARTICLES)
             {
@@ -331,6 +359,19 @@ void Scene::initializeScene()
     //================================================
     mSliderMeshes.clear();
     mSliderMeshes.reserve(sliderDefinitions().size());
+    FontParser font("/Users/erikjourgensen/Desktop/June 2026/Repositories/AnimatedNoise/plugin/UI/fonts/WorkSans-Regular.ttf");
+    std::cout << "glyphs: " << font.glyphCount()
+          << "  unitsPerEm: " << font.unitsPerEm() << "\n";
+
+    // all-glyph smoke test
+    int parsed = 0, emptyOrCompound = 0;
+    for (uint16_t g = 0; g < font.glyphCount(); g++)
+        (font.getGlyphByIndex(g).isEmpty() ? emptyOrCompound : parsed)++;
+
+    std::cout << "parsed: " << parsed << "  empty/compound: " << emptyOrCompound << "\n";
+
+    // and into the scene:
+    initializeText(font, "Init");
     for (const auto& def : sliderDefinitions())
     {
         constexpr float kSliderWallRadius = 0.9f;
@@ -550,6 +591,32 @@ void Scene::initializeParticles()
 
     mParticleCount = static_cast<uint32_t>(particles.size());
     mParticleDrawCount = mParticleCount;
+}
+
+void Scene::initializeText(FontParser& font, const std::string& text)
+{
+    std::vector<GlyphVertex> vertices;
+    std::vector<GlyphIndex>  indices;
+
+    GlyphGeometry::buildString(vertices, indices, font, text);
+    uploadGlyphMesh(vertices, indices);
+}
+
+void Scene::uploadGlyphMesh(const std::vector<GlyphVertex>& vertices,
+                            const std::vector<GlyphIndex>&  indices)
+{
+    mGlyphIndexCount = static_cast<uint32_t>(indices.size());
+
+    WGPUBufferDescriptor bd{};
+    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
+    bd.size  = vertices.size() * sizeof(GlyphVertex);
+    mGlyphVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mGlyphVertexBuffer, 0, vertices.data(), bd.size);
+
+    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
+    bd.size  = (indices.size() * sizeof(GlyphIndex) + 3) & ~3ULL;
+    mGlyphIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mGlyphIndexBuffer, 0, indices.data(), bd.size);
 }
 
 //==========================================================================

@@ -115,6 +115,7 @@ target_include_directories(AnimatedNoise
         UI/components/slider
         UI/components/camera
         UI/components/mouse
+        UI/components/text
 )
 
 #==================================

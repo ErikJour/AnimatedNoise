@@ -25,6 +25,8 @@
 #include "ParamIds.h"
 #include "components/camera/cameraHelper.h"
 #include "shaderPaths.h"
+#include "glyphGeometry.h"
+#include "components/text/FontParser.h"
 
 static constexpr uint32_t MAX_PARTICLES = 2000;
 #define WGPU_STR(s) WGPUStringView{s, sizeof(s) - 1}
@@ -53,7 +55,10 @@ class Scene
         void initializeSkylight();
         void InitializeSlider(uint32_t& indexCount, WGPUBuffer& vertexBuffer, WGPUBuffer& indexBuffer, float wallRadius, float angle) const;
         void initializeParticles();
-        void initializePlane();
+        void initializeText(FontParser& font, const std::string& text);
+        void uploadGlyphMesh(const std::vector<GlyphVertex>& vertices,
+                             const std::vector<GlyphIndex>&  indices);
+
 
         void setSurfaceFormat(WGPUTextureFormat format);
         void setCameraState(const CameraState& s);
@@ -158,9 +163,9 @@ class Scene
         static constexpr float              kSpineMaxY       =  0.25f;
         static constexpr float              kIndicatorHalfY  =  0.025f;
         //Plane
-        WGPUBuffer                          mPlaneVertexBuffer   = nullptr;
-        WGPUBuffer                          mPlaneIndexBuffer    = nullptr;
-        uint32_t                            mPlaneIndexCount     = 0;
+        // WGPUBuffer                          mPlaneVertexBuffer   = nullptr;
+        // WGPUBuffer                          mPlaneIndexBuffer    = nullptr;
+        // uint32_t                            mPlaneIndexCount     = 0;
         //Floor
         WGPUBuffer                          mFloorVertexBuffer  = nullptr;
         WGPUBuffer                          mFloorIndexBuffer  = nullptr;
@@ -187,6 +192,10 @@ class Scene
         WGPUBlendState                      mParticleBlendState{};
         WGPUColorTargetState                mParticleColorTarget{};
         WGPUDepthStencilState               mParticleDepthStencil{};
+        //Glyph
+        WGPUBuffer                          mGlyphVertexBuffer   = nullptr;
+        WGPUBuffer                          mGlyphIndexBuffer    = nullptr;
+        uint32_t                            mGlyphIndexCount     = 0;
 
         AnimatedLogo mLogo;
 

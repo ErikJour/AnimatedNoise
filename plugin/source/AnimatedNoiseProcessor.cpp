@@ -21,6 +21,7 @@ AnimatedNoiseProcessor::AnimatedNoiseProcessor()
     castParameter(apvts, ParameterID::envDecay, envelopeDecayParam);
     castParameter(apvts, ParameterID::envSustain, envelopeSustainParam);
     castParameter(apvts, ParameterID::envRelease, envelopeReleaseParam);
+
 }
 
 AnimatedNoiseProcessor::~AnimatedNoiseProcessor()

@@ -20,8 +20,6 @@
 #include <cstdint>
 #include <cmath>
 
-// Reuse PlaneVertex / PlaneIndex from perlinPlane.h if already included,
-// otherwise define them here.
 #ifndef ANIMATEDNOISE_PERLINPLANE_H
 struct PlaneVertex {
     float x, y, z;
@@ -64,11 +62,6 @@ namespace LogoConst
     static constexpr float RC_VERT_Y0 =  0.0170f;  // bottom of vertical section
     static constexpr float RC_VERT_Y1 = -0.3450f;  // top of vertical section
     static constexpr float RC_HOOK_R  =  0.0300f;  // top hook corner radius
-
-    // Left cable spiral — approximated with cubic bezier segments
-    // Tune these control points to match the loop shape.
-    // The path exits the rect left wall at (RL, CB_Y) going leftward,
-    // makes a spiral/coil, and terminates.
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -79,7 +72,6 @@ namespace LogoImpl
     using F = float;
     static constexpr F PI = 3.14159265358979f;
 
-    // Push a PlaneVertex at (x,y,z=0), normal +Z, given color
     inline void pushV(std::vector<PlaneVertex>& verts,
                       F x, F y, F cr, F cg, F cb)
     {
@@ -90,7 +82,6 @@ namespace LogoImpl
         verts.push_back(v);
     }
 
-    // Push two CCW triangles forming a quad (tl, tr, bl, br)
     inline void pushQuad(std::vector<PlaneVertex>& verts,
                          std::vector<PlaneIndex>&  indices,
                          F x0, F y0,   // top-left
