@@ -11,6 +11,7 @@
 #include "AnimatedGain.h"
 #include  "AnimatedLPG.h"
 #include "AnimatedVactrol.h"
+#include "Envelope.h"
 
 class NoiseVoice {
 
@@ -26,12 +27,11 @@ class NoiseVoice {
     NoiseGenerator mNoiseGenerator;
     int note = 0;
     int noiseType = 0;
-    FunctionGenerator mFunctionGenerator;
     AnimatedGain mGain;
     juce::AudioBuffer<float> mAudioBuffer;
     double mSampleRate;
+    Envelope mEnvelope;
 
-    //low pass gate
     AnimatedLPG mLPG;
     float rfSmoothed = 1e4f;
     float rfTarget = 5e4f;

@@ -33,6 +33,19 @@ public:
         voice.mLPG.setResonance(newResonance);
     }
 
+    void setSustain (const float sustain) {  voice.mEnvelope.setSustain(sustain);  }
+
+    void setRelease(const float release)
+    {
+        envRelease = release;
+        voice.mEnvelope.setReleaseMultiplier(envRelease);
+    }
+
+    float envAttack  {};
+    float envDecay   {};
+    float envSustain {};
+    float envRelease {};
+
 private:
     double mSampleRate;
     NoiseVoice voice;

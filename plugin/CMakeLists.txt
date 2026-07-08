@@ -88,7 +88,6 @@ target_sources(AnimatedNoise
         dsp/NoiseGenerator.cpp
         dsp/CombFilter.cpp
         dsp/NoiseVoice.cpp
-        dsp/FunctionGenerator.cpp
         dsp/AnimatedGain.cpp
         UI/components/logo/AnimatedLogo.cpp
         UI/components/slider/sliderCatalog.cpp

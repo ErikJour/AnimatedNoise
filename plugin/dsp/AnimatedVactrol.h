@@ -1,20 +1,5 @@
 //
 // Created by Erik Jourgensen on 6/4/26.
-//
-// Heuristic vactrol (Perkin Elmer VTL5C3/2) model.
-// After Parker & D'Angelo, DAFx-13, Section 3.2 / Fig. 9.
-//
-// Models the two musically important behaviours of the photoresistive
-// opto-isolator:
-//   1. Asymmetric memory effect — resistance falls quickly when the LED
-//      brightens (~12 ms) but rises slowly when it dims (~250 ms), and the
-//      response speeds up at higher drive levels (datasheet behaviour).
-//   2. Current-to-resistance mapping (Eq. 39): Rf = A / If^1.4 + B.
-//
-// Drive it with a control value in [0, 1] (e.g. velocity on note-on, decaying
-// to 0). Output getRf() feeds directly into the LPG's setRf().
-//
-
 #ifndef ANIMATEDNOISE_ANIMATEDVACTROL_H
 #define ANIMATEDNOISE_ANIMATEDVACTROL_H
 
@@ -51,9 +36,14 @@ class AnimatedVactrol
         }
 
         // Trigger a strike: velocity in [0, 1] sets how hard the LED is driven.
+        // Self-contained pluck: the LED jumps bright instantly, then immediately
+        // begins decaying back toward dark on the release time constant. The
+        // roll-off is part of the strike, so it no longer depends on note length.
         void strike(const float velocity)
         {
-            setControl(std::clamp(velocity, 0.0f, 1.0f));
+            const float norm = std::clamp(velocity, 0.0f, 1.0f);
+            mCurrent       = kMinCurrent + norm * (kMaxCurrent - kMinCurrent);  // instant attack
+            mTargetCurrent = kMinCurrent;                                       // roll off to dark
         }
 
         // Begin decay back toward darkness (e.g. on note-off, or always for a pluck).
@@ -70,10 +60,15 @@ class AnimatedVactrol
             float coeff = rising ? mAttackCoeff : mReleaseCoeff;
 
             // Datasheet note: the vactrol responds faster at higher light levels.
-            // Nudge the effective coefficient toward faster as current rises.
-            const float levelNorm = std::clamp(
-                (mCurrent - kMinCurrent) / (kMaxCurrent - kMinCurrent), 0.0f, 1.0f);
-            coeff = coeff + (1.0f - coeff) * (0.5f * levelNorm);
+            // Apply this nudge only while brightening — on release we want the
+            // full release time constant to shape the pluck, otherwise a strike
+            // (which starts at full current) would slam shut in ~1 sample.
+            if (rising)
+            {
+                const float levelNorm = std::clamp(
+                    (mCurrent - kMinCurrent) / (kMaxCurrent - kMinCurrent), 0.0f, 1.0f);
+                coeff = coeff + (1.0f - coeff) * (0.5f * levelNorm);
+            }
 
             mCurrent += coeff * (mTargetCurrent - mCurrent);
             mCurrent = std::clamp(mCurrent, kMinCurrent, kMaxCurrent);

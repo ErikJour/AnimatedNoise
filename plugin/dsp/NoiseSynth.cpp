@@ -21,9 +21,6 @@ void NoiseSynth::reset(const double sampleRate)
 {
     mSampleRate = sampleRate;
     voice.reset(mSampleRate);
-    const float inverseSampleRate = 1.0f / static_cast<float>(mSampleRate);
-    voice.mFunctionGenerator.mAttackMultiplier  = std::exp(-inverseSampleRate * std::exp(4.5f - 0.075f * 50.0f));
-    voice.mFunctionGenerator.mReleaseMultiplier = std::exp(-inverseSampleRate / 1.5f); // 1.5 second release
     voice.mVactrol.setReleaseTime(1.0f);
 }
 
@@ -64,8 +61,12 @@ void NoiseSynth::startVoice(const int note, const int velocity)
     voice.note = note;
     constexpr float midiScaling = 127.0f;
     voice.mNoiseGenerator.setAmplitude(static_cast<float>(velocity) / midiScaling);
-    voice.mFunctionGenerator.attack();
     voice.mVactrol.strike(static_cast<float>(velocity) / midiScaling);
+    Envelope& env = voice.mEnvelope;
+    env.attackMultiplier  = envAttack;
+    env.decayMultiplier   = envDecay;
+    env.releaseMultiplier = envRelease;
+    env.attack();
 }
 
 void NoiseSynth::noteOn(const int note, const int velocity)
@@ -77,7 +78,7 @@ void NoiseSynth::noteOff(const int note)
 {
     if (voice.note == note) {
         voice.note = 0;
-        voice.mFunctionGenerator.release();
+        voice.mEnvelope.release();
         voice.mVactrol.releaseGate();
     }
 }

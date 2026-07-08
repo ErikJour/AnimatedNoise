@@ -43,7 +43,7 @@ class AnimatedLPG
         void updateResonance()
         {
             float resonance = resonanceSmoothed.getNextValue();
-            resonance = std::clamp(resonance, 0.0f, 0.999f);
+            resonance = std::clamp(resonance, 0.0f, maxResonance);
             a = (C3 > 0.0f) ? resonance * getAmax() : 0.0f;
         }
 
@@ -83,34 +83,33 @@ class AnimatedLPG
         }
 
     template <typename RfSource>
-    void processBufferModulated(float* buffer, const int numSamples, RfSource&& nextRf)
+        void processBufferModulated(float* buffer, const int numSamples, RfSource&& nextRf)
+        {
+            const float h = 1.0f / (2.0f * static_cast<float>(mSampleRate));
+            const float g = 2.0f * static_cast<float>(mSampleRate);
+
+            for (int i = 0; i < numSamples; ++i)
             {
-                const float h = 1.0f / (2.0f * static_cast<float>(mSampleRate));
-                const float g = 2.0f * static_cast<float>(mSampleRate);
+                Rf = nextRf();
+                updateResonance();
 
-                for (int i = 0; i < numSamples; ++i)
-                {
-                    updateResonance();
+                const float a1 = 1.0f / (C1 * Rf);
+                const float a2 = -(1.0f / C1) * (1.0f / Rf + 1.0f / Ra);
+                const float b1 = 1.0f / (C2 * Rf);
+                const float b2 = -2.0f / (C2 * Rf);
+                const float b3 = 1.0f / (C2 * Rf);
+                const float b4 = C3 / C2;
+                const float d1 = a;
+                constexpr float d2 = -1.0f;
 
-                    Rf = nextRf();
+                const float D = 1.0f - h * a2;
+                const float P = 1.0f - h * b2 - h * b4 * g * d2;
+                const float Q = h * b3 + h * b4 * g * d1;
+                const float denomYx = P - Q * h * a1 / D;
 
-                    const float a1 = 1.0f / (C1 * Rf);
-                    const float a2 = -(1.0f / C1) * (1.0f / Rf + 1.0f / Ra);
-                    const float b1 = 1.0f / (C2 * Rf);
-                    const float b2 = -2.0f / (C2 * Rf);
-                    const float b3 = 1.0f / (C2 * Rf);
-                    const float b4 = C3 / C2;
-                    const float d1 = a;
-                    constexpr float d2 = -1.0f;
-
-                    const float D = 1.0f - h * a2;
-                    const float P = 1.0f - h * b2 - h * b4 * g * d2;
-                    const float Q = h * b3 + h * b4 * g * d1;
-                    const float denomYx = P - Q * h * a1 / D;
-
-                    buffer[i] = processSample(buffer[i], a1, a2, b1, b2, b3, b4, d1, d2, h, g, D, Q, denomYx);
-                }
+                buffer[i] = processSample(buffer[i], a1, a2, b1, b2, b3, b4, d1, d2, h, g, D, Q, denomYx);
             }
+        }
 
         float processSample(const float yi,
                             const float a1,
@@ -142,8 +141,8 @@ class AnimatedLPG
 
             return yo;
         }
-    private:
 
+    private:
         float C1 = 1e-9f;
         float C2 = 220e-12f;
         float C3 = 4.7e-9f;
@@ -158,6 +157,8 @@ class AnimatedLPG
         Mode mMode = Mode::LowPass;
 
         juce::SmoothedValue<float> resonanceSmoothed;
+
+        static constexpr float maxResonance = 0.95f;
 
 };
 

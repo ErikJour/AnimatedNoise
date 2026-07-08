@@ -7,23 +7,24 @@ NoiseVoice::NoiseVoice() : mSampleRate(0) { }
 
 void NoiseVoice::reset(const double sampleRate)
 {
-    note = 0;
+    mSampleRate     = sampleRate;
+    note            = 0;
     mNoiseGenerator.setLevel(0.5f);
-    mSampleRate = sampleRate;
-    mGain.distributeResources(mSampleRate);
-    mFunctionGenerator.reset();
     mLPG.prepare(mSampleRate);
     mLPG.setMode(AnimatedLPG::Mode::LowPass);
-    mLPG.setResonance(0.5f);
+    mLPG.setResonance(0.9f);
     mVactrol.prepare(mSampleRate);
+    mEnvelope.reset();
+    mGain.distributeResources(mSampleRate);
+
 }
 
 void NoiseVoice::render(float* buffer, const int sampleCount)
 {
     mNoiseGenerator.process(buffer, sampleCount);
     mLPG.processBufferModulated(buffer, sampleCount, [this]{ return mVactrol.tick(); });
-    mFunctionGenerator.process(buffer, sampleCount);
+    mEnvelope.process(buffer, sampleCount);
 }
 
-void NoiseVoice::release() { mFunctionGenerator.release(); }
+void NoiseVoice::release() { mEnvelope.release(); }
 
