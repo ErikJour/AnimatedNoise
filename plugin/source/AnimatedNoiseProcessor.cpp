@@ -15,7 +15,6 @@ AnimatedNoiseProcessor::AnimatedNoiseProcessor()
     apvts.state.addListener(this);
     castParameter(apvts, ParameterID::noiseLevel, noiseLevelParam);
     castParameter(apvts, ParameterID::noiseDensity, noiseDensityParam);
-    castParameter(apvts, ParameterID::combLevel, combLevelParam);
     castParameter(apvts, ParameterID::lpgResonance, lpgResonanceParam);
 }
 
@@ -263,11 +262,6 @@ void AnimatedNoiseProcessor::update()
     //=======================================
     const float noiseDensity = noiseDensityParam->get();
     noiseSynth.setNoiseDensity(noiseDensity);
-    //=======================================
-    //Comb Level
-    //=======================================
-    const float combLevel = combLevelParam->get();
-    noiseSynth.setCombLevel(combLevel);
     //=======================================
     //LPG Resonance
     //=======================================

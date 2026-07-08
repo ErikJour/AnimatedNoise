@@ -11,7 +11,6 @@ void NoiseVoice::reset(const double sampleRate)
     mNoiseGenerator.setLevel(0.5f);
     mSampleRate = sampleRate;
     mGain.distributeResources(mSampleRate);
-    mCombFilter.reset(sampleRate);
     mFunctionGenerator.reset();
     mLPG.prepare(mSampleRate);
     mLPG.setMode(AnimatedLPG::Mode::LowPass);
@@ -22,7 +21,6 @@ void NoiseVoice::reset(const double sampleRate)
 void NoiseVoice::render(float* buffer, const int sampleCount)
 {
     mNoiseGenerator.process(buffer, sampleCount);
-    mCombFilter.process(buffer, sampleCount);
     mLPG.processBufferModulated(buffer, sampleCount, [this]{ return mVactrol.tick(); });
     mFunctionGenerator.process(buffer, sampleCount);
 }

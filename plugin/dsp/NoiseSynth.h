@@ -27,14 +27,9 @@ public:
     }
 
     void setNoiseDensity(const float density)      { voice.mNoiseGenerator.setDensity(density); }
-    void setCombLevel(const float level)
-    {
-        voice.mCombFilter.setLevel(level);
-        voice.mNoiseGenerator.setCombLevel(level);
-    }
+
     void setLpgResonance(const float newResonance)
     {
-
         voice.mLPG.setResonance(newResonance);
     }
 

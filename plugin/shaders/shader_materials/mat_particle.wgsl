@@ -29,22 +29,25 @@ fn noiseCloudShape(worldPos: vec3f, t: f32, time: f32) -> vec3f {
     let shell = vec3f(cos(theta) * rF, yF, sin(theta) * rF) * 0.2;
 
     let crystal = (0.5 + 0.5 * sin(time * 0.35)) * 0.7;
-    let ball    = mix(cloud * 0.5, shell * 0.001, crystal * 0.7);
+    let noiseBall    = mix(cloud * 0.5, shell * 0.001, crystal * 0.7);
 
-    let PHI   = 1.6180339;
-    let phase = time * 0.3;
-    let waveLength = 0.3;
-    let A     = 0.07;
-    let mode1 = sin(t * 3.14159) * cos(phase)             * A;
-    let mode2 = sin(t * 6.28318) * cos(phase * 2.0 + 1.3) * A / PHI;
-    let mode3 = sin(t * 9.42478) * cos(phase * 3.0 + 2.1) * A / (PHI * PHI);
-    let yDisp = mode1 + mode2 + mode3;
-    let zDisp    = sin(t * 3.14159) * sin(phase) * 0.02;
-    let endTaper = sin(t * 3.14159);
-    let wave = vec3f((t - 0.5) * waveLength, yDisp, zDisp)
-             + worldPos * (0.03 + 0.09 * endTaper);
+//Reference for morphing the ball
+//    let PHI   = 1.6180339;
+//    let phase = time * 0.3;
+//    let waveLength = 0.3;
+//    let A     = 0.07;
+//    let mode1 = sin(t * 3.14159) * cos(phase)             * A;
+//    let mode2 = sin(t * 6.28318) * cos(phase * 2.0 + 1.3) * A / PHI;
+//    let mode3 = sin(t * 9.42478) * cos(phase * 3.0 + 2.1) * A / (PHI * PHI);
+//    let yDisp = mode1 + mode2 + mode3;
+//    let zDisp    = sin(t * 3.14159) * sin(phase) * 0.02;
+//    let endTaper = sin(t * 3.14159);
+//    let wave = vec3f((t - 0.5) * waveLength, yDisp, zDisp)
+//             + worldPos * (0.03 + 0.09 * endTaper);
 
-    return mix(ball, wave, u.morph);
+//    return mix(noiseBall, wave, u.morph);
+
+    return (noiseBall);
 }
 
 @vertex

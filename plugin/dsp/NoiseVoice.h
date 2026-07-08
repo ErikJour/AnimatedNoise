@@ -26,7 +26,6 @@ class NoiseVoice {
     NoiseGenerator mNoiseGenerator;
     int note = 0;
     int noiseType = 0;
-    CombFilter mCombFilter;
     FunctionGenerator mFunctionGenerator;
     AnimatedGain mGain;
     juce::AudioBuffer<float> mAudioBuffer;
@@ -39,7 +38,5 @@ class NoiseVoice {
     float rfSmoothedCoeff = 0.0050f;
     float rfDecayMult = 1.05f;
     AnimatedVactrol mVactrol;
-
-
 
 };
