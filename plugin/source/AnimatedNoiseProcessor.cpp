@@ -16,6 +16,11 @@ AnimatedNoiseProcessor::AnimatedNoiseProcessor()
     castParameter(apvts, ParameterID::noiseLevel, noiseLevelParam);
     castParameter(apvts, ParameterID::noiseDensity, noiseDensityParam);
     castParameter(apvts, ParameterID::lpgResonance, lpgResonanceParam);
+    castParameter(apvts, ParameterID::lpgVactrolRelease, lpgVactrolReleaseParam);
+    castParameter(apvts, ParameterID::envAttack, envelopeAttackParam);
+    castParameter(apvts, ParameterID::envDecay, envelopeDecayParam);
+    castParameter(apvts, ParameterID::envSustain, envelopeSustainParam);
+    castParameter(apvts, ParameterID::envRelease, envelopeReleaseParam);
 }
 
 AnimatedNoiseProcessor::~AnimatedNoiseProcessor()
@@ -231,21 +236,48 @@ juce::AudioProcessorValueTreeState::ParameterLayout AnimatedNoiseProcessor::crea
         juce::NormalisableRange<float>{ 0.0f, 1.0f, 0.01f, 1.0f },
         0.5f));
     //==========================================================
-    //Comb Level
-    //==========================================================
-    paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
-        ParameterID::combLevel,
-        "Comb Level",
-        juce::NormalisableRange<float>{ 0.0f, 1.0f, 0.01f, 1.0f },
-        0.5f));
-    //==========================================================
-    //Lpg Resonance
+    //Lpg
     //==========================================================
     paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
         ParameterID::lpgResonance,
         "LPG Resonance",
         juce::NormalisableRange<float>{ 0.0f, 1.0f, 0.01f, 1.0f },
         0.5f));
+    paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
+        ParameterID::lpgVactrolRelease,
+        "LPG Vactrol Release",
+        juce::NormalisableRange<float>{ 0.05f, 1.0f, 0.01f, 1.0f },
+        0.5f));
+    //==========================================================
+    //Amp Envelope
+    //==========================================================
+    paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
+        ParameterID::envAttack,
+        "Env Attack",
+        juce::NormalisableRange<float>(0.0f, 100.0f, 1.0f, 1.5f),
+        20.0f,
+        juce::AudioParameterFloatAttributes().withLabel("%")));
+
+    paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
+        ParameterID::envDecay,
+        "Env Decay",
+        juce::NormalisableRange<float>(0.0f, 100.0f, 1.0f),
+        50.0f,
+        juce::AudioParameterFloatAttributes().withLabel("%")));
+
+    paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
+        ParameterID::envSustain,
+        "Env Sustain",
+        juce::NormalisableRange<float>(0.0f, 100.0f, 1.0f),
+        50.0f,
+        juce::AudioParameterFloatAttributes().withLabel("%")));
+
+    paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
+        ParameterID::envRelease,
+        "Env Release",
+        juce::NormalisableRange<float>(0.0f, 100.0f, 1.0f),
+        50.0f,
+        juce::AudioParameterFloatAttributes().withLabel("%")));
 
     return paramLayout;
 }
@@ -267,6 +299,26 @@ void AnimatedNoiseProcessor::update()
     //=======================================
     const float lpgResonance = lpgResonanceParam->get();
     noiseSynth.setLpgResonance(lpgResonance);
+    const auto sampleRate = static_cast<float>(getSampleRate());
+    const float inverseSampleRate = 1.0f / sampleRate;
+    const float lpgVactrolRelease = lpgVactrolReleaseParam->get();
+    noiseSynth.setLpgVactrolRelease(lpgVactrolRelease);
+    //=======================================
+    //Amp Envelope
+    //=======================================
+    noiseSynth.envAttack = std::exp(-inverseSampleRate * std::exp(4.5f - 0.075f * envelopeAttackParam->get()));
+    noiseSynth.envDecay = std::exp(-inverseSampleRate * std::exp(5.5f - 0.075f * envelopeDecayParam->get()));
+    const float ampEnvSustain = envelopeSustainParam->get() / 100.0f;
+    noiseSynth.setSustain(ampEnvSustain);
+
+    if (const float envRelease = envelopeReleaseParam->get(); envRelease < 1.0f) { noiseSynth.envRelease = 0.75f; }
+    else { noiseSynth.envRelease = std::exp(-inverseSampleRate * std::exp(5.5f - 0.075f * envRelease)); }
+    const float release = noiseSynth.envRelease;
+    static float prevR=-1;
+    if (std::fabsf(release - prevR) > 1e-6f) {
+        noiseSynth.setRelease(release);
+        prevR = release;
+    }
 }
 
 //==============================================================================

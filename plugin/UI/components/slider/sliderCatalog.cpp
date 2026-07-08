@@ -9,7 +9,6 @@ const std::vector<SliderDef>& sliderDefinitions()
         { ParameterID::noiseLevel,   0.0f,  0, MAT_GLOBAL_GAIN_SLIDER, 0 },
         { ParameterID::noiseDensity, 1.45f, 1, MAT_NOIS_DENS_SLIDER,   1 },
         { ParameterID::lpgResonance, 2.975f, 2, MAT_LPG_REZ_SLIDER,   2 },
-        { ParameterID::combLevel,    4.425f,  3, MAT_COMB_AMT_SLIDER,  3 },
     };
     return defs;
 }

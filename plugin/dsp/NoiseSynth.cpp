@@ -21,7 +21,7 @@ void NoiseSynth::reset(const double sampleRate)
 {
     mSampleRate = sampleRate;
     voice.reset(mSampleRate);
-    voice.mVactrol.setReleaseTime(1.0f);
+    voice.mVactrol.setReleaseTime(0.5f); //Add param
 }
 
 void NoiseSynth::render(float** outputBuffers, const int sampleCount)
@@ -82,6 +82,8 @@ void NoiseSynth::noteOff(const int note)
         voice.mVactrol.releaseGate();
     }
 }
+
+void NoiseSynth::setLpgVactrolRelease(const float newRelease) { voice.mVactrol.setReleaseTime(newRelease); }
 
 
 

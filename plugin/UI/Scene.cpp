@@ -169,13 +169,11 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
     updateViewMatrix();
 
     const AnimatedSlider* noiseLevel    = findSlider(ParameterID::noiseLevel);
-    const AnimatedSlider* combLevel     = findSlider(ParameterID::combLevel);
     const AnimatedSlider* lpgResonance  = findSlider(ParameterID::lpgResonance);
 
     const float resonanceVal    = lpgResonance ? lpgResonance->value : 0.0f;
     juce::ignoreUnused(resonanceVal);
     const float gainVal         = noiseLevel ? noiseLevel->value : 0.0f;
-    const float morphVal        = combLevel  ? combLevel->value  : 0.0f;
     const bool  gainHeld        = noiseLevel ? noiseLevel->pressed : false;
 
     constexpr uint32_t ids[9] = {
@@ -205,7 +203,6 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
 
             if (id == MAT_PARTICLES)
             {
-                mUniforms.morph       = morphVal;
                 mUniforms.sliderValue = gainVal;
                 mUniforms.pressed     = gainHeld ? 1.0f : 0.0f;
                 mUniforms.resonate     = resonanceVal;

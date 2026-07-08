@@ -41,6 +41,8 @@ public:
         voice.mEnvelope.setReleaseMultiplier(envRelease);
     }
 
+    void setLpgVactrolRelease(float newRelease);
+
     float envAttack  {};
     float envDecay   {};
     float envSustain {};

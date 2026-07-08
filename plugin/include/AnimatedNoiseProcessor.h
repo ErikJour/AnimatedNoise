@@ -62,17 +62,34 @@ public:
                                                 createParameterLayout() };
 
 private:
-    NoiseSynth noiseSynth;
-    juce::AudioParameterFloat* noiseLevelParam{};
-    juce::AudioParameterFloat* noiseDensityParam{};
-    juce::AudioParameterFloat* combLevelParam{};
-    juce::AudioParameterFloat* lpgResonanceParam{};
-
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
-
     void valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier&) override { parametersChanged.store(true); }
     void update();
+
     std::atomic<bool> parametersChanged { false };
+    NoiseSynth noiseSynth;
+    //==========================================
+    //Global Parameters
+    //===========================================
+    //==========================================
+    //Source Parameters
+    //===========================================
+    juce::AudioParameterFloat* noiseLevelParam{};
+    juce::AudioParameterFloat* noiseDensityParam{};
+    //==========================================
+    //Filter Parameters
+    //===========================================
+    juce::AudioParameterFloat* lpgResonanceParam{};
+    juce::AudioParameterFloat* lpgVactrolReleaseParam{};
+    //==========================================
+    //Envelope Parameters
+    //===========================================
+    juce::AudioParameterFloat* envelopeAttackParam{};
+    juce::AudioParameterFloat* envelopeDecayParam{};
+    juce::AudioParameterFloat* envelopeSustainParam{};
+    juce::AudioParameterFloat* envelopeReleaseParam{};
+
+
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AnimatedNoiseProcessor)
 };

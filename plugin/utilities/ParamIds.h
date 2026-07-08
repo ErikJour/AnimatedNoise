@@ -13,8 +13,12 @@ namespace ParameterID
 
     PARAMETER_ID(noiseLevel)
     PARAMETER_ID(noiseDensity)
-    PARAMETER_ID(combLevel)
     PARAMETER_ID(lpgResonance)
+    PARAMETER_ID(lpgVactrolRelease)
+    PARAMETER_ID(envAttack)
+    PARAMETER_ID(envDecay)
+    PARAMETER_ID(envSustain)
+    PARAMETER_ID(envRelease)
 
 #undef PARAMETER_ID
 
