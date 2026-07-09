@@ -168,6 +168,7 @@ set(SHADER_FILES
         "shaders/shader_materials/mat_plane.wgsl"
         "shaders/shader_materials/vs_main.wgsl"
         "shaders/shader_materials/fs_main.wgsl"
+        "shaders/shader_materials/mat_logo.wgsl"
 )
 
 set(SHADER_SOURCE "")

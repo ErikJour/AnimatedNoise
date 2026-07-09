@@ -4,6 +4,7 @@
 
 #pragma once
 #include <webgpu/webgpu.h>
+#include "shaderPaths.h"
 
 
 class AnimatedLogo

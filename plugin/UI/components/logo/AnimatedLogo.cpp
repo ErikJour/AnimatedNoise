@@ -77,6 +77,7 @@ bool AnimatedLogo::initialize(WGPUTextureFormat surfaceFormat, const WGPUDepthSt
         constexpr float kTop   =  0.97f;
         constexpr float kH     =  0.23f;
         constexpr float kW     = kH * (9.0f / 16.0f);
+
         const LogoVertex verts[4] = {
             { kRight - kW, kTop - kH,  0.0f, 1.0f },
             { kRight,      kTop - kH,  1.0f, 1.0f },

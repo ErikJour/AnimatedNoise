@@ -12,6 +12,7 @@ static constexpr uint32_t MAT_FLOOR               = 5;
 static constexpr uint32_t MAT_SKYLIGHT            = 6;
 static constexpr uint32_t MAT_LPG_REZ_SLIDER      = 7;
 static constexpr uint32_t MAT_NOIS_DENS_SLIDER    = 8;
+static constexpr uint32_t MAT_LOGO                = 9;
 
 struct MyUniforms {
     float    time;
