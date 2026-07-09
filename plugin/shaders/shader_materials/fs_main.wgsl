@@ -2,7 +2,7 @@
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4f {
     switch u.materialId {
-        case MAT_CAVE:                    { return shadeCave(in);            }
+        case MAT_TEXT:                    { return shadeText(in);            }
         case MAT_GLOBAL_GAIN_SLIDER:      { return shadeGainSlider(in);      }
         case MAT_COMB_AMT_SLIDER:         { return shadeCombSlider(in);      }
         case MAT_PLANE:                   { return shadePlane(in);           }

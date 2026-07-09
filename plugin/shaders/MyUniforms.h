@@ -3,7 +3,7 @@
 #include <cstdint>
 
 // Must match common.wgsl
-static constexpr uint32_t MAT_CAVE                = 0;
+static constexpr uint32_t MAT_TEXT                = 0;
 static constexpr uint32_t MAT_GLOBAL_GAIN_SLIDER  = 1;
 static constexpr uint32_t MAT_COMB_AMT_SLIDER     = 2;
 static constexpr uint32_t MAT_PLANE               = 3;

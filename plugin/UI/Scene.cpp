@@ -142,7 +142,7 @@ void Scene::renderFrame(const float currentTime)
             wgpuRenderPassEncoderSetPipeline(renderPass, mPipeline);
         }
 
-        setItemBuffers(mGlyphVertexBuffer, mGlyphIndexBuffer, mGlyphIndexCount, MAT_CAVE, renderPass);
+        setItemBuffers(mGlyphVertexBuffer, mGlyphIndexBuffer, mGlyphIndexCount, MAT_TEXT, renderPass);
 
 
         mLogo.render(renderPass);
@@ -182,7 +182,7 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
     const bool  gainHeld        = noiseLevel ? noiseLevel->pressed : false;
 
     constexpr uint32_t ids[9] = {
-                                    MAT_CAVE,
+                                    MAT_TEXT,
                                     MAT_GLOBAL_GAIN_SLIDER,
                                     MAT_COMB_AMT_SLIDER,
                                     MAT_PLANE,
@@ -206,22 +206,17 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
 
             std::memcpy(mUniforms.modelMatrix, kIdentity, sizeof(kIdentity));
 
-            if (id == MAT_CAVE)
+            if (id == MAT_TEXT)
             {
-                // HUD overlay: vsCave does projMatrix * modelMatrix (no view), so this
-                // matrix alone places the em-sized glyphs in camera space. To pin the
-                // text to the bottom-left corner we compute the visible half-extents at
-                // the text's depth (perspective, so they scale with aspect) and anchor
-                // the string origin there with a small margin.
-                constexpr float kTextScale = 0.15f;   // 25%
-                constexpr float kDist      = 1.0f;     // units in front of the camera
+                constexpr float kTextScale = 0.0125f;
+                constexpr float kDist      = 0.1f;
                 constexpr float kFovY      = 1.047f;   // must match updateViewMatrix()
-                constexpr float kMargin    = 0.06f;    // gap from the screen edge
+                constexpr float kMargin    = 0.004f;
 
                 const float halfH = kDist * std::tan(kFovY * 0.5f);
                 const float halfW = halfH * mUniforms.aspectRatio;
-                const float tx    = -halfW + kMargin;  // left edge
-                const float ty    = -halfH + kMargin;  // bottom edge (baseline)
+                const float tx    = -halfW + kMargin;
+                const float ty    = -halfH + kMargin;
 
                 const auto textModel = GlyphGeometry::makeTextModel(
                     kTextScale, kTextScale, kTextScale, tx, ty, -kDist);

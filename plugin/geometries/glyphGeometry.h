@@ -38,7 +38,7 @@ public:
         const float inv  = 1.0f / unitsPerEm;
         const float half = lineWidth * 0.5f;
 
-        constexpr float cr = 0.55f, cg = 0.95f, cb = 0.85f;
+        constexpr float cr = 1.0f, cg = 1.0f, cb = 1.0f;
 
         size_t contourStart = 0;
 

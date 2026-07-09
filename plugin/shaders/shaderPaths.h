@@ -11,7 +11,7 @@
         std::vector<std::filesystem::path> shaderPaths = {
             dir + "/shader_materials/common.wgsl",
             dir + "/shader_materials/lighting.wgsl",
-            dir + "/shader_materials/mat_cave.wgsl",
+            dir + "/shader_materials/mat_text.wgsl",
             dir + "/shader_materials/mat_slider.wgsl",
             dir + "/shader_materials/mat_comb_slider.wgsl",
             dir + "/shader_materials/mat_plane.wgsl",

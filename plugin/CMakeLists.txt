@@ -86,7 +86,6 @@ target_sources(AnimatedNoise
         UI/components/slider/SliderManager.cpp
         dsp/NoiseSynth.cpp
         dsp/NoiseGenerator.cpp
-        dsp/CombFilter.cpp
         dsp/NoiseVoice.cpp
         dsp/AnimatedGain.cpp
         UI/components/logo/AnimatedLogo.cpp
@@ -164,7 +163,7 @@ endif()
 set(SHADER_FILES
         "shaders/shader_materials/common.wgsl"
         "shaders/shader_materials/lighting.wgsl"
-        "shaders/shader_materials/mat_cave.wgsl"
+        "shaders/shader_materials/mat_text.wgsl"
         "shaders/shader_materials/mat_slider.wgsl"
         "shaders/shader_materials/mat_plane.wgsl"
         "shaders/shader_materials/vs_main.wgsl"

@@ -1,9 +1,3 @@
-fn vsFloor(pos: ptr<function, vec3f>) -> vec4f {
-    let worldPosition = u.modelMatrix * vec4f(*pos, 1.0);
-    *pos = worldPosition.xyz;
-    return projectPerspective(worldPosition.xyz);
-}
-
 fn hash(p: vec2<f32>) -> f32 {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
 }
@@ -25,3 +19,10 @@ fn shadeFloor(in: VertexOutput) -> vec4f {
     let color = baseColor * (1.0 + grain * grainAmount);
     return vec4f(color * roomPointLight(in.worldPos, normal), 1.0);
 }
+
+fn vsFloor(pos: ptr<function, vec3f>) -> vec4f {
+    let worldPosition = u.modelMatrix * vec4f(*pos, 1.0);
+    *pos = worldPosition.xyz;
+    return projectPerspective(worldPosition.xyz);
+}
+
