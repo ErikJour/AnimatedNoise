@@ -92,12 +92,15 @@ private:
 //================================================================================================
 struct GlyphData
 {
-    std::vector<int>      xCoords;
-    std::vector<int>      yCoords;
-    std::vector<uint16_t> contourEndIndices;
-    int                   advanceWidth = 0;   // font units; set even for empty glyphs (space)
+    std::vector<int>        xCoords;
+    std::vector<int>        yCoords;
+    std::vector<bool>       onCurve;
+    std::vector<uint16_t>   contourEndIndices;
+    int                     advanceWidth = 0;   // font units; set even for empty glyphs (space)
 
     bool isEmpty() const { return xCoords.empty(); }
+
+
 };
 
 

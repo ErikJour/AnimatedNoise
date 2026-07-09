@@ -208,7 +208,7 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
 
             if (id == MAT_TEXT)
             {
-                constexpr float kTextScale = 0.0125f;
+                constexpr float kTextScale = 0.0115f;
                 constexpr float kDist      = 0.1f;
                 constexpr float kFovY      = 1.047f;   // must match updateViewMatrix()
                 constexpr float kMargin    = 0.004f;
@@ -354,7 +354,7 @@ void Scene::initializeScene()
     //================================================
     mSliderMeshes.clear();
     mSliderMeshes.reserve(sliderDefinitions().size());
-    FontParser font("/Users/erikjourgensen/Desktop/June 2026/Repositories/AnimatedNoise/plugin/UI/fonts/WorkSans-Regular.ttf");
+    FontParser font("/Users/erikjourgensen/Desktop/July 2026/Repositories/AnimatedNoise/plugin/UI/fonts/WorkSans-Regular.ttf");
     std::cout << "glyphs: " << font.glyphCount()
           << "  unitsPerEm: " << font.unitsPerEm() << "\n";
 
@@ -600,7 +600,12 @@ void Scene::initializeText(FontParser& font, const std::string& text)
 void Scene::uploadGlyphMesh(const std::vector<GlyphVertex>& vertices,
                             const std::vector<GlyphIndex>&  indices)
 {
+    // Rebuilding the string replaces these, so drop the previous pair first.
+    if (mGlyphVertexBuffer) { wgpuBufferRelease(mGlyphVertexBuffer); mGlyphVertexBuffer = nullptr; }
+    if (mGlyphIndexBuffer)  { wgpuBufferRelease(mGlyphIndexBuffer);  mGlyphIndexBuffer  = nullptr; }
+
     mGlyphIndexCount = static_cast<uint32_t>(indices.size());
+    if (vertices.empty() || indices.empty()) return;   // nothing to draw; zero-sized buffers are invalid
 
     WGPUBufferDescriptor bd{};
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
@@ -608,10 +613,14 @@ void Scene::uploadGlyphMesh(const std::vector<GlyphVertex>& vertices,
     mGlyphVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
     wgpuQueueWriteBuffer(mQueue, mGlyphVertexBuffer, 0, vertices.data(), bd.size);
 
+    // WebGPU wants a 4-byte-aligned size; pad the source so the copy stays in bounds.
+    std::vector<GlyphIndex> padded = indices;
+    if (padded.size() % 2 != 0) padded.push_back(0);
+
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
-    bd.size  = (indices.size() * sizeof(GlyphIndex) + 3) & ~3ULL;
+    bd.size  = padded.size() * sizeof(GlyphIndex);
     mGlyphIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-    wgpuQueueWriteBuffer(mQueue, mGlyphIndexBuffer, 0, indices.data(), bd.size);
+    wgpuQueueWriteBuffer(mQueue, mGlyphIndexBuffer, 0, padded.data(), bd.size);
 }
 
 //==========================================================================

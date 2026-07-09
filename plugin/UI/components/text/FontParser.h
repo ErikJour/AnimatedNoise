@@ -321,11 +321,15 @@ private:
             }
         }
 
+        std::vector<bool> onCurve(allFlags.size());
+        for (size_t i = 0; i < allFlags.size(); i++)
+            onCurve[i] = flagBitIsSet(allFlags[i], 0);
+
         std::vector<int> coordsX = readCoordinates(reader, allFlags, /*readingX=*/true);
         std::vector<int> coordsY = readCoordinates(reader, allFlags, /*readingX=*/false);
 
-        return GlyphData{ std::move(coordsX), std::move(coordsY),
-                          std::move(contourEndIndices) };
+        return GlyphData{ std::move(coordsX), std::move(coordsY), std::move(onCurve),
+                  std::move(contourEndIndices) };
     }
 
     //============================================================================================

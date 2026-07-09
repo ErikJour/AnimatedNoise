@@ -5,7 +5,6 @@
 
 #pragma once
 #include "NoiseGenerator.h"
-#include "CombFilter.h"
 #include "FunctionGenerator.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "AnimatedGain.h"
