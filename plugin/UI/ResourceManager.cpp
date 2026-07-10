@@ -93,6 +93,7 @@ WGPUShaderModule ResourceManager::loadShaderModule(const std::filesystem::path& 
 WGPUShaderModule ResourceManager::loadShaderModules(const std::vector<std::filesystem::path>& paths,
                                                      WGPUDevice device)
 {
+    //API expects a continuous string of wgsl
     std::string combined;
     for (const auto& path : paths) {
         std::ifstream file(path);
@@ -108,12 +109,12 @@ WGPUShaderModule ResourceManager::loadShaderModules(const std::vector<std::files
         combined += src;
         combined += '\n';
     }
-
+    //Configure shader
     WGPUShaderModuleWGSLDescriptor shaderCodeDesc{};
     shaderCodeDesc.chain.next  = nullptr;
     shaderCodeDesc.chain.sType = WGPUSType_ShaderSourceWGSL;
     shaderCodeDesc.code        = { combined.c_str(), combined.size() };
-
+    //Compile the shader into an object for the GPU
     WGPUShaderModuleDescriptor shaderDesc{};
     shaderDesc.nextInChain = &shaderCodeDesc.chain;
     return wgpuDeviceCreateShaderModule(device, &shaderDesc);

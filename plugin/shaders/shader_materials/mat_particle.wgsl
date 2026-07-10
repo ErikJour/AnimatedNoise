@@ -22,31 +22,13 @@ fn noiseCloudShape(worldPos: vec3f, t: f32, time: f32) -> vec3f {
         worldPos.z + sin(time + worldPos.x * 25.0) * 0.01
     );
 
-    let GA    = 2.3999632;
-    let yF    = 1.0 - 2.0 * t;
-    let rF    = sqrt(max(0.0, 1.0 - yF * yF));
-    let theta = GA * t * 500.0 + time * 0.1;
-    let shell = vec3f(cos(theta) * rF, yF, sin(theta) * rF) * 0.2;
-
-    let crystal = (0.5 + 0.5 * sin(time * 0.35)) * 0.7;
-    let noiseBall    = mix(cloud * 0.5, shell * 0.001, crystal * 0.7);
-
-//Reference for morphing the ball
-//    let PHI   = 1.6180339;
-//    let phase = time * 0.3;
-//    let waveLength = 0.3;
-//    let A     = 0.07;
-//    let mode1 = sin(t * 3.14159) * cos(phase)             * A;
-//    let mode2 = sin(t * 6.28318) * cos(phase * 2.0 + 1.3) * A / PHI;
-//    let mode3 = sin(t * 9.42478) * cos(phase * 3.0 + 2.1) * A / (PHI * PHI);
-//    let yDisp = mode1 + mode2 + mode3;
-//    let zDisp    = sin(t * 3.14159) * sin(phase) * 0.02;
-//    let endTaper = sin(t * 3.14159);
-//    let wave = vec3f((t - 0.5) * waveLength, yDisp, zDisp)
-//             + worldPos * (0.03 + 0.09 * endTaper);
-
-//    return mix(noiseBall, wave, u.morph);
-
+    let GA          = 2.3999632;
+    let yF          = 1.0 - 2.0 * t;
+    let rF          = sqrt(max(0.0, 1.0 - yF * yF));
+    let theta       = GA * t * 500.0 + time * 0.1;
+    let shell       = vec3f(cos(theta) * rF, yF, sin(theta) * rF) * 0.2;
+    let crystal     = (0.5 + 0.5 * sin(time * 0.35)) * 0.7;
+    let noiseBall   = mix(cloud * 0.5, shell * 0.1, crystal * 0.7);
     return (noiseBall);
 }
 
@@ -114,12 +96,11 @@ fn vs_particle_world(in: ParticleVertexInput) -> ParticleVertexOutput {
 
 @fragment
 fn fs_particle(in: ParticleVertexOutput) -> @location(0) vec4f {
-    let distanceToCenter = length(in.uv - 0.5);
-    let glow = clamp(0.05 / distanceToCenter - 0.1, 0.0, 1.0);
+    let distanceToCenter    = length(in.uv - 0.5);
+    let glow                = clamp(0.05 / distanceToCenter - 0.1, 0.0, 1.0);
+    let depthFade           = smoothstep(1.0, 1.1, in.viewDepth);
+    let alpha               = glow * mix(0.75, 0.55, depthFade) * in.color.a;
 
-    let depthFade = smoothstep(1.0, 1.1, in.viewDepth);
-
-    let alpha = glow * mix(0.3, 1.0, depthFade) * in.color.a;
     return vec4f(in.color.r * u.resonate, in.color.g, in.color.b * u.sliderValue, alpha * 0.33);
 
 }

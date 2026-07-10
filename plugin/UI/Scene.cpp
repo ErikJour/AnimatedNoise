@@ -26,7 +26,7 @@ bool Scene::createShader()
 #ifdef DEBUG
     mShaderPaths            = getShaderPaths();
     mLastShaderWriteTime    = latestWriteTime(mShaderPaths);
-    mShaderModule           =  ResourceManager::loadShaderModules(mShaderPaths, mDevice);
+    mShaderModule           = ResourceManager::loadShaderModules(mShaderPaths, mDevice);
 #else
     WGPUShaderModuleWGSLDescriptor shaderCodeDesc{};
     shaderCodeDesc.chain.next  = nullptr;
@@ -198,7 +198,7 @@ void Scene::setUniforms(const WGPUQueue queue, const WGPUBuffer uniformBuffer, c
     mUniforms.frequency                 = 10.0f;
     mUniforms.amplitude                 = 0.5f;
     mUniforms.lightPos[0]               = 0.0f;
-    mUniforms.lightPos[1]               = 0.35f;
+    mUniforms.lightPos[1]               = 0.0f;
     mUniforms.lightPos[2]               = 0.0f;
     mUniforms.aspectRatio               = static_cast<float>(mWidth) / static_cast<float>(mHeight);
 
@@ -397,6 +397,7 @@ void Scene::initializeScene()
 
     // and into the scene:
     initializeText(font, "Init");
+
     for (const auto& def : sliderDefinitions())
     {
         constexpr float kSliderWallRadius = 0.9f;
@@ -408,7 +409,6 @@ void Scene::initializeScene()
 
         mSliderMeshes.push_back(mesh);
     }
-    //================================================
     initializeParticles();
 }
 
@@ -670,7 +670,9 @@ void Scene::updateViewMatrix()
     float view[16], proj[16];
     buildLookAt(view, cameraX, cameraY, cameraZ, tx, cameraY, tz);
     buildPerspective(proj, 1.047f, mUniforms.aspectRatio, near, far);
+    //World-based objects
     mulMat4(mUniforms.viewProjMatrix, proj, view);
+    //Camera-attached objects
     std::memcpy(mUniforms.projMatrix, proj, sizeof(proj));
 }
 
