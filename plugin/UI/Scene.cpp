@@ -6,6 +6,8 @@
 #include <cmath>
 #include <components/slider/sliderCatalog.h>
 
+constexpr auto fontPath = "/Users/erikjourgensen/Desktop/July 2026/Repositories/AnimatedNoise/plugin/UI/fonts/WorkSans-Regular.ttf";
+
 //================================================================================================
 Scene::Scene() = default;
 
@@ -22,9 +24,9 @@ void Scene::setPipelineDesc(WGPURenderPipelineDescriptor pipelineDesc) { mPipeli
 bool Scene::createShader()
 {
 #ifdef DEBUG
-    mShaderPaths = getShaderPaths();
-    mLastShaderWriteTime = latestWriteTime(mShaderPaths);
-    mShaderModule        = ResourceManager::loadShaderModules(mShaderPaths, mDevice);
+    mShaderPaths            = getShaderPaths();
+    mLastShaderWriteTime    = latestWriteTime(mShaderPaths);
+    mShaderModule           =  ResourceManager::loadShaderModules(mShaderPaths, mDevice);
 #else
     WGPUShaderModuleWGSLDescriptor shaderCodeDesc{};
     shaderCodeDesc.chain.next  = nullptr;
@@ -83,54 +85,77 @@ void Scene::renderFrame(const float currentTime)
 
         if (!mPipeline) return;
         if (!mSurface) return;
-
+        //Setup surface to draw into
         WGPUSurfaceTexture surfaceTexture = {};
         wgpuSurfaceGetCurrentTexture(mSurface, &surfaceTexture);
-
+        //Safety check
         if (surfaceTexture.status != WGPUSurfaceGetCurrentTextureStatus_Success) return;
-        WGPUTextureViewDescriptor viewDesc = {};
-        viewDesc.format = mSurfaceFormat;
-        viewDesc.dimension = WGPUTextureViewDimension_2D;
-        viewDesc.mipLevelCount = 1;
-        viewDesc.arrayLayerCount = 1;
+        //Formatting over our blank texture
+        WGPUTextureViewDescriptor viewDesc              = {};
+        viewDesc.format                                 = mSurfaceFormat;
+        viewDesc.dimension                              = WGPUTextureViewDimension_2D;
+        viewDesc.mipLevelCount                          = 1;
+        viewDesc.arrayLayerCount                        = 1;
         viewDesc.aspect = WGPUTextureAspect_All;
+        //Update uniform states
         setUniforms(mQueue, mUniformBuffer, currentTime);
-        const WGPUTextureView targetView = wgpuTextureCreateView(surfaceTexture.texture, &viewDesc);
+        //Update GPU memory with
+        const WGPUTextureView targetView                = wgpuTextureCreateView(surfaceTexture.texture, &viewDesc);
+        //Transfer ownership to view
         wgpuTextureRelease(surfaceTexture.texture);
-        WGPUCommandEncoderDescriptor encoderDesc = {};
-        encoderDesc.label = WGPU_STR("Frame encoder");
-        WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(mDevice, &encoderDesc);
-        WGPURenderPassColorAttachment colorAttachment = {};
-        colorAttachment.view       = targetView;
-        colorAttachment.loadOp     = WGPULoadOp_Clear;
-        colorAttachment.storeOp    = WGPUStoreOp_Store;
-        colorAttachment.clearValue = WGPUColor{ mRed, mGreen, mBlue, 1.0 };
-        colorAttachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
-        WGPURenderPassDescriptor renderPassDesc = {};
-        renderPassDesc.colorAttachmentCount     = 1;
-        renderPassDesc.colorAttachments         = &colorAttachment;
+        //Create an object on the CPU to record our drawing commands
+        WGPUCommandEncoderDescriptor encoderDesc        = {};
+        encoderDesc.label                               = WGPU_STR("Frame encoder");
+        WGPUCommandEncoder encoder                      = wgpuDeviceCreateCommandEncoder(mDevice, &encoderDesc);
+        //Clear the canvas and set color before draw
+        WGPURenderPassColorAttachment colorAttachment   = {};
+        colorAttachment.view                            = targetView;
+        colorAttachment.loadOp                          = WGPULoadOp_Clear;
+        colorAttachment.storeOp                         = WGPUStoreOp_Store;
+        colorAttachment.clearValue                      = WGPUColor{ mRed, mGreen, mBlue, 1.0 };
+        colorAttachment.depthSlice                      = WGPU_DEPTH_SLICE_UNDEFINED;
+        //Setup master render pass
+        WGPURenderPassDescriptor renderPassDesc         = {};
+        renderPassDesc.colorAttachmentCount             = 1;
+        renderPassDesc.colorAttachments                 = &colorAttachment;
+        // Configure the depth buffer so closer objects correctly hide objects behind them
         WGPURenderPassDepthStencilAttachment depthStencilAttachment = {};
-        depthStencilAttachment.view             = mDepthTextureView;
-        depthStencilAttachment.depthClearValue  = 1.0f;
-        depthStencilAttachment.depthLoadOp      = WGPULoadOp_Clear;
-        depthStencilAttachment.depthStoreOp     = WGPUStoreOp_Store;
-        depthStencilAttachment.depthReadOnly    = false;
-        depthStencilAttachment.stencilLoadOp    = WGPULoadOp_Undefined;
-        depthStencilAttachment.stencilStoreOp   = WGPUStoreOp_Undefined;
-        depthStencilAttachment.stencilReadOnly  = true;
-        renderPassDesc.depthStencilAttachment = &depthStencilAttachment;
-        const WGPURenderPassEncoder renderPass = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
-
+        depthStencilAttachment.view                     = mDepthTextureView;
+        depthStencilAttachment.depthClearValue          = 1.0f;
+        depthStencilAttachment.depthLoadOp              = WGPULoadOp_Clear;
+        depthStencilAttachment.depthStoreOp             = WGPUStoreOp_Store;
+        depthStencilAttachment.depthReadOnly            = false;
+        depthStencilAttachment.stencilLoadOp            = WGPULoadOp_Undefined;
+        depthStencilAttachment.stencilStoreOp           = WGPUStoreOp_Undefined;
+        depthStencilAttachment.stencilReadOnly          = true;
+        renderPassDesc.depthStencilAttachment           = &depthStencilAttachment;
+        //Begin render pass - clear screen and prepare GPU for drawing
+        const WGPURenderPassEncoder renderPass          = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
+        //Load the shaders and other GPU data
         wgpuRenderPassEncoderSetPipeline(renderPass, mPipeline);
-        //Floor
-        setItemBuffers(mFloorVertexBuffer, mFloorIndexBuffer, mFloorIndexCount, MAT_FLOOR, renderPass);
-        setItemBuffers(mSphereVertexBuffer, mSphereIndexBuffer, mSphereIndexCount, MAT_FLOOR, renderPass);
-        //Skylight
-        setItemBuffers(mSkylightVertexBuffer, mSkylightIndexBuffer, mSkylightIndexCount, MAT_FLOOR, renderPass);
-        // Sliders
+        //3D Meshes
+        setItemBuffers(mFloorVertexBuffer,
+             mFloorIndexBuffer,
+                        mFloorIndexCount,
+                        MAT_FLOOR,
+                        renderPass);
+        setItemBuffers(mSphereVertexBuffer,
+              mSphereIndexBuffer,
+                         mSphereIndexCount,
+                         MAT_FLOOR,
+                              renderPass);
+        setItemBuffers(mSkylightVertexBuffer,
+            mSkylightIndexBuffer,
+                        mSkylightIndexCount,
+                        MAT_FLOOR,
+                        renderPass);
         for (const auto& m : mSliderMeshes)
-            setItemBuffers(m.vertexBuffer, m.indexBuffer, m.indexCount, m.materialId, renderPass);
-        // Particles
+            setItemBuffers(m.vertexBuffer,
+                            m.indexBuffer,
+                            m.indexCount,
+                            m.materialId,
+                            renderPass);
+
         if (mParticleQuadBuffer && mParticleDataBuffer && mParticleCount > 0)
         {
             wgpuRenderPassEncoderSetPipeline(renderPass, mParticlePipeline);
@@ -142,63 +167,69 @@ void Scene::renderFrame(const float currentTime)
             wgpuRenderPassEncoderSetPipeline(renderPass, mPipeline);
         }
 
-        setItemBuffers(mGlyphVertexBuffer, mGlyphIndexBuffer, mGlyphIndexCount, MAT_TEXT, renderPass);
-
-
+        setItemBuffers(mGlyphVertexBuffer,
+                mGlyphIndexBuffer,
+                            mGlyphIndexCount,
+                            MAT_TEXT,
+                                renderPass);
         mLogo.render(renderPass);
-
+        //Finish the render, frame is fully recorded
         wgpuRenderPassEncoderEnd(renderPass);
         wgpuRenderPassEncoderRelease(renderPass);
-
+        //Free memory on the CPU.
         WGPUCommandBufferDescriptor cmdDesc = {};
         cmdDesc.label = WGPU_STR("Frame command buffer");
         const WGPUCommandBuffer command = wgpuCommandEncoderFinish(encoder, &cmdDesc);
         wgpuCommandEncoderRelease(encoder);
+        //Pass our data to the GPU
         wgpuQueueSubmit(mQueue, 1, &command);
+        //Clean up memory
         wgpuCommandBufferRelease(command);
         wgpuTextureViewRelease(targetView);
+        //Show the current frame now!
         wgpuSurfacePresent(mSurface);
+        //Clean up
         wgpuDeviceTick(mDevice);
 }
 
-void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const float time)
+void Scene::setUniforms(const WGPUQueue queue, const WGPUBuffer uniformBuffer, const float time)
 {
-    mUniforms.time         = time;
-    mUniforms.frequency    = 10.0f;
-    mUniforms.amplitude    = 0.5f;
-    mUniforms.lightPos[0]  = 0.0f;
-    mUniforms.lightPos[1]  = 0.35f;
-    mUniforms.lightPos[2]  = 0.0f;
-    mUniforms.aspectRatio  = static_cast<float>(mWidth) / static_cast<float>(mHeight);
+    mUniforms.time                      = time;
+    mUniforms.frequency                 = 10.0f;
+    mUniforms.amplitude                 = 0.5f;
+    mUniforms.lightPos[0]               = 0.0f;
+    mUniforms.lightPos[1]               = 0.35f;
+    mUniforms.lightPos[2]               = 0.0f;
+    mUniforms.aspectRatio               = static_cast<float>(mWidth) / static_cast<float>(mHeight);
 
     updateViewMatrix();
 
     const AnimatedSlider* noiseLevel    = findSlider(ParameterID::noiseLevel);
     const AnimatedSlider* lpgResonance  = findSlider(ParameterID::lpgResonance);
 
-    const float resonanceVal    = lpgResonance ? lpgResonance->value : 0.0f;
+    const float resonanceVal            = lpgResonance ? lpgResonance->value : 0.0f;
     juce::ignoreUnused(resonanceVal);
-    const float gainVal         = noiseLevel ? noiseLevel->value : 0.0f;
-    const bool  gainHeld        = noiseLevel ? noiseLevel->pressed : false;
+    const float gainVal                 = noiseLevel ? noiseLevel->value : 0.0f;
+    const bool  gainHeld                = noiseLevel ? noiseLevel->pressed : false;
 
-    constexpr uint32_t ids[9] = {
-                                    MAT_TEXT,
-                                    MAT_GLOBAL_GAIN_SLIDER,
-                                    MAT_COMB_AMT_SLIDER,
-                                    MAT_PLANE,
-                                    MAT_PARTICLES,
-                                    MAT_FLOOR,
-                                    MAT_SKYLIGHT,
-                                    MAT_LPG_REZ_SLIDER,
-                                    MAT_NOIS_DENS_SLIDER
-                                };
+    constexpr uint32_t ids[9]           =   {
+                                            MAT_TEXT,
+                                            MAT_GLOBAL_GAIN_SLIDER,
+                                            MAT_COMB_AMT_SLIDER,
+                                            MAT_PLANE,
+                                            MAT_PARTICLES,
+                                            MAT_FLOOR,
+                                            MAT_SKYLIGHT,
+                                            MAT_LPG_REZ_SLIDER,
+                                            MAT_NOIS_DENS_SLIDER
+                                            };
 
-    auto sliderForMaterial = [&](const uint32_t mat) -> const AnimatedSlider* {
-        if (mSliderList)
-            for (const auto& s : *mSliderList)
-                if (s.materialId == mat) return &s;
-        return nullptr;
-    };
+    auto sliderForMaterial              = [&](const uint32_t mat) -> const AnimatedSlider* {
+                                            if (mSliderList)
+                                                for (const auto& s : *mSliderList)
+                                                    if (s.materialId == mat) return &s;
+                                            return nullptr;
+                                        };
 
     for (const unsigned int id : ids)
     {
@@ -208,15 +239,14 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
 
             if (id == MAT_TEXT)
             {
-                constexpr float kTextScale = 0.0115f;
-                constexpr float kDist      = 0.1f;
-                constexpr float kFovY      = 1.047f;   // must match updateViewMatrix()
-                constexpr float kMargin    = 0.004f;
-
-                const float halfH = kDist * std::tan(kFovY * 0.5f);
-                const float halfW = halfH * mUniforms.aspectRatio;
-                const float tx    = -halfW + kMargin;
-                const float ty    = -halfH + kMargin;
+                constexpr float kTextScale  = 0.0115f;
+                constexpr float kDist       = 0.1f;
+                constexpr float kFovY       = 1.047f;   // must match updateViewMatrix()
+                constexpr float kMargin     = 0.004f;
+                const float halfH           = kDist * std::tan(kFovY * 0.5f);
+                const float halfW           = halfH * mUniforms.aspectRatio;
+                const float tx              = -halfW + kMargin;
+                const float ty              = -halfH + kMargin;
 
                 const auto textModel = GlyphGeometry::makeTextModel(
                     kTextScale, kTextScale, kTextScale, tx, ty, -kDist);
@@ -226,9 +256,9 @@ void Scene::setUniforms(WGPUQueue queue, const WGPUBuffer uniformBuffer, const f
 
             if (id == MAT_PARTICLES)
             {
-                mUniforms.sliderValue = gainVal;
-                mUniforms.pressed     = gainHeld ? 1.0f : 0.0f;
-                mUniforms.resonate     = resonanceVal;
+                mUniforms.sliderValue   = gainVal;
+                mUniforms.pressed       = gainHeld ? 1.0f : 0.0f;
+                mUniforms.resonate      = resonanceVal;
             }
             else if (const AnimatedSlider* s = sliderForMaterial(id))
             {
@@ -354,7 +384,7 @@ void Scene::initializeScene()
     //================================================
     mSliderMeshes.clear();
     mSliderMeshes.reserve(sliderDefinitions().size());
-    FontParser font("/Users/erikjourgensen/Desktop/July 2026/Repositories/AnimatedNoise/plugin/UI/fonts/WorkSans-Regular.ttf");
+    FontParser font(fontPath);
     std::cout << "glyphs: " << font.glyphCount()
           << "  unitsPerEm: " << font.unitsPerEm() << "\n";
 
@@ -463,7 +493,7 @@ void Scene::updateDepthTexture(const uint32_t width, const uint32_t height)
     if (mDepthTextureView) { wgpuTextureViewRelease(mDepthTextureView); mDepthTextureView = nullptr; }
     if (mDepthTexture)     { wgpuTextureDestroy(mDepthTexture); wgpuTextureRelease(mDepthTexture); mDepthTexture = nullptr; }
 
-    WGPUTextureDescriptor depthDesc{};
+    WGPUTextureDescriptor   depthDesc{};
     depthDesc.usage         = WGPUTextureUsage_RenderAttachment;
     depthDesc.dimension     = WGPUTextureDimension_2D;
     depthDesc.size          = { mWidth, mHeight, 1 };
