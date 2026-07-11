@@ -15,9 +15,9 @@ struct vec2
 };
 
 struct CameraState {
-    float angleX = 0.0f;   // horizontal look direction (yaw)
-    float posX   = 0.0f;   // camera world position X
-    float posZ   = 1.0f;   // camera world position Z
+    float angleX = 0.0f;
+    float posX   = 0.5f;
+    float posZ   = 2.0f;
 
     static constexpr float eyeY        = 0.02f;  // fixed eye height
     static constexpr float kWallRadius = 2.0f;  // clamp radius (floor edge is 0.95)

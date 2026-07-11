@@ -379,7 +379,6 @@ bool Scene::createParticlePipeline()
 
 void Scene::initializeScene()
 {
-    initializeFloor();
     initializeSphere();
     //================================================
     mSliderMeshes.clear();

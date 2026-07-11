@@ -172,11 +172,12 @@ void WebGpuWindow::onResize (const uint32_t width, const uint32_t height)
 void WebGpuWindow::terminate()
 {
     mScene.terminate();
-    if (mPipelineDesc.layout) { wgpuPipelineLayoutRelease(mPipelineDesc.layout); mPipelineDesc.layout = nullptr; }
-    if (mQueue)         { wgpuQueueRelease(mQueue); mQueue = nullptr; }
-    if (mDevice)        { wgpuDeviceRelease(mDevice); mDevice = nullptr; }
-    if (mAdapter)       { wgpuAdapterRelease(mAdapter); mAdapter = nullptr; }
-    if (mInstance)      { wgpuInstanceRelease(mInstance); mInstance = nullptr; }
+
+    if (mPipelineDesc.layout)   { wgpuPipelineLayoutRelease(mPipelineDesc.layout);  mPipelineDesc.layout    = nullptr; }
+    if (mQueue)                 { wgpuQueueRelease(mQueue);                         mQueue                  = nullptr; }
+    if (mDevice)                { wgpuDeviceRelease(mDevice);                       mDevice                 = nullptr; }
+    if (mAdapter)               { wgpuAdapterRelease(mAdapter);                     mAdapter                = nullptr; }
+    if (mInstance)              { wgpuInstanceRelease(mInstance);                   mInstance               = nullptr; }
 }
 
 void WebGpuWindow::setFeatures(const WGPUAdapter adapter)
@@ -200,7 +201,7 @@ void WebGpuWindow::getAdapter(const WGPUAdapter adapter, const WGPUAdapterInfo& 
     std::cout << "Adapter backend: 0x" << std::hex << properties.backendType << std::dec << std::endl;
 }
 
-void WebGpuWindow::getLimits(WGPUAdapter adapter, WGPUSupportedLimits &limits)
+void WebGpuWindow::getLimits(const WGPUAdapter adapter, WGPUSupportedLimits &limits)
 {
     bool success = wgpuAdapterGetLimits(adapter, &limits) == WGPUStatus_Success;
     if (success) {
@@ -228,29 +229,31 @@ void WebGpuWindow::setDefault(WGPUStencilFaceState& stencilFaceState)
 
 void WebGpuWindow::setDefault(WGPUDepthStencilState& depthStencilState)
 {
-    depthStencilState.format             = WGPUTextureFormat_Undefined;
-    depthStencilState.depthWriteEnabled  = WGPUOptionalBool_False;
-    depthStencilState.depthCompare       = WGPUCompareFunction_Always;
-    depthStencilState.stencilReadMask    = 0xFFFFFFFF;
-    depthStencilState.stencilWriteMask   = 0xFFFFFFFF;
-    depthStencilState.depthBias          = 0;
+    depthStencilState.format              = WGPUTextureFormat_Undefined;
+    depthStencilState.depthWriteEnabled   = WGPUOptionalBool_False;
+    depthStencilState.depthCompare        = WGPUCompareFunction_Always;
+    depthStencilState.stencilReadMask     = 0xFFFFFFFF;
+    depthStencilState.stencilWriteMask    = 0xFFFFFFFF;
+    depthStencilState.depthBias           = 0;
     depthStencilState.depthBiasSlopeScale = 0;
-    depthStencilState.depthBiasClamp     = 0;
+    depthStencilState.depthBiasClamp      = 0;
+
     setDefault(depthStencilState.stencilFront);
     setDefault(depthStencilState.stencilBack);
 }
 
-WGPURequiredLimits WebGpuWindow::GetRequiredLimits(WGPUAdapter adapter)
+WGPURequiredLimits WebGpuWindow::GetRequiredLimits(const WGPUAdapter adapter)
 {
-    WGPUSupportedLimits supportedLimits;
-    supportedLimits.nextInChain = nullptr;
+    WGPUSupportedLimits supportedLimits                 = {};
+    supportedLimits.nextInChain                         = nullptr;
     wgpuAdapterGetLimits(adapter, &supportedLimits);
-    WGPURequiredLimits requiredLimits{};
+
+    WGPURequiredLimits requiredLimits                   = {};;
     setDefault(requiredLimits.limits);
-    requiredLimits.limits.maxVertexAttributes = 2;
-    requiredLimits.limits.maxVertexBuffers = 1;
-    requiredLimits.limits.maxBufferSize = 15 * 5 * sizeof(float);
-    requiredLimits.limits.maxVertexBufferArrayStride = 9 * sizeof(float);
+    requiredLimits.limits.maxVertexAttributes           = 2;
+    requiredLimits.limits.maxVertexBuffers              = 1;
+    requiredLimits.limits.maxBufferSize                 = 15 * 5 * sizeof(float);
+    requiredLimits.limits.maxVertexBufferArrayStride    = 9 * sizeof(float);
     requiredLimits.limits.maxInterStageShaderComponents = 3;
     return requiredLimits;
 }

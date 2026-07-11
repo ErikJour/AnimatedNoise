@@ -18,7 +18,7 @@ struct ParticleVertexOutput {
 fn noiseCloudShape(worldPos: vec3f, t: f32, time: f32) -> vec3f {
     let cloud = vec3f(
         worldPos.x + sin(time + worldPos.x * 25.0) * 0.005,
-        worldPos.y,
+        worldPos.y + 0.17,
         worldPos.z + sin(time + worldPos.x * 25.0) * 0.01
     );
 
@@ -36,8 +36,9 @@ fn noiseCloudShape(worldPos: vec3f, t: f32, time: f32) -> vec3f {
 fn vs_particle(in: ParticleVertexInput) -> ParticleVertexOutput {
     var out: ParticleVertexOutput;
 
+
     let worldPos = in.pos_size.xyz;
-    let size     = in.pos_size.w * 0.15;
+    let size     = in.pos_size.w * 0.5;
     let t        = in.life_vel.x;
 
     let shaped = noiseCloudShape(worldPos, t, u.time);
