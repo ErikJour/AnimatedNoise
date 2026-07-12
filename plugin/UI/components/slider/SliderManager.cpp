@@ -58,9 +58,9 @@ bool SliderManager::handleMouseDown(const juce::MouseEvent& event, int width, in
 
         const float beadV = juce::jlimit(kIndicatorHalfH, 1.0f - kIndicatorHalfH, s.value);
 
-        const juce::Point<float> bead    = mScene.projectSliderPoint(screenW, screenH, beadV, s.angle);
-        const float hitDepth = mScene.getDepthValue();
-        const juce::Point<float> nearest = mScene.projectSliderPoint(screenW, screenH, tClmp, s.angle);
+        const juce::Point<float> bead       = mScene.projectSliderPoint(screenW, screenH, beadV, s.angle);
+        const float hitDepth                = mScene.getDepthValue();
+        const juce::Point<float> nearest    = mScene.projectSliderPoint(screenW, screenH, tClmp, s.angle);
 
         const bool onIndicator = mouse.getDistanceFrom(bead)    <= kIndicatorRadius;
         const bool onTube      = mouse.getDistanceFrom(nearest) <= kHitRadius;

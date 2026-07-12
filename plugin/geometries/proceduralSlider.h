@@ -14,20 +14,20 @@ using SliderIndex = uint16_t;
 inline void buildSliderGeometry(
     std::vector<SliderVertex>& verts,
     std::vector<SliderIndex>&  indices,
-    const float wallRadius     = 0.9f,
-    const float wallAngle      = 0.0f,
-    const int   curveVariant   = 0,
-    const float roomX          = 0.0f,
-    const float roomZ          = 0.0f,
-    const float yBottom        = -0.1875f,
-    const float yTop           =  0.38125f,
-    const int   heightSegments = 8,
-    const int   radialSegments = 24)
+    const float wallRadius     = 0.9f,      //where the slider will be in terms of a circle
+    const float wallAngle      = 0.0f,      //not sure
+    const int   curveVariant   = 0,         //variation in curvature, static
+    const float roomX          = 0.0f,      //static
+    const float roomZ          = 0.0f,      //static
+    const float yBottom        = 0.f,  //static, changing this messes up the mouse tracking
+    const float yTop           = 0.03f, //static, changing this messes up the mouse tracking
+    const int   heightSegments = 1,         //static
+    const int   radialSegments = 24)        //static
 {
-    constexpr float kPI = 3.14159265f;
+    constexpr float kPI = 3.14159265f;      //pi
 
-    const float cosA = std::cosf(wallAngle);
-    const float sinA = std::sinf(wallAngle);
+    const float cosA = std::cosf(wallAngle);//gives us our location I think
+    const float sinA = std::sinf(wallAngle);//gives us our location I think
 
     const vec3 anchor  { roomX + wallRadius * cosA, 0.0f, roomZ + wallRadius * sinA };
     const vec3 radial  { cosA,  0.0f, sinA };
@@ -35,6 +35,7 @@ inline void buildSliderGeometry(
 
     struct Variant { float ampMod, xFreq, zFreq, phase; };
 
+    //These are the curve variants===================================
     const Variant variants[5] = {
         { 1.00f, 2.0f, 1.0f, 0.0f        },
         { 1.05f, 1.5f, 0.8f, kPI * 0.5f  },
@@ -42,20 +43,21 @@ inline void buildSliderGeometry(
         { 1.10f, 2.5f, 1.2f, kPI * 0.25f },
         { 0.90f, 1.0f, 1.5f, kPI * 0.75f },
     };
-    const auto& vp = variants[curveVariant % 5];
+    const auto& [ampMod, xFreq, zFreq, phase] = variants[curveVariant % 5];
+    //================================================================
 
     const float height            = yTop - yBottom;
-    const float amplitude         = 0.00625f * vp.ampMod;  // +25% waviness
-    constexpr float spineR        = 0.0065f;  // 50% of original (was 0.013)
-    constexpr float indicatorR    = 0.013f;   // original width — indicator ring stays fat
+    const float amplitude         = 0.000f * ampMod;  // +25% waviness
+    constexpr float spineR        = 0.03f;  // 50% of original (was 0.013)
+    constexpr float indicatorR    = 0.01f;   // original width — indicator ring stays fat
 
     // Spine centerline at height-fraction t (0 = bottom, 1 = top).
     // Adds gentle side-to-side waviness that fades near both ends so caps sit clean.
     auto spineAt = [&](float t) -> vec3 {
         const float y        = yBottom + t * height;
-        const float endCurve = 0.3f + std::sinf(t * kPI) * 0.7f;
-        const float wRad     = std::sinf(t * kPI * vp.xFreq + vp.phase) * amplitude * endCurve;
-        const float wTan     = std::cosf(t * kPI * vp.zFreq)            * amplitude * 0.5f * endCurve;
+        const float endCurve = 0.01f + std::sinf(t * kPI) * 0.01f;
+        const float wRad     = std::sinf(t * kPI * xFreq + phase) * amplitude * endCurve;
+        const float wTan     = std::cosf(t * kPI * zFreq)            * amplitude * 0.5f * endCurve;
         return vec3{ anchor.x, y, anchor.z } + radial * wRad + tangent * wTan;
     };
 
@@ -77,10 +79,6 @@ inline void buildSliderGeometry(
         return { here, tan, b1, b2 };
     };
 
-    // Build a tube with hemispherical end caps.
-    // Ring layout: [nCap bottom-cap rings] [nY+1 body rings] [nCap top-cap rings]
-    // Cap phi = 0 at equator (full radius, meets body) → PI/2 at pole (radius 0).
-    // Sphere normal = radialDir * cos(phi) + capDir * sin(phi).
     auto buildTube = [&](float baseR, float padVal)
     {
         const int  nCap  = 6;
@@ -119,7 +117,7 @@ inline void buildSliderGeometry(
         // Bottom cap: pole (k=nCap) → near-equator (k=1). capDir = -tangent.
         for (int k = nCap; k >= 1; --k)
         {
-            const float phi    = static_cast<float>(k) / nCap * kPI * 0.5f;
+            const float phi    = static_cast<float>(k) / nCap * kPI * 0.1f;
             const float sinPhi = std::sinf(phi);
             const float ringR  = baseR * std::cosf(phi);
             emitRing(base.pos - base.tangent * (baseR * sinPhi),
@@ -141,7 +139,7 @@ inline void buildSliderGeometry(
         // Top cap: near-equator (k=1) → pole (k=nCap). capDir = +tangent.
         for (int k = 1; k <= nCap; ++k)
         {
-            const float phi    = static_cast<float>(k) / nCap * kPI * 0.5f;
+            const float phi    = static_cast<float>(k) / nCap * kPI * 0.1f;
             const float sinPhi = std::sinf(phi);
             const float ringR  = baseR * std::cosf(phi);
             emitRing(top.pos + top.tangent * (baseR * sinPhi),
