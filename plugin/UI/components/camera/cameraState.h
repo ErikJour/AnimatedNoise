@@ -9,9 +9,9 @@ struct vec2
 {
     float x = 0.0f, y = 0.0f;
 
-    vec2 operator+(vec2 o) const { return { x + o.x, y + o.y }; }
-    vec2 operator-(vec2 o) const { return { x - o.x, y - o.y }; }
-    vec2 operator*(float s) const { return { x * s, y * s }; }
+    vec2 operator+(vec2 o)  const       { return { x + o.x, y + o.y }; }
+    vec2 operator-(vec2 o)  const       { return { x - o.x, y - o.y }; }
+    vec2 operator*(float s) const       { return { x * s, y * s }; }
 };
 
 struct CameraState {

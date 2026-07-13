@@ -684,21 +684,21 @@ void Scene::onMouseMove(const float xpos, const float /*ypos*/)
     }
 }
 
-void Scene::onMouseButton(const int button, const bool isPressed, const float xpos, float /*ypos*/)
+void Scene::onMouseButton(const int /*button*/, const bool /*isPressed*/, const float /*xpos*/, float /*ypos*/)
 {
-    if (button == 0)
-    {
-        if (isPressed)
-        {
-            mDrag.active      = true;
-            mDrag.startMouseX = xpos;
-            mDrag.startAngleX = mCameraState.angleX;
-        }
-        else
-        {
-            mDrag.active = false;
-        }
-    }
+    // if (button == 0)
+    // {
+    //     if (isPressed)
+    //     {
+    //         mDrag.active      = true;
+    //         mDrag.startMouseX = xpos;
+    //         mDrag.startAngleX = mCameraState.angleX;
+    //     }
+    //     else
+    //     {
+    //         mDrag.active = false;
+    //     }
+    // }
 }
 
 void Scene::onScroll(const float deltaX, const float deltaY)
@@ -726,10 +726,10 @@ void Scene::setCameraState(const CameraState& s)             { mCameraState = s;
 
 float Scene::getSliderValue(const int index) const           { return mSliderValues[index]; }
 
-float Scene::sliderTopFraction() const                       { return (1.0f - (kSpineMaxY + mSliderPos[1])) * 0.5f; }
+float Scene::sliderTopFraction() const                       { return (1.0f - (kSpineMaxY + mSliderPos[1])) * 0.1f; }
 
-float Scene::sliderBottomFraction() const                    { return (1.0f - (kSpineMinY + mSliderPos[1])) * 0.5f; }
+float Scene::sliderBottomFraction() const                    { return (1.0f - (kSpineMinY + mSliderPos[1])) * 0.1f; }
 
-float Scene::sliderXFraction() const                         { return (mSliderPos[0] + 1.0f) * 0.5f; }
+float Scene::sliderXFraction() const                         { return (mSliderPos[0] + 1.0f) * 3.5f; }
 
-float Scene::indicatorHalfFraction()                         { return kIndicatorHalfY * 0.5f; }
+float Scene::indicatorHalfFraction()                         { return kIndicatorHalfY * 0.1f; }
