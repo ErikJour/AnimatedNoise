@@ -31,60 +31,59 @@ void SliderManager::initializeSliders()
     mScene.setSliderList(mSliders);
 }
 
-bool SliderManager::handleMouseDown(const juce::MouseEvent& /*event*/, int /*width*/, int /*height*/)
+bool SliderManager::handleMouseDown(const juce::MouseEvent& event, const int width, int height)
 {
-    // const auto screenW               = static_cast<float>(width);
-    // const auto screenH               = static_cast<float>(height);
-    // const juce::Point<float> mouse{ (float)event.x, (float)event.y };
-    // constexpr float kHitRadius       = 12.0f;
-    // constexpr float kIndicatorRadius = 8.0f;
-    // constexpr float kIndicatorHalfH  = 6.48f;
+    //Step 1 - Normalize coordinates -1 to 1
+    const float x = (2.0f * static_cast<float>(event.x)) / static_cast<float>(width) - 1.0f;
+    std::cout << "X is: " << x << std::endl;
+
+    const float y = 1.0f - (2.0f * static_cast<float>(event.y)) / static_cast<float>(height);
+    std::cout << "Y is: " << y << std::endl;
+
+    //Step 2 - clip coordinates
+    const float ray_clip[4] = { x, y, -1.0f, 1.0f };
+
+    //Step 3 - Camera coordinates
+    float ray_eye[4];
+    mulMat4Vec4(ray_eye, mScene.invProj(), ray_clip);
+    ray_eye[2] = -1.0f;
+    ray_eye[3] =  0.0f;
+
+    //Step 4 - World Coordinates
+    float ray_wor[4];
+    mulMat4Vec4(ray_wor, mScene.invView(), ray_eye);
+    const float len = std::sqrt(ray_wor[0]*ray_wor[0]
+                              + ray_wor[1]*ray_wor[1]
+                              + ray_wor[2]*ray_wor[2]);
+    ray_wor[0] /= len;  ray_wor[1] /= len;  ray_wor[2] /= len;
+
+    std::cout << "ray_wor: ("
+          << ray_wor[0] << ", "
+          << ray_wor[1] << ", "
+          << ray_wor[2] << ")" << std::endl;
+
+    const float* iv = mScene.invView();
+    const float rayOrigin[3] = { iv[12], iv[13], iv[14] };
+    juce::ignoreUnused(rayOrigin);
+
+    //Need slider positions somehow
+
+    // TODO ray picking, per slider:
+    //   1. intersect (rayOrigin, ray_wor) against slider's world-space bounds
+    //   2. keep smallest positive t across sliders  -> bestIndex
+    //   3. recover position along slider axis       -> bestTRaw
     //
-    //
-    //  int   bestIndex  = -1;
-    //  float bestDepth  = FLT_MAX;
-    //  float bestTRaw   = 0.0f;
-    //
-    // for (auto& s : mSliders)
-    // {
-    //     juce::Point<float> top, bottom;
-    //     mScene.projectSliderBounds(screenW, screenH, top, bottom, s.angle);
-    //
-    //     const juce::Point<float> axis = top - bottom;
-    //     const float axisLen2 = axis.x * axis.x + axis.y * axis.y;
-    //
-    //     const float tRaw  = (mouse - bottom).getDotProduct(axis) / axisLen2;
-    //     const float tClmp = juce::jlimit(0.0f, 1.0f, tRaw);
-    //
-    //     const float beadV = juce::jlimit(kIndicatorHalfH, 1.0f - kIndicatorHalfH, s.value);
-    //
-    //     const juce::Point<float> bead       = mScene.projectSliderPoint(screenW, screenH, beadV, s.angle);
-    //     const float hitDepth                = mScene.getDepthValue();
-    //     const juce::Point<float> nearest    = mScene.projectSliderPoint(screenW, screenH, tClmp, s.angle);
-    //
-    //     const bool onIndicator = mouse.getDistanceFrom(bead)    <= kIndicatorRadius;
-    //     const bool onTube      = mouse.getDistanceFrom(nearest) <= kHitRadius;
-    //
-    //
-    //     if ((onIndicator || onTube) && hitDepth < bestDepth)
-    //     {
-    //         bestDepth = hitDepth;
-    //         bestIndex = static_cast<int>(&s - mSliders.data());
-    //         bestTRaw = tRaw;
-    //     }
-    // }
-    //
+    // then (unchanged from old picker):
     // if (bestIndex < 0) return false;
-    // auto& s = mSliders[static_cast<size_t>(bestIndex)];
+    // auto& s = mSliders[bestIndex];
     // mActiveSlider = bestIndex;
     // mDragOffsetT  = bestTRaw - s.value;
-    // mDragging     = true;
-    // s.pressed     = true;
-    //
+    // mDragging = true;  s.pressed = true;
     // const float v = juce::jlimit(0.0f, 1.0f, bestTRaw - mDragOffsetT);
     // s.attachment->beginGesture();
     // s.attachment->setValueAsPartOfGesture(v);
-    return true;
+
+    return false;
 }
 
 bool SliderManager::handleMouseDrag(const juce::MouseEvent& /*event*/, int /*width*/, int /*height*/) const

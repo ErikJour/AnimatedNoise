@@ -10,7 +10,6 @@ constexpr auto fontPath = "/Users/erikjourgensen/Desktop/July 2026/Repositories/
 
 //================================================================================================
 Scene::Scene() = default;
-
 Scene::~Scene() = default;
 
 //================================================================================================
@@ -54,6 +53,8 @@ void Scene::terminate()
     if (mSkylightIndexBuffer)           { wgpuBufferRelease(mSkylightIndexBuffer); mSkylightIndexBuffer = nullptr; }
     if (mSphereVertexBuffer)            { wgpuBufferRelease(mSphereVertexBuffer); mSphereVertexBuffer = nullptr; }
     if (mSphereIndexBuffer)             { wgpuBufferRelease(mSphereIndexBuffer); mSphereIndexBuffer = nullptr; }
+    if (mSphereSliderVertexBuffer)      { wgpuBufferRelease(mSphereSliderVertexBuffer); mSphereSliderVertexBuffer = nullptr; }
+    if (mSphereSliderIndexBuffer)       { wgpuBufferRelease(mSphereSliderIndexBuffer); mSphereSliderIndexBuffer = nullptr; }
     if (mFloorVertexBuffer)             { wgpuBufferRelease(mFloorVertexBuffer); mFloorVertexBuffer = nullptr; }
     if (mFloorIndexBuffer)              { wgpuBufferRelease(mFloorIndexBuffer); mFloorIndexBuffer = nullptr; }
     if (mGlyphVertexBuffer)             { wgpuBufferRelease(mGlyphVertexBuffer); mGlyphVertexBuffer = nullptr; }
@@ -149,12 +150,19 @@ void Scene::renderFrame(const float currentTime)
                         mSkylightIndexCount,
                         MAT_FLOOR,
                         renderPass);
-        for (const auto& m : mSliderMeshes)
-            setItemBuffers(m.vertexBuffer,
-                            m.indexBuffer,
-                            m.indexCount,
-                            m.materialId,
-                            renderPass);
+        //New sphere slider
+        setItemBuffers(mSphereSliderVertexBuffer,
+          mSphereSliderIndexBuffer,
+                     mSphereSliderIndexCount,
+                     MAT_COMB_AMT_SLIDER,
+                          renderPass);
+        //Old sliders
+        // for (const auto& m : mSliderMeshes)
+        //     setItemBuffers(m.vertexBuffer,
+        //                     m.indexBuffer,
+        //                     m.indexCount,
+        //                     m.materialId,
+        //                     renderPass);
 
         if (mParticleQuadBuffer && mParticleDataBuffer && mParticleCount > 0)
         {
@@ -380,6 +388,7 @@ bool Scene::createParticlePipeline()
 void Scene::initializeScene()
 {
     initializeSphere();
+    initializeSliderSphere();
     //================================================
     mSliderMeshes.clear();
     mSliderMeshes.reserve(sliderDefinitions().size());
@@ -409,6 +418,7 @@ void Scene::initializeScene()
         mSliderMeshes.push_back(mesh);
     }
     initializeParticles();
+    initializeFloor();
 }
 
 
@@ -515,7 +525,7 @@ void Scene::initializeFloor()
     std::vector<FloorVertex> vertices;
     std::vector<FloorIndex>  indices;
 
-    CircularFloor::buildCircle(vertices, indices, 0.95f, 64);  // was 1.0f
+    CircularFloor::buildCircle(vertices, indices, 2.95f, 64);  // was 1.0f
 
     mFloorIndexCount = static_cast<uint32_t>(indices.size());
 
@@ -589,6 +599,28 @@ void Scene::InitializeSlider(uint32_t& indexCount, WGPUBuffer& vertexBuffer, WGP
     bd.size  = (indices.size() * sizeof(SliderIndex) + 3) & ~3ULL;
     indexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
     wgpuQueueWriteBuffer(mQueue, indexBuffer, 0, indices.data(), bd.size);
+}
+
+void Scene::initializeSliderSphere()
+{
+    std::cout << "Initializing Slider Sphere" << std::endl;
+    std::vector<SphereVertex> vertices;
+    std::vector<SphereIndex>  indices;
+
+    SphericalSlider::buildSphere(vertices, indices);
+
+    mSphereSliderIndexCount = static_cast<uint32_t>(indices.size());
+
+    WGPUBufferDescriptor bd{};
+    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
+    bd.size  = vertices.size() * sizeof(SphereVertex);
+    mSphereSliderVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mSphereSliderVertexBuffer, 0, vertices.data(), bd.size);
+
+    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
+    bd.size  = (indices.size() * sizeof(FloorIndex) + 3) & ~3ULL;
+    mSphereSliderIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mSphereSliderIndexBuffer, 0, indices.data(), bd.size);
 }
 
 void Scene::initializeParticles()
@@ -666,13 +698,14 @@ void Scene::updateViewMatrix()
     constexpr float near = 0.1f;
     constexpr float far = 8.0f;
 
-    float view[16], proj[16];
-    buildLookAt(view, cameraX, cameraY, cameraZ, tx, cameraY, tz);
-    buildPerspective(proj, 1.047f, mUniforms.aspectRatio, near, far);
-    //World-based objects
-    mulMat4(mUniforms.viewProjMatrix, proj, view);
-    //Camera-attached objects
-    std::memcpy(mUniforms.projMatrix, proj, sizeof(proj));
+    buildLookAt(mView, cameraX, cameraY, cameraZ, tx, cameraY, tz);
+    buildPerspective(mProj, 1.047f, mUniforms.aspectRatio, near, far);
+
+    mulMat4(mUniforms.viewProjMatrix, mProj, mView);
+    std::memcpy(mUniforms.projMatrix, mProj, sizeof(mProj));
+
+    buildInvLookAt(mInvView, cameraX, cameraY, cameraZ, tx, cameraY, tz);
+    buildInvPerspective(mInvProj, 1.047f, mUniforms.aspectRatio, near, far);
 }
 
 void Scene::onMouseMove(const float xpos, const float /*ypos*/)

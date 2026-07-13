@@ -23,6 +23,11 @@
         }
     };
 
+    struct vec4
+    {
+        float x, y, z, w;
+    };
+
     struct Frame { vec3 pos, tangent, b1, b2; };
 
 

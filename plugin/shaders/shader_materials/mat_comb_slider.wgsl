@@ -1,8 +1,16 @@
-// ── Comb Amount Slider — purple ───────────────────────────────────────────────
 fn vsCombSlider(pos: ptr<function, vec3f>, color: vec3f) -> vec4f {
-    return u.viewProjMatrix * vec4f(*pos, 1.0);
+    let sliderPosition = vec3f(0.9, 0.35, -0.5);
+    let worldPosition = vec4f(*pos + sliderPosition, 1.0);
+    *pos = worldPosition.xyz;
+    return projectPerspective(worldPosition.xyz);
 }
 
 fn shadeCombSlider(in: VertexOutput) -> vec4f {
-    return shadeSpineTube(in);
+ let normal    = normalize(in.normal);
+    let baseColor = vec3f(0.4, 0.5, 0.8);
+    let uv = (in.worldPos.xz);
+    let grain = filmGrain(uv, 0.01);
+    let grainAmount = 0.1;
+    let color = baseColor * (1.0 + grain * grainAmount);
+    return vec4f(color, 1.0);
 }

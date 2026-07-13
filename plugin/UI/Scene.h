@@ -27,6 +27,7 @@
 #include "shaderPaths.h"
 #include "glyphGeometry.h"
 #include "components/text/FontParser.h"
+#include <sphericalSlider.h>
 
 static constexpr uint32_t MAX_PARTICLES = 2000;
 #define WGPU_STR(s) WGPUStringView{s, sizeof(s) - 1}
@@ -52,6 +53,8 @@ class Scene
         bool createPipeline();
         void initializeFloor();
         void initializeSphere();
+        void initializeSliderSphere();
+
         void initializeSkylight();
         void InitializeSlider(uint32_t& indexCount, WGPUBuffer& vertexBuffer, WGPUBuffer& indexBuffer, float wallRadius, float angle) const;
         void initializeParticles();
@@ -73,43 +76,70 @@ class Scene
         void onMouseMove(float xpos, float ypos);
         void onScroll(float deltaX, float deltaY);
 
+
+
         void setSliderList(const std::vector<AnimatedSlider>& list) { mSliderList = &list; }
-        float getDepthValue() const { return mDepthValue; }
-
-        void projectSliderBounds(const float screenW, const float screenH,
-                                                        juce::Point<float>& outTop,
-                                                        juce::Point<float>& outBottom,
-                                                        const float angle)
-            {
-                outTop    = projectSliderPoint(screenW, screenH, 1.0f, angle);
-                outBottom = projectSliderPoint(screenW, screenH, 0.0f, angle);
-            }
-
-        juce::Point<float> projectSliderPoint(const float screenW, const float screenH,
-                                              const float v, const float angle)
-            {
-                const float wx                 = 0.9f * std::cos(angle);
-                const float wz                 = 0.9f * std::sin(angle);
-                constexpr float yBottom        = -0.1875f;
-                constexpr float yTop           =  0.38125f;
-                const float y                  = yBottom + v * (yTop - yBottom);
-
-                const float* m = mUniforms.viewProjMatrix;
-                const float cx = m[0]*wx + m[4]*y + m[8]*wz  + m[12];
-                const float cy = m[1]*wx + m[5]*y + m[9]*wz  + m[13];
-                const float cw = m[3]*wx + m[7]*y + m[11]*wz + m[15];
-
-                mDepthValue = cw;
-
-                return { (cx/cw * 0.5f + 0.5f)        * screenW,
-                         (1.0f - (cy/cw * 0.5f + 0.5f))  * screenH };
-            }
 
         WGPUTextureView getDepthTextureView() const { return mDepthTextureView; }
         WGPUColorTargetState getColorTarget() const { return mColorTarget; }
         WGPUFragmentState getFragmentState()  const { return mFragmentState; }
         WGPUBlendState getBlendState()        const { return mBlendState; }
         CameraState getCameraState()          const { return mCameraState; }
+
+        const float* invView() const { return mInvView; }
+        const float* invProj() const { return mInvProj; }
+
+        inline void buildInvLookAt(float* out,
+                               float ex, float ey, float ez,
+                               float tx, float ty, float tz,
+                               float upx = 0.0f, float upy = 1.0f, float upz = 0.0f)
+            {
+                // Same basis as buildLookAt
+                float fx = tx - ex, fy = ty - ey, fz = tz - ez;
+                const float fl = 1.0f / sqrtf(fx*fx + fy*fy + fz*fz);
+                fx *= fl; fy *= fl; fz *= fl;
+
+                // right = normalize(cross(f, up))
+                float rx = fy*upz - fz*upy;
+                float ry = fz*upx - fx*upz;
+                float rz = fx*upy - fy*upx;
+                const float rl = 1.0f / sqrtf(rx*rx + ry*ry + rz*rz);
+                rx *= rl; ry *= rl; rz *= rl;
+
+                // up = cross(right, f)
+                const float ux = ry*fz - rz*fy;
+                const float uy = rz*fx - rx*fz;
+                const float uz = rx*fy - ry*fx;
+
+                // Camera-to-world: rotation transposed relative to the view
+                // matrix, eye position as the translation column.
+                out[0]  = rx;   out[1]  = ry;   out[2]  = rz;   out[3]  = 0.0f;  // col 0: right
+                out[4]  = ux;   out[5]  = uy;   out[6]  = uz;   out[7]  = 0.0f;  // col 1: up
+                out[8]  = -fx;  out[9]  = -fy;  out[10] = -fz;  out[11] = 0.0f;  // col 2: -forward
+                out[12] = ex;   out[13] = ey;   out[14] = ez;   out[15] = 1.0f;  // col 3: eye
+            }
+
+        inline void buildInvPerspective(float* out,
+                                    float fovY, float aspect,
+                                    float nearZ, float farZ)
+            {
+                // Forward matrix (WebGPU 0..1 depth, -1 in the w row):
+                //   sx = 1 / (aspect * tan(fovY/2))
+                //   sy = 1 / tan(fovY/2)
+                //   A  = farZ / (nearZ - farZ)
+                //   B  = (farZ * nearZ) / (nearZ - farZ)
+                const float t  = tanf(fovY * 0.5f);
+                const float A  = farZ / (nearZ - farZ);
+                const float B  = (farZ * nearZ) / (nearZ - farZ);
+
+                for (int i = 0; i < 16; ++i) out[i] = 0.0f;
+
+                out[0]  = aspect * t;   // 1/sx
+                out[5]  = t;            // 1/sy
+                out[11] = 1.0f / B;
+                out[14] = -1.0f;
+                out[15] = A / B;
+            }
 
     private:
         void setItemBuffers(WGPUBuffer vertexBuffer, WGPUBuffer indexBuffer, uint32_t indexCount, uint32_t material, WGPURenderPassEncoder renderPass) const
@@ -149,7 +179,7 @@ class Scene
         MyUniforms                          mUniforms = {};
 
         float                               mSliderValues[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-        float                               mDepthValue      = 0.0f;
+        // float                               mDepthValue      = 0.0f;
 
         struct SliderMesh {
             WGPUBuffer vertexBuffer = nullptr;
@@ -174,6 +204,10 @@ class Scene
         WGPUBuffer                          mSphereVertexBuffer   = nullptr;
         WGPUBuffer                          mSphereIndexBuffer    = nullptr;
         uint32_t                            mSphereIndexCount     = 0;
+        //Sphere slider
+        WGPUBuffer                          mSphereSliderVertexBuffer   = nullptr;
+        WGPUBuffer                          mSphereSliderIndexBuffer    = nullptr;
+        uint32_t                            mSphereSliderIndexCount     = 0;
         //Skylight
         WGPUBuffer                          mSkylightVertexBuffer  = nullptr;
         WGPUBuffer                          mSkylightIndexBuffer  = nullptr;
@@ -202,6 +236,8 @@ class Scene
         //Camera
         CameraState mCameraState;
         DragState mDrag;
+        float mView[16]{}, mProj[16]{};
+        float mInvView[16]{}, mInvProj[16]{};
 
         mutable double mRed = {};
         double mGreen = {};

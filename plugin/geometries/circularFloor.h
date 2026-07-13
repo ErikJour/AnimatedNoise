@@ -31,7 +31,7 @@ public:
 
         verts.reserve(1 + static_cast<size_t>(segments));
         indices.reserve(static_cast<size_t>(segments) * 3);
-        constexpr float floorHeight = -0.5f;
+        constexpr float floorHeight = -0.75f;
 
         verts.push_back({
             0.0f, floorHeight, 0.0f,

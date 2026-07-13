@@ -21,7 +21,6 @@ inline void buildSliderGeometry(
     const float roomZ          = 0.0f,      //static
     const float yBottom        = 0.f,  //static, changing this messes up the mouse tracking
     const float yTop           = 0.03f, //static, changing this messes up the mouse tracking
-    const int   heightSegments = 1,         //static
     const int   radialSegments = 24)        //static
 {
     constexpr float kPI = 3.14159265f;      //pi
@@ -63,10 +62,6 @@ inline void buildSliderGeometry(
 
     // Organic bulge only — no end taper (hemispherical caps handle the rounding).
     // sin(0) = sin(4π) = 0, so body radius exactly matches cap equator at both ends.
-    auto scaledRadius = [&](float t, float baseR) -> float {
-        const float bulge = 1.0f + std::sinf(t * kPI * 4.0f) * 0.1f;
-        return baseR * bulge;
-    };
 
     // Frenet frame at spine parameter t — shared by body rings and cap placement.
     auto getFrame = [&](float t) -> Frame {
@@ -126,15 +121,7 @@ inline void buildSliderGeometry(
                      base.tangent * -1.0f, sinPhi);
         }
 
-        // Main body: t = 0 → 1
-        for (int j = 0; j <= heightSegments; ++j)
-        {
-            const float t = static_cast<float>(j) / static_cast<float>(heightSegments);
-            const Frame f = getFrame(t);
-            emitRing(f.pos, f.b1, f.b2,
-                     scaledRadius(t, baseR), t,
-                     vec3{0.0f, 0.0f, 0.0f}, 0.0f);
-        }
+
 
         // Top cap: near-equator (k=1) → pole (k=nCap). capDir = +tangent.
         for (int k = 1; k <= nCap; ++k)
@@ -149,7 +136,7 @@ inline void buildSliderGeometry(
         }
 
         // Quads connecting all adjacent rings — pure index arithmetic, unchanged.
-        const int totalRings = nCap + (heightSegments + 1) + nCap;
+        const int totalRings = nCap + (1) + nCap;
         for (int r = 0; r < totalRings - 1; ++r)
             for (int i = 0; i < radialSegments; ++i)
             {

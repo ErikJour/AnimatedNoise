@@ -20,6 +20,16 @@ public:
     const std::vector<AnimatedSlider>& sliders() const { return mSliders; }
 
 private:
+    // Column-major mat4 * vec4  (matches your matrix layout)
+    static inline void mulMat4Vec4(float* out, const float* m, const float* v)
+    {
+        for (int row = 0; row < 4; ++row)
+            out[row] = m[0*4 + row] * v[0]
+                     + m[1*4 + row] * v[1]
+                     + m[2*4 + row] * v[2]
+                     + m[3*4 + row] * v[3];
+    }
+
     Scene&                                mScene;
     std::vector<AnimatedSlider>           mSliders;
     juce::AudioProcessorValueTreeState&   mApvts;
