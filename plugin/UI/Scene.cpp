@@ -53,8 +53,8 @@ void Scene::terminate()
     if (mSkylightIndexBuffer)           { wgpuBufferRelease(mSkylightIndexBuffer); mSkylightIndexBuffer = nullptr; }
     if (mSphereVertexBuffer)            { wgpuBufferRelease(mSphereVertexBuffer); mSphereVertexBuffer = nullptr; }
     if (mSphereIndexBuffer)             { wgpuBufferRelease(mSphereIndexBuffer); mSphereIndexBuffer = nullptr; }
-    if (mSphereSliderVertexBuffer)      { wgpuBufferRelease(mSphereSliderVertexBuffer); mSphereSliderVertexBuffer = nullptr; }
-    if (mSphereSliderIndexBuffer)       { wgpuBufferRelease(mSphereSliderIndexBuffer); mSphereSliderIndexBuffer = nullptr; }
+    // if (mSphereSliderVertexBuffer)      { wgpuBufferRelease(mSphereSliderVertexBuffer); mSphereSliderVertexBuffer = nullptr; }
+    // if (mSphereSliderIndexBuffer)       { wgpuBufferRelease(mSphereSliderIndexBuffer); mSphereSliderIndexBuffer = nullptr; }
     if (mFloorVertexBuffer)             { wgpuBufferRelease(mFloorVertexBuffer); mFloorVertexBuffer = nullptr; }
     if (mFloorIndexBuffer)              { wgpuBufferRelease(mFloorIndexBuffer); mFloorIndexBuffer = nullptr; }
     if (mGlyphVertexBuffer)             { wgpuBufferRelease(mGlyphVertexBuffer); mGlyphVertexBuffer = nullptr; }
@@ -151,18 +151,18 @@ void Scene::renderFrame(const float currentTime)
                         MAT_FLOOR,
                         renderPass);
         //New sphere slider
-        setItemBuffers(mSphereSliderVertexBuffer,
-          mSphereSliderIndexBuffer,
-                     mSphereSliderIndexCount,
-                     MAT_COMB_AMT_SLIDER,
-                          renderPass);
+        // setItemBuffers(mSphereSliderVertexBuffer,
+        //   mSphereSliderIndexBuffer,
+        //              mSphereSliderIndexCount,
+        //              MAT_COMB_AMT_SLIDER,
+        //                   renderPass);
         //Old sliders
-        // for (const auto& m : mSliderMeshes)
-        //     setItemBuffers(m.vertexBuffer,
-        //                     m.indexBuffer,
-        //                     m.indexCount,
-        //                     m.materialId,
-        //                     renderPass);
+        for (const auto& m : mSliderMeshes)
+            setItemBuffers(m.vertexBuffer,
+                            m.indexBuffer,
+                            m.indexCount,
+                            m.materialId,
+                            renderPass);
 
         if (mParticleQuadBuffer && mParticleDataBuffer && mParticleCount > 0)
         {
@@ -391,7 +391,7 @@ bool Scene::createParticlePipeline()
 void Scene::initializeScene()
 {
     initializeSphere();
-    initializeSliderSphere();
+    // initializeSliderSphere();
     //================================================
     mSliderMeshes.clear();
     mSliderMeshes.reserve(sliderDefinitions().size());
