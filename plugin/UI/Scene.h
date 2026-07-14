@@ -15,7 +15,6 @@
 #include "circularFloor.h"
 #include "components/camera/cameraState.h"
 #include "components/mouse/dragState.h"
-#include "yurtBeams.h"
 #include "skylight.h"
 #include "components/logo/AnimatedLogo.h"
 #include "sphereGeometry.h"
