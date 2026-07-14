@@ -9,14 +9,15 @@ void SliderManager::initializeSliders()
     mSliders.clear();
     mSliders.reserve(defs.size());
 
-    for (const auto& [paramID, angle, materialId ] : defs)
+    for (const auto& def : defs)
     {
-        auto& s        = mSliders.emplace_back();
-        s.paramID      = paramID;
-        s.angle        = angle;
-        s.materialId   = materialId;
+        auto& s      = mSliders.emplace_back();
+        s.paramID    = def.paramID;
+        s.angle      = def.angle;
+        s.materialId = def.materialId;
 
-        auto* param = mApvts.getParameter(paramID.getParamID());
+        auto* param = mApvts.getParameter(def.paramID.getParamID());
+
         jassert(param != nullptr);
 
         s.attachment = std::make_unique<juce::ParameterAttachment>(
@@ -29,7 +30,7 @@ void SliderManager::initializeSliders()
     mScene.setSliderList(mSliders);
 }
 
-bool SliderManager::handleMouseDown(const juce::MouseEvent& event, const int width, const int height) const
+bool SliderManager::handleMouseDown(const juce::MouseEvent& event, const int width, const int height)
 {
     //Step 1 - Normalize coordinates -1 to 1
     const float x = (2.0f * static_cast<float>(event.x)) / static_cast<float>(width) - 1.0f;
@@ -39,7 +40,7 @@ bool SliderManager::handleMouseDown(const juce::MouseEvent& event, const int wid
     std::cout << "Y is: " << y << std::endl;
 
     //Step 2 - clip coordinates
-    const float ray_clip[4] = { x, y, -1.0f, 1.0f };
+    const float ray_clip[4] = { -x, y, -1.0f, 1.0f };
 
     //Step 3 - Camera coordinates
     float ray_eye[4];
@@ -62,29 +63,52 @@ bool SliderManager::handleMouseDown(const juce::MouseEvent& event, const int wid
 
     const float* iv = mScene.invView();
     const float rayOrigin[3] = { iv[12], iv[13], iv[14] };
-    juce::ignoreUnused(rayOrigin);
-
     //Need slider positions somehow
 
     // TODO ray picking, per slider:
     //   1. intersect (rayOrigin, ray_wor) against slider's world-space bounds
     //   2. keep smallest positive t across sliders  -> bestIndex
     //   3. recover position along slider axis       -> bestTRaw
-    //
-    // then (unchanged from old picker):
-    // if (bestIndex < 0) return false;
-    // auto& s = mSliders[bestIndex];
-    // mActiveSlider = bestIndex;
-    // mDragOffsetT  = bestTRaw - s.value;
-    // mDragging = true;  s.pressed = true;
-    // const float v = juce::jlimit(0.0f, 1.0f, bestTRaw - mDragOffsetT);
-    // s.attachment->beginGesture();
-    // s.attachment->setValueAsPartOfGesture(v);
 
-    return false;
+    const auto& defs = sliderDefinitions();
+    int bestIndex = -1;
+    float bestT = FLT_MAX;
+
+    std::cout << "rayOrigin: (" << rayOrigin[0] << ", "
+              << rayOrigin[1] << ", " << rayOrigin[2] << ")\n";
+
+    for (int i = 0; i < (int)defs.size(); ++i)
+    {
+        const float* c = defs[(size_t)i].position;
+        const float oc[3] = { rayOrigin[0]-c[0], rayOrigin[1]-c[1], rayOrigin[2]-c[2] };
+        const float b  = oc[0]*ray_wor[0] + oc[1]*ray_wor[1] + oc[2]*ray_wor[2];
+        const float cc = oc[0]*oc[0] + oc[1]*oc[1] + oc[2]*oc[2] - kSliderRadius*kSliderRadius;
+        const float disc = b*b - cc;
+
+        std::cout << "slider " << i << " b=" << b << " cc=" << cc
+                  << " disc=" << disc << std::endl;
+
+        if (disc < 0.0f) continue;
+        const float t = -b - std::sqrt(disc);
+        if (t > 0.0f && t < bestT) { bestT = t; bestIndex = i; }
+    }
+
+    std::cout << (bestIndex >= 0 ? "HIT " : "MISS ") << bestIndex
+              << " t=" << bestT << std::endl;
+
+
+
+    if (bestIndex < 0) return false;
+    auto& s = mSliders[static_cast<size_t>(bestIndex)];
+    mActiveSlider = bestIndex;
+    mDragging = true;
+    s.pressed = true;
+    mDragOffsetT  = 0.0f;
+    s.attachment->beginGesture();
+    return true;
 }
 
-bool SliderManager::handleMouseDrag(const juce::MouseEvent& /*event*/, int /*width*/, int /*height*/) const
+bool SliderManager::handleMouseDrag(const juce::MouseEvent& /*event*/, int /*width*/, int /*height*/)
 {
     // if (!mDragging) return false;
     // auto& s = mSliders[static_cast<size_t>(mActiveSlider)];

@@ -199,9 +199,6 @@ void Scene::setUniforms(const WGPUQueue queue, const WGPUBuffer uniformBuffer, c
     mUniforms.lightPos[0]               = 0.0f;
     mUniforms.lightPos[1]               = 0.0f;
     mUniforms.lightPos[2]               = 0.0f;
-    mUniforms.sliderPosition[0]         = 1.5f;
-    mUniforms.sliderPosition[1]         = 0.15f;
-    mUniforms.sliderPosition[2]         = -0.5f;
     mUniforms.aspectRatio               = static_cast<float>(mWidth) / static_cast<float>(mHeight);
 
     updateViewMatrix();
@@ -266,6 +263,11 @@ void Scene::setUniforms(const WGPUQueue queue, const WGPUBuffer uniformBuffer, c
             {
                 mUniforms.sliderValue = s->value;
                 mUniforms.pressed     = s->pressed ? 1.0f : 0.0f;
+                for (const auto& def : sliderDefinitions())
+                    if (def.materialId == id) {
+                        std::memcpy(mUniforms.sliderPosition, def.position, sizeof(def.position));
+                        break;
+                    }
             }
             else
             {

@@ -14,8 +14,8 @@ public:
     ~SliderManager() = default;
 
     void initializeSliders();
-    bool handleMouseDown(const juce::MouseEvent& event, int width, int height) const;
-    [[nodiscard]] bool handleMouseDrag(const juce::MouseEvent& event, int width, int height) const;
+    bool handleMouseDown(const juce::MouseEvent& event, int width, int height);
+    [[nodiscard]] bool handleMouseDrag(const juce::MouseEvent& event, int width, int height);
     bool handleMouseUp();
     [[nodiscard]] const std::vector<AnimatedSlider>& sliders() const { return mSliders; }
 

@@ -13,6 +13,7 @@ struct AnimatedSlider
     float             value        = 0.0f;
     bool              pressed      = false;
 
+
     std::unique_ptr<juce::ParameterAttachment> attachment;  // param→UI binding
 };
 
