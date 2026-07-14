@@ -583,26 +583,21 @@ void Scene::initializeSkylight()
     wgpuQueueWriteBuffer(mQueue, mSkylightIndexBuffer, 0, indices.data(), bd.size);
 }
 
-void Scene::initializeSliderSphere()
+void Scene::InitializeSlider(uint32_t& indexCount, WGPUBuffer& vertexBuffer, WGPUBuffer& indexBuffer, const float wallRadius = 0.9f, const float angle = 2.975f) const
 {
-    std::cout << "Initializing Slider Sphere" << std::endl;
-    std::vector<SphereVertex> vertices;
+    std::vector<SphereVertex> verts;
     std::vector<SphereIndex>  indices;
-
-    SphericalSlider::buildSphere(vertices, indices);
-
-    mSphereSliderIndexCount = static_cast<uint32_t>(indices.size());
-
+    SphericalSlider::buildSphere(verts, indices, wallRadius, angle);
+    indexCount = static_cast<uint32_t>(indices.size());
     WGPUBufferDescriptor bd{};
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
-    bd.size  = vertices.size() * sizeof(SphereVertex);
-    mSphereSliderVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-    wgpuQueueWriteBuffer(mQueue, mSphereSliderVertexBuffer, 0, vertices.data(), bd.size);
-
+    bd.size = verts.size() * sizeof(SphereVertex);
+    vertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, vertexBuffer, 0, verts.data(), bd.size);
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
-    bd.size  = (indices.size() * sizeof(FloorIndex) + 3) & ~3ULL;
-    mSphereSliderIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-    wgpuQueueWriteBuffer(mQueue, mSphereSliderIndexBuffer, 0, indices.data(), bd.size);
+    bd.size  = (indices.size() * sizeof(SphereIndex) + 3) & ~3ULL;
+    indexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, indexBuffer, 0, indices.data(), bd.size);
 }
 
 void Scene::initializeParticles()

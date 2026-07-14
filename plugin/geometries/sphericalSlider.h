@@ -15,6 +15,7 @@ class SphericalSlider
     static void buildSphere(std::vector<SphereVertex>& vertices,
                                  std::vector<SphereIndex>& indices,
                                     const float radius = 0.0666f,
+                                    const float angle = 0.0f,
                                     int widthSegments = 64,
                                     int heightSegments = 32,
                                     const float phiStart = 0.0f,
@@ -22,6 +23,7 @@ class SphericalSlider
                                     const float thetaStart = 0.0f,
                                     const float thetaLength = PI)
         {
+            juce::ignoreUnused(angle);
             widthSegments = std::max( 3, static_cast<int>(std::floor( widthSegments ) ) );
             heightSegments = std::max( 2, static_cast<int>(std::floor( heightSegments ) ) );
             const float thetaEnd = std::min( thetaStart + thetaLength, PI );

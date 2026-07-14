@@ -52,7 +52,7 @@ class Scene
         bool createPipeline();
         void initializeFloor();
         void initializeSphere();
-        void initializeSliderSphere();
+        void InitializeSlider(uint32_t& indexCount, WGPUBuffer& vertexBuffer, WGPUBuffer& indexBuffer, float wallRadius, float angle) const;
         void initializeSkylight();
         void initializeParticles();
         void initializeText(FontParser& font, const std::string& text);
@@ -202,10 +202,6 @@ class Scene
         WGPUBuffer                          mSphereVertexBuffer   = nullptr;
         WGPUBuffer                          mSphereIndexBuffer    = nullptr;
         uint32_t                            mSphereIndexCount     = 0;
-        //Sphere slider
-        WGPUBuffer                          mSphereSliderVertexBuffer   = nullptr;
-        WGPUBuffer                          mSphereSliderIndexBuffer    = nullptr;
-        uint32_t                            mSphereSliderIndexCount     = 0;
         //Skylight
         WGPUBuffer                          mSkylightVertexBuffer  = nullptr;
         WGPUBuffer                          mSkylightIndexBuffer  = nullptr;
