@@ -10,17 +10,17 @@ class SliderManager
 public:
     explicit SliderManager(Scene& scene, juce::AudioProcessorValueTreeState& apvts)
         : mScene(scene), mApvts(apvts) {}
+
     ~SliderManager() = default;
 
     void initializeSliders();
-    bool handleMouseDown(const juce::MouseEvent& event, int width, int height);
-    bool handleMouseDrag(const juce::MouseEvent& event, int width, int height) const;
+    bool handleMouseDown(const juce::MouseEvent& event, int width, int height) const;
+    [[nodiscard]] bool handleMouseDrag(const juce::MouseEvent& event, int width, int height) const;
     bool handleMouseUp();
+    [[nodiscard]] const std::vector<AnimatedSlider>& sliders() const { return mSliders; }
 
-    const std::vector<AnimatedSlider>& sliders() const { return mSliders; }
 
 private:
-    // Column-major mat4 * vec4  (matches your matrix layout)
     static inline void mulMat4Vec4(float* out, const float* m, const float* v)
     {
         for (int row = 0; row < 4; ++row)

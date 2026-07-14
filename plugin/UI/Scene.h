@@ -12,7 +12,6 @@
 #include "plane.h"
 #include "particleSystem.h"
 #include "../shaders/MyUniforms.h"
-#include "proceduralSlider.h"
 #include "circularFloor.h"
 #include "components/camera/cameraState.h"
 #include "components/mouse/dragState.h"
@@ -54,9 +53,7 @@ class Scene
         void initializeFloor();
         void initializeSphere();
         void initializeSliderSphere();
-
         void initializeSkylight();
-        void InitializeSlider(uint32_t& indexCount, WGPUBuffer& vertexBuffer, WGPUBuffer& indexBuffer, float wallRadius, float angle) const;
         void initializeParticles();
         void initializeText(FontParser& font, const std::string& text);
         void uploadGlyphMesh(const std::vector<GlyphVertex>& vertices,
@@ -187,6 +184,7 @@ class Scene
             uint32_t   indexCount   = 0;
             uint32_t   materialId   = 0;
         };
+
         std::vector<SliderMesh>             mSliderMeshes;
         float                               mSliderPos[3]    = { 0.5f, 0.0f, 0.2f };
         static constexpr float              kSpineMinY       = -0.15f;
@@ -244,7 +242,6 @@ class Scene
         double mBlue = {};
 
         const std::vector<AnimatedSlider>* mSliderList = nullptr;  // borrowed from SliderManager
-
 
         const AnimatedSlider* findSlider(const juce::ParameterID& id) const
         {

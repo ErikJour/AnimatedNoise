@@ -208,6 +208,9 @@ void Scene::setUniforms(const WGPUQueue queue, const WGPUBuffer uniformBuffer, c
     mUniforms.lightPos[0]               = 0.0f;
     mUniforms.lightPos[1]               = 0.0f;
     mUniforms.lightPos[2]               = 0.0f;
+    mUniforms.sliderPosition[0]         = 1.5f;
+    mUniforms.sliderPosition[1]         = 0.15f;
+    mUniforms.sliderPosition[2]         = -0.5f;
     mUniforms.aspectRatio               = static_cast<float>(mWidth) / static_cast<float>(mHeight);
 
     updateViewMatrix();
@@ -408,12 +411,9 @@ void Scene::initializeScene()
 
     for (const auto& def : sliderDefinitions())
     {
-        constexpr float kSliderWallRadius = 0.9f;
+        // constexpr float kSliderWallRadius = 0.9f;
         SliderMesh mesh;
         mesh.materialId = def.materialId;
-
-        InitializeSlider(mesh.indexCount, mesh.vertexBuffer, mesh.indexBuffer,
-                         kSliderWallRadius, def.angle);
 
         mSliderMeshes.push_back(mesh);
     }
@@ -582,23 +582,6 @@ void Scene::initializeSkylight()
     bd.size  = (indices.size() * sizeof(SkylightIndex) + 3) & ~3ULL;
     mSkylightIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
     wgpuQueueWriteBuffer(mQueue, mSkylightIndexBuffer, 0, indices.data(), bd.size);
-}
-
-void Scene::InitializeSlider(uint32_t& indexCount, WGPUBuffer& vertexBuffer, WGPUBuffer& indexBuffer, const float wallRadius = 0.9f, const float angle = 2.975f) const
-{
-    std::vector<SliderVertex> verts;
-    std::vector<SliderIndex>  indices;
-    buildSliderGeometry(verts, indices, wallRadius, angle);
-    indexCount = static_cast<uint32_t>(indices.size());
-    WGPUBufferDescriptor bd{};
-    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
-    bd.size = verts.size() * sizeof(SliderVertex);
-    vertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-    wgpuQueueWriteBuffer(mQueue, vertexBuffer, 0, verts.data(), bd.size);
-    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
-    bd.size  = (indices.size() * sizeof(SliderIndex) + 3) & ~3ULL;
-    indexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-    wgpuQueueWriteBuffer(mQueue, indexBuffer, 0, indices.data(), bd.size);
 }
 
 void Scene::initializeSliderSphere()

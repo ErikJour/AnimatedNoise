@@ -19,6 +19,7 @@ namespace ParameterID
     PARAMETER_ID(envDecay)
     PARAMETER_ID(envSustain)
     PARAMETER_ID(envRelease)
+    PARAMETER_ID(gain)
 
 #undef PARAMETER_ID
 

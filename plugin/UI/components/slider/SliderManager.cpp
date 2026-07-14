@@ -9,21 +9,19 @@ void SliderManager::initializeSliders()
     mSliders.clear();
     mSliders.reserve(defs.size());
 
-    for (const auto& [paramID, angle, curveVariant, materialId, glowIndex] : defs)
+    for (const auto& [paramID, angle, materialId ] : defs)
     {
         auto& s        = mSliders.emplace_back();
         s.paramID      = paramID;
         s.angle        = angle;
-        s.curveVariant = curveVariant;
         s.materialId   = materialId;
-        s.glowIndex    = glowIndex;
 
         auto* param = mApvts.getParameter(paramID.getParamID());
         jassert(param != nullptr);
 
         s.attachment = std::make_unique<juce::ParameterAttachment>(
             *param,
-            [&s](float newValue) { s.value = newValue; });
+            [&s](const float newValue) { s.value = newValue; });
 
         s.attachment->sendInitialUpdate();
     }
@@ -31,7 +29,7 @@ void SliderManager::initializeSliders()
     mScene.setSliderList(mSliders);
 }
 
-bool SliderManager::handleMouseDown(const juce::MouseEvent& event, const int width, int height)
+bool SliderManager::handleMouseDown(const juce::MouseEvent& event, const int width, const int height) const
 {
     //Step 1 - Normalize coordinates -1 to 1
     const float x = (2.0f * static_cast<float>(event.x)) / static_cast<float>(width) - 1.0f;
@@ -119,3 +117,4 @@ bool SliderManager::handleMouseUp()
     mActiveSlider = -1;
     return true;
 }
+

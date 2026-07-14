@@ -31,7 +31,8 @@ struct Uniforms {
     morph :         f32,
     pressed:        f32,
     materialId:     u32,
-    resonate:       f32
+    resonate:       f32,
+    sliderPosition: vec3f
 };
 
 @group(0) @binding(0) var<uniform> u: Uniforms;

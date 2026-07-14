@@ -6,17 +6,10 @@
 const std::vector<SliderDef>& sliderDefinitions()
 {
     static const std::vector<SliderDef> defs = {
-        { ParameterID::noiseLevel,   0.0f,  0, MAT_GLOBAL_GAIN_SLIDER, 0 },
-        { ParameterID::noiseDensity, 1.45f, 1, MAT_NOIS_DENS_SLIDER,   1 },
-        { ParameterID::lpgResonance, 2.975f, 2, MAT_LPG_REZ_SLIDER,   2 },
+        { ParameterID::gain,   0.0f,  MAT_GLOBAL_GAIN_SLIDER},
+        // { ParameterID::noiseLevel,   0.0f,  MAT_GLOBAL_GAIN_SLIDER },
+        // { ParameterID::noiseDensity, 1.45f, MAT_NOIS_DENS_SLIDER },
+        // { ParameterID::lpgResonance, 2.975f, MAT_LPG_REZ_SLIDER }
     };
     return defs;
-}
-
-void sliderGlowAnchor(const float angle, const float wallR, const float yCenter,
-                      float& outX, float& outY, float& outZ)
-{
-    outX = wallR * std::cos(angle);
-    outY = yCenter;
-    outZ = wallR * std::sin(angle);
 }

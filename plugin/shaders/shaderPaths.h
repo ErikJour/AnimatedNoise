@@ -13,7 +13,7 @@
             dir + "/shader_materials/lighting.wgsl",
             dir + "/shader_materials/mat_text.wgsl",
             dir + "/shader_materials/mat_slider.wgsl",
-            dir + "/shader_materials/mat_comb_slider.wgsl",
+            dir + "/shader_materials/mat_gain_slider.wgsl",
             dir + "/shader_materials/mat_plane.wgsl",
             dir + "/shader_materials/mat_particle.wgsl",
             dir + "/shader_materials/mat_floor.wgsl",

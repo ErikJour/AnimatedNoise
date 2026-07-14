@@ -21,6 +21,9 @@ public:
     void noteOn(int note, int velocity);
     void noteOff(int note);
     //======================================================================================
+
+    void setGain (const float gain) {  voice.mGain.setGain(gain);  }
+
     void setNoiseLevel(const float level)
     {
         voice.mNoiseGenerator.setLevel(level);

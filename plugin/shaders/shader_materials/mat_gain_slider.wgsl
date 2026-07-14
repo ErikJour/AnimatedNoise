@@ -1,5 +1,6 @@
 fn vsCombSlider(pos: ptr<function, vec3f>, color: vec3f) -> vec4f {
-    let sliderPosition = vec3f(0.9, 0.35, -0.5);
+
+    let sliderPosition = u.sliderPosition;
     let worldPosition = vec4f(*pos + sliderPosition, 1.0);
     *pos = worldPosition.xyz;
     return projectPerspective(worldPosition.xyz);
