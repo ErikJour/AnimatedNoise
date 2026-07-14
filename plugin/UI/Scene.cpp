@@ -413,7 +413,8 @@ void Scene::initializeScene()
         // constexpr float kSliderWallRadius = 0.9f;
         SliderMesh mesh;
         mesh.materialId = def.materialId;
-        // initializeSliderSphere();
+        InitializeSlider(mesh.indexCount, mesh.vertexBuffer, mesh.indexBuffer,
+                         kSliderWallRadius, def.angle);
         mSliderMeshes.push_back(mesh);
     }
     initializeParticles();
