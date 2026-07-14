@@ -15,8 +15,8 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 
     switch u.materialId {
         case MAT_TEXT:                    { out.clipPos  = vsText               (pos);            }
-        case MAT_GLOBAL_GAIN_SLIDER:      { out.clipPos  = vsGainSlider         (&pos, in.color); }
-        case MAT_COMB_AMT_SLIDER:         { out.clipPos  = vsCombSlider         (&pos, in.color); }
+        case MAT_MASTER_GAIN_SLIDER:      { out.clipPos  = vsMasterGainSlider   (&pos, in.color); }
+        case MAT_COMB_AMT_SLIDER:         { out.clipPos  = vsMasterGainSlider   (&pos, in.color); }
         case MAT_PLANE:                   { out.clipPos  = vsPlane              (&pos);           }
         case MAT_FLOOR:                   { out.clipPos  = vsFloor              (&pos);           }
         case MAT_SKYLIGHT:                { out.clipPos  = vsSkylight           (&pos);           }

@@ -53,8 +53,6 @@ void Scene::terminate()
     if (mSkylightIndexBuffer)           { wgpuBufferRelease(mSkylightIndexBuffer); mSkylightIndexBuffer = nullptr; }
     if (mSphereVertexBuffer)            { wgpuBufferRelease(mSphereVertexBuffer); mSphereVertexBuffer = nullptr; }
     if (mSphereIndexBuffer)             { wgpuBufferRelease(mSphereIndexBuffer); mSphereIndexBuffer = nullptr; }
-    // if (mSphereSliderVertexBuffer)      { wgpuBufferRelease(mSphereSliderVertexBuffer); mSphereSliderVertexBuffer = nullptr; }
-    // if (mSphereSliderIndexBuffer)       { wgpuBufferRelease(mSphereSliderIndexBuffer); mSphereSliderIndexBuffer = nullptr; }
     if (mFloorVertexBuffer)             { wgpuBufferRelease(mFloorVertexBuffer); mFloorVertexBuffer = nullptr; }
     if (mFloorIndexBuffer)              { wgpuBufferRelease(mFloorIndexBuffer); mFloorIndexBuffer = nullptr; }
     if (mGlyphVertexBuffer)             { wgpuBufferRelease(mGlyphVertexBuffer); mGlyphVertexBuffer = nullptr; }
@@ -134,7 +132,7 @@ void Scene::renderFrame(const float currentTime)
         const WGPURenderPassEncoder renderPass          = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
         //Load the shaders and other GPU data
         wgpuRenderPassEncoderSetPipeline(renderPass, mPipeline);
-        //3D Meshes
+        //Meshes
         setItemBuffers(mFloorVertexBuffer,
              mFloorIndexBuffer,
                         mFloorIndexCount,
@@ -150,11 +148,11 @@ void Scene::renderFrame(const float currentTime)
                         mSkylightIndexCount,
                         MAT_FLOOR,
                         renderPass);
-        for (const auto& m : mSliderMeshes)
-            setItemBuffers(m.vertexBuffer,
-                            m.indexBuffer,
-                            m.indexCount,
-                            m.materialId,
+        for (const auto& [vertexBuffer, indexBuffer, indexCount, materialId] : mSliderMeshes)
+            setItemBuffers(vertexBuffer,
+                            indexBuffer,
+                            indexCount,
+                            materialId,
                             renderPass);
 
         if (mParticleQuadBuffer && mParticleDataBuffer && mParticleCount > 0)
@@ -218,7 +216,7 @@ void Scene::setUniforms(const WGPUQueue queue, const WGPUBuffer uniformBuffer, c
 
     constexpr uint32_t ids[9]           =   {
                                             MAT_TEXT,
-                                            MAT_GLOBAL_GAIN_SLIDER,
+                                            MAT_MASTER_GAIN_SLIDER,
                                             MAT_COMB_AMT_SLIDER,
                                             MAT_PLANE,
                                             MAT_PARTICLES,
@@ -245,7 +243,7 @@ void Scene::setUniforms(const WGPUQueue queue, const WGPUBuffer uniformBuffer, c
             {
                 constexpr float kTextScale  = 0.0115f;
                 constexpr float kDist       = 0.1f;
-                constexpr float kFovY       = 1.047f;   // must match updateViewMatrix()
+                constexpr float kFovY       = 1.047f;
                 constexpr float kMargin     = 0.004f;
                 const float halfH           = kDist * std::tan(kFovY * 0.5f);
                 const float halfW           = halfH * mUniforms.aspectRatio;
@@ -391,19 +389,17 @@ void Scene::initializeScene()
     std::cout << "glyphs: " << font.glyphCount()
           << "  unitsPerEm: " << font.unitsPerEm() << "\n";
 
-    // all-glyph smoke test
     int parsed = 0, emptyOrCompound = 0;
     for (uint16_t g = 0; g < font.glyphCount(); g++)
         (font.getGlyphByIndex(g).isEmpty() ? emptyOrCompound : parsed)++;
 
     std::cout << "parsed: " << parsed << "  empty/compound: " << emptyOrCompound << "\n";
 
-    // and into the scene:
     initializeText(font, "Init");
 
     for (const auto& def : sliderDefinitions())
     {
-        constexpr float kSliderWallRadius = 0.9f;
+        constexpr float kSliderWallRadius = 0.06f;
         SliderMesh mesh;
         mesh.materialId = def.materialId;
         InitializeSlider(mesh.indexCount, mesh.vertexBuffer, mesh.indexBuffer,
@@ -632,7 +628,6 @@ void Scene::initializeText(FontParser& font, const std::string& text)
 void Scene::uploadGlyphMesh(const std::vector<GlyphVertex>& vertices,
                             const std::vector<GlyphIndex>&  indices)
 {
-    // Rebuilding the string replaces these, so drop the previous pair first.
     if (mGlyphVertexBuffer) { wgpuBufferRelease(mGlyphVertexBuffer); mGlyphVertexBuffer = nullptr; }
     if (mGlyphIndexBuffer)  { wgpuBufferRelease(mGlyphIndexBuffer);  mGlyphIndexBuffer  = nullptr; }
 

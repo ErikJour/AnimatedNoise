@@ -3,8 +3,8 @@
 fn fs_main(in: VertexOutput) -> @location(0) vec4f {
     switch u.materialId {
         case MAT_TEXT:                    { return shadeText(in);            }
-        case MAT_GLOBAL_GAIN_SLIDER:      { return shadeGainSlider(in);      }
-        case MAT_COMB_AMT_SLIDER:         { return shadeCombSlider(in);      }
+        case MAT_MASTER_GAIN_SLIDER:      { return shadeMasterGainSlider(in);}
+        case MAT_COMB_AMT_SLIDER:         { return shadeMasterGainSlider(in);}
         case MAT_PLANE:                   { return shadePlane(in);           }
         case MAT_FLOOR:                   { return shadeFloor(in);           }
         case MAT_SKYLIGHT:                { return shadeSkylight(in);        }

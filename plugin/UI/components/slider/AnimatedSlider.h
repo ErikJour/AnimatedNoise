@@ -7,9 +7,9 @@
 
 struct AnimatedSlider
 {
-    juce::ParameterID paramID;                      // source of truth for APVTS sync
-    float             angle        = 0.0f;          // local angle within the room
-    std::uint32_t     materialId   = 0;             // which MAT_* slot this slider drives
+    juce::ParameterID paramID;
+    float             angle        = 0.0f;
+    std::uint32_t     materialId   = 0;
     float             value        = 0.0f;
     bool              pressed      = false;
 
