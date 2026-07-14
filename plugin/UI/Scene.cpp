@@ -391,7 +391,6 @@ bool Scene::createParticlePipeline()
 void Scene::initializeScene()
 {
     initializeSphere();
-    // initializeSliderSphere();
     //================================================
     mSliderMeshes.clear();
     mSliderMeshes.reserve(sliderDefinitions().size());
@@ -414,7 +413,7 @@ void Scene::initializeScene()
         // constexpr float kSliderWallRadius = 0.9f;
         SliderMesh mesh;
         mesh.materialId = def.materialId;
-
+        // initializeSliderSphere();
         mSliderMeshes.push_back(mesh);
     }
     initializeParticles();
