@@ -60,12 +60,12 @@ fn shadeSpineTube(in: VertexOutput) -> vec4f {
     if (isIndicator) {
         let halfH = 0.048;
         let indicatorCenter = clamp(u.sliderValue, halfH, 1.0 - halfH);
-        let dCenter = abs(v - indicatorCenter);        // distance from bead centre in v
-        if (dCenter > halfH) { discard; }
+        let dCenter = abs(v - indicatorCenter);
+//        if (dCenter > halfH) { discard; }
 
         let baseAlpha = smoothstep(halfH, 0.0, dCenter);
         var alpha     = baseAlpha * 2.95;
-        if (alpha < 0.01) { discard; }
+//        if (alpha < 0.01) { discard; }
 
         let rim = 1.0 - abs(in.normal.y);
 
@@ -79,7 +79,7 @@ fn shadeSpineTube(in: VertexOutput) -> vec4f {
     }
 
     // ── Spine tube branch ─────────────────────────────────────────────────────
-    let pulse     = sin(u.time * 2.0 + v * 6.0) * 0.15 + 0.85;
+    let pulse     = sin(u.time * 2.0 + v * 6.0) * 0.015 + 0.85;
 
     let fillEdge = smoothstep(u.sliderValue - 0.03, u.sliderValue + 0.01, v);
 
