@@ -150,13 +150,6 @@ void Scene::renderFrame(const float currentTime)
                         mSkylightIndexCount,
                         MAT_FLOOR,
                         renderPass);
-        //New sphere slider
-        // setItemBuffers(mSphereSliderVertexBuffer,
-        //   mSphereSliderIndexBuffer,
-        //              mSphereSliderIndexCount,
-        //              MAT_COMB_AMT_SLIDER,
-        //                   renderPass);
-        //Old sliders
         for (const auto& m : mSliderMeshes)
             setItemBuffers(m.vertexBuffer,
                             m.indexBuffer,
@@ -410,7 +403,7 @@ void Scene::initializeScene()
 
     for (const auto& def : sliderDefinitions())
     {
-        // constexpr float kSliderWallRadius = 0.9f;
+        constexpr float kSliderWallRadius = 0.9f;
         SliderMesh mesh;
         mesh.materialId = def.materialId;
         InitializeSlider(mesh.indexCount, mesh.vertexBuffer, mesh.indexBuffer,
