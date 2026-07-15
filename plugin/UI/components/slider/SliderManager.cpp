@@ -71,18 +71,15 @@ bool SliderManager::handleMouseDown(const juce::MouseEvent& event, const int wid
         if (t > 0.0f && t < bestT) { bestT = t; bestIndex = i; }
     }
 
-    // std::cout << (bestIndex >= 0 ? "HIT " : "MISS ") << bestIndex
-    //           << " t=" << bestT << std::endl;
-
-
     if (bestIndex < 0) return false;
-    auto& s = mSliders[static_cast<size_t>(bestIndex)];
-    mDragStartValue = s.value;                 // normalized 0–1
-    mDragStartY     = event.y;
-    mActiveSlider = bestIndex;
-    mDragging = true;
-    s.pressed = true;
-    mDragOffsetT  = 0.0f;
+    auto& s     = mSliders[static_cast<size_t>(bestIndex)];
+    mDragStartValue          = s.value;
+    mDragStartY              = event.y;
+    mActiveSlider            = bestIndex;
+    mDragging                = true;
+    s.pressed                = true;
+    mDragOffsetT             = 0.0f;
+
     s.attachment->beginGesture();
     return true;
 }
@@ -91,15 +88,13 @@ bool SliderManager::handleMouseDrag(const juce::MouseEvent& event, int, int) con
 {
     if (!mDragging) return false;
 
-    constexpr float kPixelsForFullRange = 150.0f;
-    const float delta = static_cast<float>(mDragStartY - event.y) / kPixelsForFullRange;
-    const float v = juce::jlimit(0.0f, 1.0f, mDragStartValue + delta);
-    std::cout << " Value in handle drag: " << v << std::endl;
+    constexpr float kPixelsForFullRange       = 100.0f;
+    const float delta                         = static_cast<float>(mDragStartY - event.y) / kPixelsForFullRange;
+    const float v                             = juce::jlimit(0.0f, 1.0f, mDragStartValue + delta);
+    auto& s                 = mSliders[static_cast<size_t>(mActiveSlider)];
+    const auto* param = mApvts.getParameter(s.paramID.getParamID());
 
-    auto& s = mSliders[static_cast<size_t>(mActiveSlider)];
-    s.attachment->setValueAsPartOfGesture(
-        mApvts.getParameter(s.paramID.getParamID())->convertFrom0to1(v));
-
+    s.attachment->setValueAsPartOfGesture(param->convertFrom0to1(v));
 
     return true;
 }

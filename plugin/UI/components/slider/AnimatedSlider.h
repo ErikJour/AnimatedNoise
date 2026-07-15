@@ -15,6 +15,7 @@ struct AnimatedSlider
 
 
     std::unique_ptr<juce::ParameterAttachment> attachment;  // param→UI binding
+
 };
 
 #endif
