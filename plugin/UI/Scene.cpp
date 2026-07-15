@@ -266,10 +266,6 @@ void Scene::setUniforms(const WGPUQueue queue, const WGPUBuffer uniformBuffer, c
                 for (const auto& def : sliderDefinitions())
                     if (def.materialId == id) {
                         std::memcpy(mUniforms.sliderPosition, def.position, sizeof(def.position));
-                        // s->position[0] = def.position[0];
-
-
-
                         break;
                     }
             }
