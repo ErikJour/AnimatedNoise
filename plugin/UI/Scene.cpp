@@ -259,13 +259,17 @@ void Scene::setUniforms(const WGPUQueue queue, const WGPUBuffer uniformBuffer, c
                 mUniforms.pressed       = gainHeld ? 1.0f : 0.0f;
                 mUniforms.resonate      = resonanceVal;
             }
-            else if (const AnimatedSlider* s = sliderForMaterial(id))
+            else if (const AnimatedSlider* s = sliderForMaterial(id)) //here
             {
                 mUniforms.sliderValue = s->value;
                 mUniforms.pressed     = s->pressed ? 1.0f : 0.0f;
                 for (const auto& def : sliderDefinitions())
                     if (def.materialId == id) {
                         std::memcpy(mUniforms.sliderPosition, def.position, sizeof(def.position));
+                        // s->position[0] = def.position[0];
+
+
+
                         break;
                     }
             }
@@ -401,11 +405,10 @@ void Scene::initializeScene()
 
     for (const auto& def : sliderDefinitions())
     {
-        constexpr float kSliderWallRadius = 0.06f;
+        // constexpr float kSliderWallRadius = 0.06f;
         SliderMesh mesh;
         mesh.materialId = def.materialId;
-        InitializeSlider(mesh.indexCount, mesh.vertexBuffer, mesh.indexBuffer,
-                         kSliderWallRadius, def.angle);
+        InitializeSlider(mesh.indexCount, mesh.vertexBuffer, mesh.indexBuffer, def.radius);
         mSliderMeshes.push_back(mesh);
     }
     initializeParticles();
@@ -575,11 +578,11 @@ void Scene::initializeSkylight()
     wgpuQueueWriteBuffer(mQueue, mSkylightIndexBuffer, 0, indices.data(), bd.size);
 }
 
-void Scene::InitializeSlider(uint32_t& indexCount, WGPUBuffer& vertexBuffer, WGPUBuffer& indexBuffer, const float wallRadius = 0.9f, const float angle = 2.975f) const
+void Scene::InitializeSlider(uint32_t& indexCount, WGPUBuffer& vertexBuffer, WGPUBuffer& indexBuffer, const float radius) const
 {
     std::vector<SphereVertex> verts;
     std::vector<SphereIndex>  indices;
-    SphericalSlider::buildSphere(verts, indices, wallRadius, angle);
+    SphericalSlider::buildSphere(verts, indices, radius);
     indexCount = static_cast<uint32_t>(indices.size());
     WGPUBufferDescriptor bd{};
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;

@@ -32,23 +32,17 @@ void SliderManager::initializeSliders()
 
 bool SliderManager::handleMouseDown(const juce::MouseEvent& event, const int width, const int height)
 {
-    //Step 1 - Normalize coordinates -1 to 1
+    //Raycasting setup
     const float x = (2.0f * static_cast<float>(event.x)) / static_cast<float>(width) - 1.0f;
-    std::cout << "X is: " << x << std::endl;
-
     const float y = 1.0f - (2.0f * static_cast<float>(event.y)) / static_cast<float>(height);
-    std::cout << "Y is: " << y << std::endl;
 
-    //Step 2 - clip coordinates
     const float ray_clip[4] = { -x, y, -1.0f, 1.0f };
 
-    //Step 3 - Camera coordinates
     float ray_eye[4];
     mulMat4Vec4(ray_eye, mScene.invProj(), ray_clip);
     ray_eye[2] = -1.0f;
     ray_eye[3] =  0.0f;
 
-    //Step 4 - World Coordinates
     float ray_wor[4];
     mulMat4Vec4(ray_wor, mScene.invView(), ray_eye);
     const float len = std::sqrt(ray_wor[0]*ray_wor[0]
@@ -56,44 +50,35 @@ bool SliderManager::handleMouseDown(const juce::MouseEvent& event, const int wid
                               + ray_wor[2]*ray_wor[2]);
     ray_wor[0] /= len;  ray_wor[1] /= len;  ray_wor[2] /= len;
 
-    std::cout << "ray_wor: ("
-          << ray_wor[0] << ", "
-          << ray_wor[1] << ", "
-          << ray_wor[2] << ")" << std::endl;
-
     const float* iv = mScene.invView();
     const float rayOrigin[3] = { iv[12], iv[13], iv[14] };
-    //Need slider positions somehow
 
-
-    const auto& defs = sliderDefinitions();
+    const auto& sliders = sliderDefinitions();
     int bestIndex = -1;
     float bestT = FLT_MAX;
 
-    std::cout << "rayOrigin: (" << rayOrigin[0] << ", "
-              << rayOrigin[1] << ", " << rayOrigin[2] << ")\n";
 
-    for (int i = 0; i < (int)defs.size(); ++i)
+    for (int i = 0; i < static_cast<int>(sliders.size()); ++i)
     {
-        const float* c = defs[(size_t)i].position;
+        const float* c = sliders[static_cast<size_t>(i)].position;
         const float oc[3] = { rayOrigin[0]-c[0], rayOrigin[1]-c[1], rayOrigin[2]-c[2] };
         const float b  = oc[0]*ray_wor[0] + oc[1]*ray_wor[1] + oc[2]*ray_wor[2];
         const float cc = oc[0]*oc[0] + oc[1]*oc[1] + oc[2]*oc[2] - kSliderRadius*kSliderRadius;
         const float disc = b*b - cc;
-
-        std::cout << "slider " << i << " b=" << b << " cc=" << cc
-                  << " disc=" << disc << std::endl;
 
         if (disc < 0.0f) continue;
         const float t = -b - std::sqrt(disc);
         if (t > 0.0f && t < bestT) { bestT = t; bestIndex = i; }
     }
 
-    std::cout << (bestIndex >= 0 ? "HIT " : "MISS ") << bestIndex
-              << " t=" << bestT << std::endl;
+    // std::cout << (bestIndex >= 0 ? "HIT " : "MISS ") << bestIndex
+    //           << " t=" << bestT << std::endl;
+
 
     if (bestIndex < 0) return false;
     auto& s = mSliders[static_cast<size_t>(bestIndex)];
+    mDragStartValue = s.value;                 // normalized 0–1
+    mDragStartY     = event.y;
     mActiveSlider = bestIndex;
     mDragging = true;
     s.pressed = true;
@@ -102,23 +87,20 @@ bool SliderManager::handleMouseDown(const juce::MouseEvent& event, const int wid
     return true;
 }
 
-bool SliderManager::handleMouseDrag(const juce::MouseEvent& event, int /*width*/, int /*height*/) const
+bool SliderManager::handleMouseDrag(const juce::MouseEvent& event, int, int) const
 {
     if (!mDragging) return false;
 
-    juce::Point<float> top, bottom;
+    constexpr float kPixelsForFullRange = 150.0f;
+    const float delta = static_cast<float>(mDragStartY - event.y) / kPixelsForFullRange;
+    const float v = juce::jlimit(0.0f, 1.0f, mDragStartValue + delta);
+    std::cout << " Value in handle drag: " << v << std::endl;
 
-    const juce::Point<float> axis = top - bottom;
-    const float axisLen2 = axis.x * axis.x + axis.y * axis.y;
-    const juce::Point<float> mouse{ (float)event.x, (float)event.y };
-    std::cout << mouse.getX() << " " << mouse.getY() << std::endl;
+    auto& s = mSliders[static_cast<size_t>(mActiveSlider)];
+    s.attachment->setValueAsPartOfGesture(
+        mApvts.getParameter(s.paramID.getParamID())->convertFrom0to1(v));
 
-    const float t = (mouse - bottom).getDotProduct(axis) / axisLen2;
-    const float v = juce::jlimit(0.0f, 1.0f, t - mDragOffsetT);
-    std::cout << "v is: " << v << std::endl;
 
-    // auto& slider = mSliders[static_cast<size_t>(mActiveSlider)];
-    // slider.attachment->setValueAsPartOfGesture(v);
     return true;
 }
 

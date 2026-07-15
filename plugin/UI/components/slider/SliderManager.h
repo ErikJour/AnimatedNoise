@@ -15,7 +15,7 @@ public:
 
     void initializeSliders();
     bool handleMouseDown(const juce::MouseEvent& event, int width, int height);
-    [[nodiscard]] bool handleMouseDrag(const juce::MouseEvent& event, int width, int height) const;
+    [[nodiscard]] bool handleMouseDrag(const juce::MouseEvent& event, int, int) const;
     bool handleMouseUp();
     [[nodiscard]] const std::vector<AnimatedSlider>& sliders() const { return mSliders; }
 
@@ -36,6 +36,10 @@ private:
     int                                   mActiveSlider = -1;
     float mDragOffsetT = 0.0f;
     bool                                  mDragging     = false;
+    float mDragStartValue = 0.0f;
+    int   mDragStartY     = 0;
+
+
 };
 
 #endif

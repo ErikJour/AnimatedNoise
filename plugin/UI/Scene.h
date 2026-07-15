@@ -51,7 +51,7 @@ class Scene
         bool createPipeline();
         void initializeFloor();
         void initializeSphere();
-        void InitializeSlider(uint32_t& indexCount, WGPUBuffer& vertexBuffer, WGPUBuffer& indexBuffer, float wallRadius, float angle) const;
+        void InitializeSlider(uint32_t& indexCount, WGPUBuffer& vertexBuffer, WGPUBuffer& indexBuffer, float radius) const;
         void initializeSkylight();
         void initializeParticles();
         void initializeText(FontParser& font, const std::string& text);
