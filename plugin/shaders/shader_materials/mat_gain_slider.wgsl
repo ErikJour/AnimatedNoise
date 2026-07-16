@@ -7,11 +7,11 @@ fn vsMasterGainSlider(pos: ptr<function, vec3f>, color: vec3f) -> vec4f {
 
 fn shadeMasterGainSlider(in: VertexOutput) -> vec4f {
     let normal    = normalize(in.normal);
-    let baseColor = vec3f(0.4, 0.5, 0.8);
+    let baseColor = vec3f(0.4, 0.5, 0.8) * roomPointLight(in.worldPos, normal);
     let uv = (in.worldPos.xz);
     let grain = filmGrain(uv, 0.01);
     let grainAmount = 0.1;
-    let color = baseColor * (1.0 + grain * grainAmount);
+    let color = baseColor * (1.0 + grain * grainAmount) ;
     let colorOut = vec4(color, 1.0);
     let spine = shadeSpineTube(in);
 
