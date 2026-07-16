@@ -299,7 +299,6 @@ void AnimatedNoiseProcessor::update()
     //=======================================
     const float gain = gainParam->get();
     noiseSynth.setGain(gain);
-    std::cout << "gain in processor : " << gain << std::endl;
     //=======================================
     //Noise Level
     //=======================================
