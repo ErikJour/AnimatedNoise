@@ -6,10 +6,9 @@
 #include <cmath>
 #include <components/slider/sliderCatalog.h>
 
-constexpr auto fontPath = "/Users/erikjourgensen/Desktop/July 2026/Repositories/AnimatedNoise/plugin/UI/fonts/WorkSans-Regular.ttf";
-
+static constexpr uint32_t materialCount = 11;
 //================================================================================================
-Scene::Scene() = default;
+Scene::Scene() : mFont(fontPath)  {}
 Scene::~Scene() = default;
 
 //================================================================================================
@@ -55,8 +54,10 @@ void Scene::terminate()
     if (mSphereIndexBuffer)             { wgpuBufferRelease(mSphereIndexBuffer); mSphereIndexBuffer = nullptr; }
     if (mFloorVertexBuffer)             { wgpuBufferRelease(mFloorVertexBuffer); mFloorVertexBuffer = nullptr; }
     if (mFloorIndexBuffer)              { wgpuBufferRelease(mFloorIndexBuffer); mFloorIndexBuffer = nullptr; }
-    if (mGlyphVertexBuffer)             { wgpuBufferRelease(mGlyphVertexBuffer); mGlyphVertexBuffer = nullptr; }
-    if (mGlyphIndexBuffer)              { wgpuBufferRelease(mGlyphIndexBuffer); mGlyphIndexBuffer = nullptr; }
+    if (mPresetVertexBuffer)             { wgpuBufferRelease(mPresetVertexBuffer); mPresetVertexBuffer = nullptr; }
+    if (mPresetIndexBuffer)              { wgpuBufferRelease(mPresetIndexBuffer); mPresetIndexBuffer = nullptr; }
+    if (mTooltipVertexBuffer)             { wgpuBufferRelease(mTooltipVertexBuffer); mTooltipVertexBuffer = nullptr; }
+    if (mTooltipIndexBuffer)              { wgpuBufferRelease(mTooltipIndexBuffer); mTooltipIndexBuffer = nullptr; }
     for (auto& m : mSliderMeshes)
     {
         if (m.vertexBuffer) { wgpuBufferRelease(m.vertexBuffer); m.vertexBuffer = nullptr; }
@@ -165,12 +166,19 @@ void Scene::renderFrame(const float currentTime)
             wgpuRenderPassEncoderDraw(renderPass, 6, mParticleDrawCount, 0, 0);
             wgpuRenderPassEncoderSetPipeline(renderPass, mPipeline);
         }
-
-        setItemBuffers(mGlyphVertexBuffer,
-                mGlyphIndexBuffer,
-                            mGlyphIndexCount,
+        //Preset Names
+        setItemBuffers(mPresetVertexBuffer,
+                mPresetIndexBuffer,
+                            mPresetIndexCount,
                             MAT_TEXT,
                                 renderPass);
+        //Tooltip
+        setItemBuffers(mTooltipVertexBuffer,
+                mTooltipIndexBuffer,
+                            mTooltipIndexCount,
+                            MAT_TOOLTIP,
+                                renderPass);
+
         mLogo.render(renderPass);
         //Finish the render, frame is fully recorded
         wgpuRenderPassEncoderEnd(renderPass);
@@ -211,7 +219,7 @@ void Scene::setUniforms(const WGPUQueue queue, const WGPUBuffer uniformBuffer, c
     const float gainVal                 = noiseLevel ? noiseLevel->value : 0.0f;
     const bool  gainHeld                = noiseLevel ? noiseLevel->pressed : false;
 
-    constexpr uint32_t ids[9]           =   {
+    constexpr uint32_t ids[materialCount]           =   {
                                             MAT_TEXT,
                                             MAT_MASTER_GAIN_SLIDER,
                                             MAT_COMB_AMT_SLIDER,
@@ -220,7 +228,8 @@ void Scene::setUniforms(const WGPUQueue queue, const WGPUBuffer uniformBuffer, c
                                             MAT_FLOOR,
                                             MAT_SKYLIGHT,
                                             MAT_LPG_REZ_SLIDER,
-                                            MAT_NOIS_DENS_SLIDER
+                                            MAT_NOIS_DENS_SLIDER,
+                                            MAT_TOOLTIP
                                             };
 
     auto sliderForMaterial              = [&](const uint32_t mat) -> const AnimatedSlider* {
@@ -388,6 +397,7 @@ void Scene::initializeScene()
     mSliderMeshes.clear();
     mSliderMeshes.reserve(sliderDefinitions().size());
     FontParser font(fontPath);
+    mFont = font;
     std::cout << "glyphs: " << font.glyphCount()
           << "  unitsPerEm: " << font.unitsPerEm() << "\n";
 
@@ -397,7 +407,8 @@ void Scene::initializeScene()
 
     std::cout << "parsed: " << parsed << "  empty/compound: " << emptyOrCompound << "\n";
 
-    initializeText(font, "Init");
+    initializeText(mFont, "Init");
+    initializeTooltip(mFont, "Noise Density", "0.0");
 
     for (const auto& def : sliderDefinitions())
     {
@@ -460,7 +471,7 @@ bool Scene::createPipeline()
     }
 
     WGPUBufferDescriptor bufferDesc = {};
-    bufferDesc.size                 = 9 * mUniformStride;  // one slot per material
+    bufferDesc.size                 = materialCount * mUniformStride;  // one slot per material
     bufferDesc.usage                = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
     mUniformBuffer                  = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
 
@@ -617,7 +628,7 @@ void Scene::initializeParticles()
     mParticleDrawCount = mParticleCount;
 }
 
-void Scene::initializeText(FontParser& font, const std::string& text)
+void Scene::initializeText(FontParser& font, const std::string text)
 {
     std::vector<GlyphVertex> vertices;
     std::vector<GlyphIndex>  indices;
@@ -626,29 +637,64 @@ void Scene::initializeText(FontParser& font, const std::string& text)
     uploadGlyphMesh(vertices, indices);
 }
 
+void Scene::initializeTooltip(FontParser& font, const std::string& paramName, const std::string& paramValue)
+{
+    std::vector<GlyphVertex> vertices;
+    std::vector<GlyphIndex>  indices;
+
+    const std::string text = paramName + " : " + paramValue;
+
+    GlyphGeometry::buildString(vertices, indices, font, text);
+    uploadTooltipMesh(vertices, indices);
+    std::cout << text << std::endl;
+}
+
 void Scene::uploadGlyphMesh(const std::vector<GlyphVertex>& vertices,
                             const std::vector<GlyphIndex>&  indices)
 {
-    if (mGlyphVertexBuffer) { wgpuBufferRelease(mGlyphVertexBuffer); mGlyphVertexBuffer = nullptr; }
-    if (mGlyphIndexBuffer)  { wgpuBufferRelease(mGlyphIndexBuffer);  mGlyphIndexBuffer  = nullptr; }
+    if (mPresetVertexBuffer) { wgpuBufferRelease(mPresetVertexBuffer); mPresetVertexBuffer = nullptr; }
+    if (mPresetIndexBuffer)  { wgpuBufferRelease(mPresetIndexBuffer);  mPresetIndexBuffer  = nullptr; }
 
-    mGlyphIndexCount = static_cast<uint32_t>(indices.size());
-    if (vertices.empty() || indices.empty()) return;   // nothing to draw; zero-sized buffers are invalid
+    mPresetIndexCount = static_cast<uint32_t>(indices.size());
+    if (vertices.empty() || indices.empty()) return;
 
     WGPUBufferDescriptor bd{};
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
     bd.size  = vertices.size() * sizeof(GlyphVertex);
-    mGlyphVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-    wgpuQueueWriteBuffer(mQueue, mGlyphVertexBuffer, 0, vertices.data(), bd.size);
+    mPresetVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mPresetVertexBuffer, 0, vertices.data(), bd.size);
 
-    // WebGPU wants a 4-byte-aligned size; pad the source so the copy stays in bounds.
     std::vector<GlyphIndex> padded = indices;
     if (padded.size() % 2 != 0) padded.push_back(0);
 
     bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
     bd.size  = padded.size() * sizeof(GlyphIndex);
-    mGlyphIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-    wgpuQueueWriteBuffer(mQueue, mGlyphIndexBuffer, 0, padded.data(), bd.size);
+    mPresetIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mPresetIndexBuffer, 0, padded.data(), bd.size);
+}
+
+void Scene::uploadTooltipMesh(const std::vector<GlyphVertex>& vertices,
+                            const std::vector<GlyphIndex>&  indices)
+{
+    if (mTooltipVertexBuffer) { wgpuBufferRelease(mTooltipVertexBuffer); mTooltipVertexBuffer = nullptr; }
+    if (mTooltipIndexBuffer)  { wgpuBufferRelease(mTooltipIndexBuffer);  mTooltipIndexBuffer  = nullptr; }
+
+    mTooltipIndexCount = static_cast<uint32_t>(indices.size());
+    if (vertices.empty() || indices.empty()) return;
+
+    WGPUBufferDescriptor bd{};
+    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
+    bd.size  = vertices.size() * sizeof(GlyphVertex);
+    mTooltipVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mTooltipVertexBuffer, 0, vertices.data(), bd.size);
+
+    std::vector<GlyphIndex> padded = indices;
+    if (padded.size() % 2 != 0) padded.push_back(0);
+
+    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
+    bd.size  = padded.size() * sizeof(GlyphIndex);
+    mTooltipIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mTooltipIndexBuffer, 0, padded.data(), bd.size);
 }
 
 //==========================================================================
@@ -684,21 +730,21 @@ void Scene::onMouseMove(const float xpos, const float /*ypos*/)
     }
 }
 
-void Scene::onMouseButton(const int /*button*/, const bool /*isPressed*/, const float /*xpos*/, float /*ypos*/)
+void Scene::onMouseButton(const int button, const bool isPressed, const float xpos, float /*ypos*/)
 {
-    // if (button == 0)
-    // {
-    //     if (isPressed)
-    //     {
-    //         mDrag.active      = true;
-    //         mDrag.startMouseX = xpos;
-    //         mDrag.startAngleX = mCameraState.angleX;
-    //     }
-    //     else
-    //     {
-    //         mDrag.active = false;
-    //     }
-    // }
+    if (button == 0)
+    {
+        if (isPressed)
+        {
+            mDrag.active      = true;
+            mDrag.startMouseX = xpos;
+            mDrag.startAngleX = mCameraState.angleX;
+        }
+        else
+        {
+            mDrag.active = false;
+        }
+    }
 }
 
 void Scene::onScroll(const float deltaX, const float deltaY)
@@ -719,6 +765,14 @@ void Scene::onScroll(const float deltaX, const float deltaY)
     }
     updateViewMatrix();
 }
+
+void Scene::setToolTip(const std::string &paramName, const std::string &paramValue)
+{
+    mText = paramName;
+    std::cout << "The value of the " << mText << " slider is: " << paramValue << std::endl;
+
+}
+
 
 void Scene::setSurfaceFormat(const WGPUTextureFormat format) { mSurfaceFormat = format; }
 

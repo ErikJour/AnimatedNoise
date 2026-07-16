@@ -11,6 +11,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
         case MAT_LPG_REZ_SLIDER:          { return shadeLpgRezSlider(in);    }
         case MAT_NOIS_DENS_SLIDER:        { return shadeDensitySlider(in);   }
         case MAT_LOGO:                    { return shadeLogo(in);            }
+        case MAT_TOOLTIP:                 { return shadeTooltipText(in);     }
 
         default:                          { return vec4f(1.0, 0.0, 1.0, 1.0);}
     }

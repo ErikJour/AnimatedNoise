@@ -22,7 +22,9 @@
             dir + "/shader_materials/fs_main.wgsl",
             dir + "/shader_materials/mat_lpg_rez_slider.wgsl",
             dir + "/shader_materials/mat_noise_density_slider.wgsl",
-            dir + "/shader_materials/mat_logo.wgsl"
+            dir + "/shader_materials/mat_logo.wgsl",
+            dir + "/shader_materials/mat_tooltip.wgsl"
+
         };
         return shaderPaths;
     }

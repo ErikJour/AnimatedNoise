@@ -28,6 +28,7 @@
 #include <sphericalSlider.h>
 
 static constexpr uint32_t MAX_PARTICLES = 2000;
+constexpr auto fontPath = "/Users/erikjourgensen/Desktop/July 2026/Repositories/AnimatedNoise/plugin/UI/fonts/WorkSans-Regular.ttf";
 #define WGPU_STR(s) WGPUStringView{s, sizeof(s) - 1}
 
 class Scene
@@ -54,10 +55,13 @@ class Scene
         void InitializeSlider(uint32_t& indexCount, WGPUBuffer& vertexBuffer, WGPUBuffer& indexBuffer, float radius) const;
         void initializeSkylight();
         void initializeParticles();
-        void initializeText(FontParser& font, const std::string& text);
+        void initializeText(FontParser& font, std::string text);
+        void initializeTooltip(FontParser& font, const std::string& paramName, const std::string& paramValue);
+
         void uploadGlyphMesh(const std::vector<GlyphVertex>& vertices,
                              const std::vector<GlyphIndex>&  indices);
-
+        void uploadTooltipMesh(const std::vector<GlyphVertex>& vertices,
+                                const std::vector<GlyphIndex>&  indices);
 
         void setSurfaceFormat(WGPUTextureFormat format);
         void setCameraState(const CameraState& s);
@@ -71,7 +75,7 @@ class Scene
         void onMouseButton(int button, bool isPressed, float xpos, float ypos);
         void onMouseMove(float xpos, float ypos);
         void onScroll(float deltaX, float deltaY);
-
+        void setToolTip(const std::string &paramName, const std::string &paramValue);
 
 
         void setSliderList(const std::vector<AnimatedSlider>& list) { mSliderList = &list; }
@@ -219,10 +223,17 @@ class Scene
         WGPUBlendState                      mParticleBlendState{};
         WGPUColorTargetState                mParticleColorTarget{};
         WGPUDepthStencilState               mParticleDepthStencil{};
-        //Glyph
-        WGPUBuffer                          mGlyphVertexBuffer   = nullptr;
-        WGPUBuffer                          mGlyphIndexBuffer    = nullptr;
-        uint32_t                            mGlyphIndexCount     = 0;
+        //Preset Name
+        WGPUBuffer                          mPresetVertexBuffer   = nullptr;
+        WGPUBuffer                          mPresetIndexBuffer    = nullptr;
+        uint32_t                            mPresetIndexCount     = 0;
+        //Tooltip Text
+        WGPUBuffer                          mTooltipVertexBuffer   = nullptr;
+        WGPUBuffer                          mTooltipIndexBuffer    = nullptr;
+        uint32_t                            mTooltipIndexCount     = 0;
+
+        std::string mText;
+        FontParser mFont;
 
         AnimatedLogo mLogo;
 

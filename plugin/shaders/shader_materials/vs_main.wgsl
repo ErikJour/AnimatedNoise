@@ -23,6 +23,7 @@ fn vs_main(in: VertexInput) -> VertexOutput {
         case MAT_LPG_REZ_SLIDER:          { out.clipPos  = vsLpgRezSlider       (&pos, in.color); }
         case MAT_NOIS_DENS_SLIDER:        { out.clipPos  = vsDensitySlider      (&pos, in.color); }
         case MAT_LOGO:                    { out.clipPos  = vsLogo               (pos);            }
+        case MAT_TOOLTIP                  { out.clipPos  = vsTooltipText        (pos);            }
         default:                          { out.clipPos  = projectPerspective   (pos);            }
     }
 

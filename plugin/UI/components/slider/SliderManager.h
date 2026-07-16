@@ -17,6 +17,7 @@ public:
     bool handleMouseDown(const juce::MouseEvent& event, int width, int height);
     [[nodiscard]] bool handleMouseDrag(const juce::MouseEvent& event, int, int) const;
     bool handleMouseUp();
+    void printSliderValue(float value) const;
     [[nodiscard]] const std::vector<AnimatedSlider>& sliders() const { return mSliders; }
 
 
