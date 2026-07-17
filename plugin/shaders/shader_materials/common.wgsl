@@ -84,7 +84,7 @@ fn shadeSpineTube(in: VertexOutput) -> vec4f {
     let creamWithPulse = cream * animPulse * 0.90;
     var finalColor     = mix(creamWithPulse, grey, fillEdge);
 
-    finalColor      += cream * 0.60;
+    finalColor      += cream;
     return vec4f(finalColor, 1.0);
 }
 

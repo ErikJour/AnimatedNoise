@@ -80,7 +80,7 @@ bool SliderManager::handleMouseDown(const juce::MouseEvent& event, const int wid
     s.pressed                = true;
     mDragOffsetT             = 0.0f;
     s.attachment->beginGesture();
-    printSliderValue(s.value);
+    sendParamStringTooltip(s.value);
     return true;
 }
 
@@ -95,7 +95,7 @@ bool SliderManager::handleMouseDrag(const juce::MouseEvent& event, int, int) con
     const auto* param = mApvts.getParameter(s.paramID.getParamID());
 
     s.attachment->setValueAsPartOfGesture(param->convertFrom0to1(v));
-    printSliderValue(v);
+    sendParamStringTooltip(v);
     return true;
 }
 
@@ -106,6 +106,8 @@ bool SliderManager::handleMouseUp()
         auto& s = mSliders[static_cast<size_t>(mActiveSlider)];
         s.pressed = false;
         s.attachment->endGesture();
+        mScene.setToolTip("", "");
+
     }
     mDragging     = false;
     mDragOffsetT  = 0.0f;
@@ -113,20 +115,17 @@ bool SliderManager::handleMouseUp()
     return true;
 }
 
-void SliderManager::printSliderValue(const float value) const
+void SliderManager::sendParamStringTooltip(const float value) const
 {
     if (mActiveSlider >= 0)
     {
-        auto& s       = mSliders[static_cast<size_t>(mActiveSlider)];
-        const juce::String paramName    = s.paramID.getParamID();
-        const std::string paramString   = paramName.toStdString();
-        const juce::String paramValue         = std::to_string(value);
-        const std::string paramValueString   = paramValue.toStdString();
+        auto& s              = mSliders[static_cast<size_t>(mActiveSlider)];
+        const int intVal                        = static_cast<int>(value * 100);
+        const std::string paramString           = s.paramID.getParamID().toStdString();
+        const juce::String paramValue           = std::to_string(intVal);
+        const std::string paramValueString      = paramValue.toStdString() + "%";
+
         mScene.setToolTip(paramString, paramValueString);
-        //================================================
-        //Function sends the param name and slider value
-        //===============================================
-        std::cout << "The value of the " << paramString << " slider is: " << paramValue << std::endl;
     }
 }
 

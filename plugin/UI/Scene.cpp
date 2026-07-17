@@ -408,7 +408,7 @@ void Scene::initializeScene()
     std::cout << "parsed: " << parsed << "  empty/compound: " << emptyOrCompound << "\n";
 
     initializeText(mFont, "Init");
-    initializeTooltip(mFont, "Noise Density", "0.0");
+    // initializeTooltip(mFont, "Noise Density", "0.0");
 
     for (const auto& def : sliderDefinitions())
     {
@@ -646,7 +646,6 @@ void Scene::initializeTooltip(FontParser& font, const std::string& paramName, co
 
     GlyphGeometry::buildString(vertices, indices, font, text);
     uploadTooltipMesh(vertices, indices);
-    std::cout << text << std::endl;
 }
 
 void Scene::uploadGlyphMesh(const std::vector<GlyphVertex>& vertices,
@@ -769,7 +768,8 @@ void Scene::onScroll(const float deltaX, const float deltaY)
 void Scene::setToolTip(const std::string &paramName, const std::string &paramValue)
 {
     mText = paramName;
-    std::cout << "The value of the " << mText << " slider is: " << paramValue << std::endl;
+
+    initializeTooltip(mFont, paramName, paramValue);
 
 }
 
