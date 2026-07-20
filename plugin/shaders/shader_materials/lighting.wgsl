@@ -21,7 +21,7 @@ fn ceilingLights(worldPos: vec3f) -> vec3f {
     let d3 = distance(worldPos.xz, LightThree); if (d3 < bd) { bd = d3; currentLight = LightThree; }
     let d4 = distance(worldPos.xz, lightFour);  if (d4 < bd) { bd = d4; currentLight = lightFour; }
     let d5 = distance(worldPos.xz, lightFive);  if (d5 < bd) { bd = d5; currentLight = lightFive; }
-    let d6 = distance(worldPos.xz, lightSix);   if (d6 < bd) {           currentLight = lightSix; }
+    let d6 = distance(worldPos.xz, lightSix);   if (d6 < bd) { bd = d6; currentLight = lightSix; }
 
     return vec3f(currentLight.x, lightHeight, currentLight.y);
 }
@@ -45,7 +45,8 @@ fn roomPointLight(worldPos: vec3f, normal: vec3f) -> vec3f {
     //Mix
     let lampColor  = vec3f(1.0, 0.92, 0.80);
     let ambient    = vec3f(0.035, 0.18, 0.3);
-    return ambient + (diffuse * lampColor) + (diffuseTwo * lampColor);
+
+    return ambient * 0.3 + (diffuse * lampColor) + (diffuseTwo * lampColor);
 }
 
 fn computeNormal(worldPos: vec3f) -> vec3f {

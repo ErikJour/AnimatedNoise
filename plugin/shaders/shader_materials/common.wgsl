@@ -59,32 +59,32 @@ fn shadeSpineTube(in: VertexOutput) -> vec4f {
     let isIndicator = in.color.z > 0.5;
 
     if (isIndicator) {
-        let halfH = 0.048;
+        let halfH           = 0.048;
         let indicatorCenter = clamp(u.sliderValue, halfH, 1.0 - halfH);
-        let dCenter = abs(v - indicatorCenter);
-        let baseAlpha = smoothstep(halfH, 0.0, dCenter);
-        var alpha     = baseAlpha * 2.95;
+        let dCenter         = abs(v - indicatorCenter);
+        let baseAlpha       = smoothstep(halfH, 0.0, dCenter);
+        var alpha           = baseAlpha * 2.95;
         let rim = 1.0 - abs(in.normal.y);
-        let pulse         = sin(u.time * 4.0) * 0.15 + 0.85;
-        let restColor     = vec3f(1.0, 0.38, 0.06);
-        let pressedColor  = vec3f(1.0 * (1.0 - u.sliderValue), 0.82, 0.50);   // bright warm-white when held
-        let indicatorColor = mix(restColor, pressedColor, u.pressed) * pulse
+
+        let pulse           = sin(u.time * 4.0) * 0.15 + 0.85;
+        let restColor       = vec3f(1.0, 0.38, 0.06);
+        let pressedColor    = vec3f(1.0 * (1.0 - u.sliderValue), 0.82, 0.50);
+        let indicatorColor  = mix(restColor, pressedColor, u.pressed) * pulse
                            * (0.85 + 0.15 * rim * rim);
-        let pressedAlpha  = mix(alpha, min(alpha * 1.25, 1.0), u.pressed);
+        let pressedAlpha    = mix(alpha, min(alpha * 1.25, 1.0), u.pressed);
+
         return vec4f(indicatorColor, pressedAlpha);
     }
 
-    let pulse     = sin(u.time * 2.0 + v * 6.0) * 0.015 + 0.85;
-
-    let fillEdge = smoothstep(u.sliderValue - 0.03, u.sliderValue + 0.01, v);
-
-    let pulseMask = 1.0 - step(u.sliderValue, v);
-    let animPulse = mix(1.0, pulse, pulseMask);
-
+    let pulse          = sin(u.time * 2.0 + v * 6.0) * 0.015 + 0.85;
+    let fillEdge       = smoothstep(u.sliderValue - 0.03, u.sliderValue + 0.01, v);
+    let pulseMask      = 1.0 - step(u.sliderValue, v);
+    let animPulse      = mix(1.0, pulse, pulseMask);
     let creamWithPulse = cream * animPulse * 0.90;
     var finalColor     = mix(creamWithPulse, grey, fillEdge);
 
-    finalColor      += cream;
+    finalColor        += cream;
+
     return vec4f(finalColor, 1.0);
 }
 
