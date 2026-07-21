@@ -1,5 +1,8 @@
+//===============================================
+//Lighting
+//===============================================
 fn centerLight(worldPos: vec3f) -> vec3f {
-    let hy: f32 = 0.25;
+    let hy: f32 = 0.2;
     let c0 = vec2f(  0.000,  0.0000 );
     return vec3f(c0.x, hy, c0.y);
 }
@@ -43,18 +46,10 @@ fn roomPointLight(worldPos: vec3f, normal: vec3f) -> vec3f {
     let attenTwo      = 1.0 / (1.0 + 12.0 * distTwo * distTwo * distTwo);
     let diffuseTwo    = max(dot(normal, lightDirTwo), 0.0) * attenTwo;
     //Mix
-    let lampColor  = vec3f(1.0, 0.92, 0.80);
-    let ambient    = vec3f(0.035, 0.18, 0.3);
+    let lampColor  = vec3f(0.9, 0.92, 0.80);
+    let ambient    = vec3f(0.135, 0.18, 0.3);
 
-    return ambient * 0.3 + (diffuse * lampColor) + (diffuseTwo * lampColor);
-}
-
-fn computeNormal(worldPos: vec3f) -> vec3f {
-    let dp_dx  = dpdx(worldPos);
-    let dp_dy  = dpdy(worldPos);
-    var normal = normalize(cross(dp_dx, dp_dy));
-    if dot(normal, u.lightPos - worldPos) < 0.0 { normal = -normal; }
-    return normal;
+    return ambient * 0.32 + (diffuse * lampColor) + (diffuseTwo * lampColor);
 }
 
 fn pointLight(worldPos: vec3f, normal: vec3f) -> vec3f {
@@ -67,4 +62,5 @@ fn pointLight(worldPos: vec3f, normal: vec3f) -> vec3f {
     let ambient     = vec3f(0.5, 0.8, 0.3);
     return ambient + diffuse * lampColor;
 }
+
 

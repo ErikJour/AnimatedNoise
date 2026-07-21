@@ -137,17 +137,17 @@ void Scene::renderFrame(const float currentTime)
         setItemBuffers(mFloorVertexBuffer,
              mFloorIndexBuffer,
                         mFloorIndexCount,
-                        MAT_FLOOR,
+                        MAT_LEVEL,
                         renderPass);
         setItemBuffers(mSphereVertexBuffer,
               mSphereIndexBuffer,
                          mSphereIndexCount,
-                         MAT_FLOOR,
+                         MAT_LEVEL,
                               renderPass);
         setItemBuffers(mSkylightVertexBuffer,
             mSkylightIndexBuffer,
                         mSkylightIndexCount,
-                        MAT_FLOOR,
+                        MAT_LEVEL,
                         renderPass);
         for (const auto& [vertexBuffer, indexBuffer, indexCount, materialId] : mSliderMeshes)
             setItemBuffers(vertexBuffer,
@@ -225,7 +225,7 @@ void Scene::setUniforms(const WGPUQueue queue, const WGPUBuffer uniformBuffer, c
                                             MAT_COMB_AMT_SLIDER,
                                             MAT_PLANE,
                                             MAT_PARTICLES,
-                                            MAT_FLOOR,
+                                            MAT_LEVEL,
                                             MAT_SKYLIGHT,
                                             MAT_LPG_REZ_SLIDER,
                                             MAT_NOIS_DENS_SLIDER,

@@ -1,22 +1,32 @@
-// ── Material IDs ──────────────────────────────────────────────────────────────
+//===============================================
+//Common
+//===============================================
+
+//===============================================
+//Material IDs
+//===============================================
 const MAT_TEXT:                    u32 = 0u;
 const MAT_MASTER_GAIN_SLIDER:      u32 = 1u;
 const MAT_COMB_AMT_SLIDER:         u32 = 2u;
 const MAT_PLANE:                   u32 = 3u;
 const MAT_PARTICLES:               u32 = 4u;
-const MAT_FLOOR:                   u32 = 5u;
+const MAT_LEVEL:                   u32 = 5u;
 const MAT_SKYLIGHT:                u32 = 6u;
 const MAT_LPG_REZ_SLIDER:          u32 = 7u;
 const MAT_NOIS_DENS_SLIDER:        u32 = 8u;
 const MAT_LOGO:                    u32 = 9u;
 const MAT_TOOLTIP:                 u32 = 10u;
 
-// ── Scene constants ───────────────────────────────────────────────────────────
+//===============================================
+//Constants
+//===============================================
 const FOV_FACTOR:  f32 = 1.5;
 const SPINE_MIN_Y: f32 = -0.15;
 const SPINE_MAX_Y: f32 =  0.25;
 
-// ── Uniforms ──────────────────────────────────────────────────────────────────
+//===============================================
+//Uniforms
+//===============================================
 struct Uniforms {
     time:           f32,
     frequency:      f32,
@@ -38,7 +48,9 @@ struct Uniforms {
 
 @group(0) @binding(0) var<uniform> u: Uniforms;
 
-// ── Vertex I/O ────────────────────────────────────────────────────────────────
+//===============================================
+//Slider function
+//===============================================
 struct VertexInput {
     @location(0) position: vec3f,
     @location(1) color:    vec3f,
@@ -64,7 +76,7 @@ fn shadeSpineTube(in: VertexOutput) -> vec4f {
         let dCenter         = abs(v - indicatorCenter);
         let baseAlpha       = smoothstep(halfH, 0.0, dCenter);
         var alpha           = baseAlpha * 2.95;
-        let rim = 1.0 - abs(in.normal.y);
+        let rim             = 1.0 - abs(in.normal.y);
 
         let pulse           = sin(u.time * 4.0) * 0.15 + 0.85;
         let restColor       = vec3f(1.0, 0.38, 0.06);
@@ -86,6 +98,18 @@ fn shadeSpineTube(in: VertexOutput) -> vec4f {
     finalColor        += cream;
 
     return vec4f(finalColor, 1.0);
+}
+
+//===============================================
+//Compute Normal
+//===============================================
+
+fn computeNormal(worldPos: vec3f) -> vec3f {
+    let dp_dx  = dpdx(worldPos);
+    let dp_dy  = dpdy(worldPos);
+    var normal = normalize(cross(dp_dx, dp_dy));
+    if dot(normal, u.lightPos - worldPos) < 0.0 { normal = -normal; }
+    return normal;
 }
 
 

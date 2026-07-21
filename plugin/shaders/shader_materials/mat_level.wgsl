@@ -11,16 +11,16 @@ fn filmGrain(uv: vec2<f32>, t: f32) -> f32 {
     return grain;
 }
 
-fn vsFloor(pos: ptr<function, vec3f>) -> vec4f {
+fn vertexLevel(pos: ptr<function, vec3f>) -> vec4f {
     let worldPosition = u.modelMatrix * vec4f(*pos, 1.0);
     *pos              = worldPosition.xyz;
 
     return (projectPerspective(worldPosition.xyz));
 }
 
-fn shadeFloor(in: VertexOutput) -> vec4f {
+fn fragmentLevel(in: VertexOutput) -> vec4f {
     let normal      = normalize(in.normal);
-    let baseColor   = vec3f(0.7, 0.75, 0.5);
+    let baseColor   = vec3f(0.7, 0.65, 0.5);
     let uv          = (in.worldPos.xz);
     let grain       = filmGrain(uv, 0.01);
     let grainAmount = 0.1;

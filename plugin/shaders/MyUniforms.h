@@ -8,7 +8,7 @@ static constexpr uint32_t MAT_MASTER_GAIN_SLIDER  = 1;
 static constexpr uint32_t MAT_COMB_AMT_SLIDER     = 2;
 static constexpr uint32_t MAT_PLANE               = 3;
 static constexpr uint32_t MAT_PARTICLES           = 4;
-static constexpr uint32_t MAT_FLOOR               = 5;
+static constexpr uint32_t MAT_LEVEL               = 5;
 static constexpr uint32_t MAT_SKYLIGHT            = 6;
 static constexpr uint32_t MAT_LPG_REZ_SLIDER      = 7;
 static constexpr uint32_t MAT_NOIS_DENS_SLIDER    = 8;
@@ -35,13 +35,13 @@ struct MyUniforms {
     float    pad;
 };
 
-static_assert(sizeof(MyUniforms) % 16 == 0);
+static_assert(sizeof(MyUniforms) % 16              == 0);
 static_assert(offsetof(MyUniforms, sliderLevels)   == 32);
 static_assert(offsetof(MyUniforms, sliderGlowPos)  == 48);
 static_assert(offsetof(MyUniforms, modelMatrix)    == 112);
+static_assert(offsetof(MyUniforms, materialId)     == 312);
 static_assert(offsetof(MyUniforms, modelMatrix)    % 16 == 0);
 static_assert(offsetof(MyUniforms, viewProjMatrix) % 16 == 0);
-static_assert(offsetof(MyUniforms, materialId)     == 312);
 
 static constexpr float kIdentity[16] = {
     1.0f, 0.0f, 0.0f, 0.0f,

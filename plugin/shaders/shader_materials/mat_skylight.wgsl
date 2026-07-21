@@ -11,7 +11,7 @@ const SKYLIGHT_RADIUS : f32   = 4.0;
 const BEYOND_COLOR  : vec3f = vec3f(0.45, 0.65, 0.82);  // sky beyond the glass
 const GLASS_OPACITY : f32   = 0.80;
 
-fn vsSkylight(pos: ptr<function, vec3f>) -> vec4f {
+fn vertexSkylight(pos: ptr<function, vec3f>) -> vec4f {
     let worldPos = u.modelMatrix * vec4f(*pos, 1.0);
     *pos = worldPos.xyz;
     return projectPerspective(worldPos.xyz);
@@ -85,7 +85,7 @@ fn voronoi2D(p: vec2f, scale: f32) -> vec2f {
 
 // ── Skylight shading ────────────────────────────────────────────────────────
 
-fn shadeSkylight(in: VertexOutput) -> vec4f {
+fn fragmentSkylight(in: VertexOutput) -> vec4f {
     // Radial UVs (0..1) derived from world position on the ceiling plane
     let uv = (in.worldPos.xz - SKYLIGHT_CENTER) / (SKYLIGHT_RADIUS * 2.0) + 0.5;
 

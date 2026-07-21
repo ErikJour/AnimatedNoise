@@ -1,4 +1,4 @@
-fn vsMasterGainSlider(pos: ptr<function, vec3f>, color: vec3f) -> vec4f {
+fn vertexNoiseLevelSlider(pos: ptr<function, vec3f>, color: vec3f) -> vec4f {
 
 let expandedRatio = (u.pressed * 0.13) + 1.0 ;
 
@@ -15,7 +15,7 @@ let expandedRatio = (u.pressed * 0.13) + 1.0 ;
     return projectPerspective(worldPosition.xyz);
 }
 
-fn shadeMasterGainSlider(in: VertexOutput) -> vec4f {
+fn fragmentNoiseLevelSlider(in: VertexOutput) -> vec4f {
     let normal      = normalize(in.normal);
     let baseColor   = vec3f(0.4, 0.5, 0.8);
     let uv          = (in.worldPos.xz);

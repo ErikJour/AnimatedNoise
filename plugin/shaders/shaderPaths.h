@@ -16,7 +16,7 @@
             dir + "/shader_materials/mat_gain_slider.wgsl",
             dir + "/shader_materials/mat_plane.wgsl",
             dir + "/shader_materials/mat_particle.wgsl",
-            dir + "/shader_materials/mat_floor.wgsl",
+            dir + "/shader_materials/mat_level.wgsl",
             dir + "/shader_materials/mat_skylight.wgsl",
             dir + "/shader_materials/vs_main.wgsl",
             dir + "/shader_materials/fs_main.wgsl",

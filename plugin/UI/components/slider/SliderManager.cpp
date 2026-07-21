@@ -124,6 +124,7 @@ void SliderManager::sendParamStringTooltip(const float value) const
         std::string paramString                 = s.paramID.getParamID().toStdString();
         const juce::String paramValue           = std::to_string(intVal);
         if (paramString == "noiseDensity")      {paramString = "Noise Density"; }
+        if (paramString == "noiseLevel")        {paramString = "Noise Level"; }
         const std::string paramValueString      = paramValue.toStdString() + "%";
 
         mScene.setToolTip(paramString, paramValueString);
