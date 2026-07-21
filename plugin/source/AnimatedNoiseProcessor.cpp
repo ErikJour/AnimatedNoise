@@ -32,10 +32,6 @@ AnimatedNoiseProcessor::AnimatedNoiseProcessor()
     castParameter(apvts, ParameterID::envDecay, envelopeDecayParam);
     castParameter(apvts, ParameterID::envSustain, envelopeSustainParam);
     castParameter(apvts, ParameterID::envRelease, envelopeReleaseParam);
-    //==========================================
-    //Global Parameters
-    //===========================================
-    castParameter(apvts, ParameterID::gain, gainParam);
 
 }
 
@@ -235,15 +231,6 @@ juce::AudioProcessorValueTreeState::ParameterLayout AnimatedNoiseProcessor::crea
 {
     juce::AudioProcessorValueTreeState::ParameterLayout paramLayout;
     //==========================================================
-    //Global Params
-    //==========================================================
-    paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
-        ParameterID::gain,
-        "Master Gain",
-        juce::NormalisableRange<float>{ 0.0f, 1.0f, 0.01f, 1.0f },
-        0.5f));
-
-    //==========================================================
     //Noise Level
     //==========================================================
     paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
@@ -324,11 +311,6 @@ juce::AudioProcessorValueTreeState::ParameterLayout AnimatedNoiseProcessor::crea
 
 void AnimatedNoiseProcessor::update()
 {
-    //=======================================
-    //Global Gain
-    //=======================================
-    const float gain = gainParam->get();
-    noiseSynth.setGain(gain);
     //=======================================
     //Noise Level
     //=======================================

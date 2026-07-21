@@ -87,7 +87,6 @@ target_sources(AnimatedNoise
         dsp/NoiseSynth.cpp
         dsp/NoiseGenerator.cpp
         dsp/NoiseVoice.cpp
-        dsp/AnimatedGain.cpp
         dsp/AnimatedAuxEnv.cpp
         UI/components/logo/AnimatedLogo.cpp
         UI/components/slider/sliderCatalog.cpp
@@ -163,15 +162,20 @@ endif()
 #==================================
 set(SHADER_FILES
         "shaders/shader_materials/common.wgsl"
+        "shaders/shader_materials/fs_main.wgsl"
         "shaders/shader_materials/lighting.wgsl"
         "shaders/shader_materials/mat_text.wgsl"
-        "shaders/shader_materials/mat_slider.wgsl"
-        "shaders/shader_materials/mat_plane.wgsl"
-        "shaders/shader_materials/vs_main.wgsl"
-        "shaders/shader_materials/fs_main.wgsl"
+        "shaders/shader_materials/mat_level.wgsl"
         "shaders/shader_materials/mat_logo.wgsl"
-        "shaders/shader_materials/mat_gain_slider.wgsl"
+        "shaders/shader_materials/mat_noise_density_mod_slider.wgsl"
+        "shaders/shader_materials/mat_noise_density_slider.wgsl"
+        "shaders/shader_materials/mat_noise_level_mod_slider.wgsl"
+        "shaders/shader_materials/mat_noise_level_slider.wgsl"
+        "shaders/shader_materials/mat_particle.wgsl"
+        "shaders/shader_materials/mat_skylight.wgsl"
+        "shaders/shader_materials/mat_text.wgsl"
         "shaders/shader_materials/mat_tooltip.wgsl"
+        "shaders/shader_materials/vs_main.wgsl"
 )
 
 set(SHADER_SOURCE "")

@@ -6,7 +6,6 @@
 #pragma once
 #include "NoiseGenerator.h"
 #include <juce_audio_processors/juce_audio_processors.h>
-#include "AnimatedGain.h"
 #include  "AnimatedLPG.h"
 #include "AnimatedVactrol.h"
 #include "Envelope.h"
@@ -25,7 +24,6 @@ class NoiseVoice {
     NoiseGenerator mNoiseGenerator;
     int note = 0;
     int noiseType = 0;
-    AnimatedGain mGain;
     juce::AudioBuffer<float> mAudioBuffer;
     double mSampleRate;
     Envelope mEnvelope;

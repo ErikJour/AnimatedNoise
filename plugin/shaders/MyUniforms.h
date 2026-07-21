@@ -2,7 +2,7 @@
 #include <cstddef>
 #include <cstdint>
 
-// Must match common.wgsl
+// Remember that these have to match the Common materials order
 //===========================================
 //Level
 //===========================================

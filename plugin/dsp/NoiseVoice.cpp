@@ -15,8 +15,6 @@ void NoiseVoice::reset(const double sampleRate)
     mLPG.setResonance(0.9f);
     mVactrol.prepare(mSampleRate);
     mEnvelope.reset();
-    mGain.distributeResources(mSampleRate);
-
 }
 
 void NoiseVoice::render(float* buffer, const int sampleCount)

@@ -49,7 +49,7 @@ fn roomPointLight(worldPos: vec3f, normal: vec3f) -> vec3f {
     let lampColor  = vec3f(0.9, 0.92, 0.80);
     let ambient    = vec3f(0.135, 0.18, 0.3);
 
-    return ambient * 0.32 + (diffuse * lampColor) + (diffuseTwo * lampColor);
+    return ambient * 0.0 + (diffuse * lampColor) + (diffuseTwo * lampColor);
 }
 
 fn pointLight(worldPos: vec3f, normal: vec3f) -> vec3f {
@@ -60,7 +60,7 @@ fn pointLight(worldPos: vec3f, normal: vec3f) -> vec3f {
     let diffuse     = max(dot(normal, lightDir), 0.0) * attenuation;
     let lampColor   = vec3f(1.0, 0.92, 0.80);
     let ambient     = vec3f(0.5, 0.8, 0.3);
-    return ambient + diffuse * lampColor;
+    return ambient * 0.0 + diffuse * lampColor;
 }
 
 
