@@ -10,10 +10,10 @@ inline constexpr float kSliderRadius = 0.06f;
 
 struct SliderDef
 {
-    juce::ParameterID paramID;          // APVTS parameter this slider drives
-    float             angle;            // local angle within that room
-    std::uint32_t     materialId;       // MAT_* uniform / material slot
-    float             position[3];      // world-space thumb center
+    juce::ParameterID paramID;
+    float             angle;
+    std::uint32_t     materialId;
+    float             position[3];
     float             radius;
 };
 
