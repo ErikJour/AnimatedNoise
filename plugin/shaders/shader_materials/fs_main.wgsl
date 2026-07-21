@@ -5,7 +5,7 @@
 fn fs_main(in: VertexOutput) -> @location(0) vec4f {
     switch u.materialId {
         case MAT_TEXT:                    { return fragmentText(in);            }
-        case MAT_MASTER_GAIN_SLIDER:      { return fragmentNoiseLevelSlider(in);}
+        case MAT_NOISE_LEVEL_SLIDER:      { return fragmentNoiseLevelSlider(in);}
         case MAT_PLANE:                   { return fragmentPlane(in);           }
         case MAT_LEVEL:                   { return fragmentLevel(in);           }
         case MAT_SKYLIGHT:                { return fragmentSkylight(in);        }

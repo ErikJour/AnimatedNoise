@@ -6,8 +6,8 @@
 //Material IDs
 //===============================================
 const MAT_TEXT:                    u32 = 0u;
-const MAT_MASTER_GAIN_SLIDER:      u32 = 1u;
-const MAT_COMB_AMT_SLIDER:         u32 = 2u;
+const MAT_NOISE_LEVEL_SLIDER:      u32 = 1u;
+//const MAT_NOISE_LEVEL_MOD_SLIDER:  u32 = 2u;
 const MAT_PLANE:                   u32 = 3u;
 const MAT_PARTICLES:               u32 = 4u;
 const MAT_LEVEL:                   u32 = 5u;

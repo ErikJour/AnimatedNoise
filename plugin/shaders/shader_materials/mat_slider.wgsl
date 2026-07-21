@@ -1,10 +1,13 @@
-// ── Noise Level (Gain) Slider — teal ─────────────────────────────────────────
-fn shadeGainSlider(in: VertexOutput) -> vec4f {
+fn vertexDensityModSlider(pos: ptr<function, vec3f>, color: vec3f) -> vec4f {
+        let sliderPosition = u.sliderPosition;
+        let worldPosition = vec4f(*pos + sliderPosition, 1.0);
+        *pos = worldPosition.xyz;
+        return projectPerspective(worldPosition.xyz);
+}
+
+fn fragmentDensityModSlider(in: VertexOutput) -> vec4f {
     return shadeSpineTube(in);
 }
 
-fn vsGainSlider(pos: ptr<function, vec3f>, color: vec3f) -> vec4f {
-    return u.viewProjMatrix * vec4f(*pos, 1.0);
-}
 
 

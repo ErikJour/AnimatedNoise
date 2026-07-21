@@ -13,14 +13,28 @@ AnimatedNoiseProcessor::AnimatedNoiseProcessor()
                        )
 {
     apvts.state.addListener(this);
+    //==========================================
+    //Noise Parameters
+    //===========================================
     castParameter(apvts, ParameterID::noiseLevel, noiseLevelParam);
     castParameter(apvts, ParameterID::noiseDensity, noiseDensityParam);
+    castParameter(apvts, ParameterID::noiseLevelMod, noiseLevelModParam);
+    castParameter(apvts, ParameterID::noiseDensityMod, noiseDensityModParam);
+    //==========================================
+    //Filter Parameters
+    //===========================================
     castParameter(apvts, ParameterID::lpgResonance, lpgResonanceParam);
     castParameter(apvts, ParameterID::lpgVactrolRelease, lpgVactrolReleaseParam);
+    //==========================================
+    //Envelope Parameters
+    //===========================================
     castParameter(apvts, ParameterID::envAttack, envelopeAttackParam);
     castParameter(apvts, ParameterID::envDecay, envelopeDecayParam);
     castParameter(apvts, ParameterID::envSustain, envelopeSustainParam);
     castParameter(apvts, ParameterID::envRelease, envelopeReleaseParam);
+    //==========================================
+    //Global Parameters
+    //===========================================
     castParameter(apvts, ParameterID::gain, gainParam);
 
 }
@@ -246,6 +260,22 @@ juce::AudioProcessorValueTreeState::ParameterLayout AnimatedNoiseProcessor::crea
         juce::NormalisableRange<float>{ 0.0f, 1.0f, 0.01f, 1.0f },
         0.5f));
     //==========================================================
+    //Noise Level Mod
+    //==========================================================
+    paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
+        ParameterID::noiseLevelMod,
+        "Noise Level Mod",
+        juce::NormalisableRange<float>{ 0.0f, 1.0f, 0.01f, 1.0f },
+        0.5f));
+    //==========================================================
+    //Noise Density Mod
+    //==========================================================
+    paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
+        ParameterID::noiseDensityMod,
+        "Noise Density Mod",
+        juce::NormalisableRange<float>{ 0.0f, 1.0f, 0.01f, 1.0f },
+        0.5f));
+    //==========================================================
     //Lpg
     //==========================================================
     paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
@@ -309,6 +339,17 @@ void AnimatedNoiseProcessor::update()
     //=======================================
     const float noiseDensity = noiseDensityParam->get();
     noiseSynth.setNoiseDensity(noiseDensity);
+    //=======================================
+    //Noise Level Mod
+    //=======================================
+    const float noiseLevelMod = noiseLevelModParam->get();
+    juce::ignoreUnused(noiseLevelMod);
+    //=======================================
+    //Noise Density Mod
+    //=======================================
+    const float noiseDensityMod = noiseDensityModParam->get();
+    juce::ignoreUnused(noiseDensityMod);
+
     //=======================================
     //LPG Resonance
     //=======================================

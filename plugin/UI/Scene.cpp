@@ -221,13 +221,13 @@ void Scene::setUniforms(const WGPUQueue queue, const WGPUBuffer uniformBuffer, c
 
     constexpr uint32_t ids[materialCount]           =   {
                                             MAT_TEXT,
-                                            MAT_MASTER_GAIN_SLIDER,
+                                            MAT_NOIS_LEVEL_SLIDER,
                                             MAT_COMB_AMT_SLIDER,
                                             MAT_PLANE,
                                             MAT_PARTICLES,
                                             MAT_LEVEL,
                                             MAT_SKYLIGHT,
-                                            MAT_LPG_REZ_SLIDER,
+                                            MAT_NOISE_LEVEL_MOD_SLIDER,
                                             MAT_NOIS_DENS_SLIDER,
                                             MAT_TOOLTIP
                                             };

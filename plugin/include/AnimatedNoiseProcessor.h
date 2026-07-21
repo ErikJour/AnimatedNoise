@@ -70,14 +70,12 @@ private:
     std::atomic<bool> parametersChanged { false };
     NoiseSynth noiseSynth;
     //==========================================
-    //Global Parameters
-    //===========================================
-    juce::AudioParameterFloat* gainParam{};
-    //==========================================
-    //Source Parameters
+    //Noise Parameters
     //===========================================
     juce::AudioParameterFloat* noiseLevelParam{};
     juce::AudioParameterFloat* noiseDensityParam{};
+    juce::AudioParameterFloat* noiseLevelModParam{};
+    juce::AudioParameterFloat* noiseDensityModParam{};
     //==========================================
     //Filter Parameters
     //===========================================
@@ -90,7 +88,10 @@ private:
     juce::AudioParameterFloat* envelopeDecayParam{};
     juce::AudioParameterFloat* envelopeSustainParam{};
     juce::AudioParameterFloat* envelopeReleaseParam{};
-
+    //==========================================
+    //Global Parameters
+    //===========================================
+    juce::AudioParameterFloat* gainParam{};
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AnimatedNoiseProcessor)

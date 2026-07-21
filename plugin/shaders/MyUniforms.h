@@ -4,13 +4,13 @@
 
 // Must match common.wgsl
 static constexpr uint32_t MAT_TEXT                = 0;
-static constexpr uint32_t MAT_MASTER_GAIN_SLIDER  = 1;
+static constexpr uint32_t MAT_NOIS_LEVEL_SLIDER  = 1;
 static constexpr uint32_t MAT_COMB_AMT_SLIDER     = 2;
 static constexpr uint32_t MAT_PLANE               = 3;
 static constexpr uint32_t MAT_PARTICLES           = 4;
 static constexpr uint32_t MAT_LEVEL               = 5;
 static constexpr uint32_t MAT_SKYLIGHT            = 6;
-static constexpr uint32_t MAT_LPG_REZ_SLIDER      = 7;
+static constexpr uint32_t MAT_NOISE_LEVEL_MOD_SLIDER      = 7;
 static constexpr uint32_t MAT_NOIS_DENS_SLIDER    = 8;
 static constexpr uint32_t MAT_LOGO                = 9;
 static constexpr uint32_t MAT_TOOLTIP             = 10;
