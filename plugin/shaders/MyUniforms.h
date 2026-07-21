@@ -3,17 +3,28 @@
 #include <cstdint>
 
 // Must match common.wgsl
-static constexpr uint32_t MAT_TEXT                = 0;
-static constexpr uint32_t MAT_NOIS_LEVEL_SLIDER  = 1;
-static constexpr uint32_t MAT_COMB_AMT_SLIDER     = 2;
-static constexpr uint32_t MAT_PLANE               = 3;
-static constexpr uint32_t MAT_PARTICLES           = 4;
-static constexpr uint32_t MAT_LEVEL               = 5;
-static constexpr uint32_t MAT_SKYLIGHT            = 6;
-static constexpr uint32_t MAT_NOISE_LEVEL_MOD_SLIDER      = 7;
-static constexpr uint32_t MAT_NOIS_DENS_SLIDER    = 8;
-static constexpr uint32_t MAT_LOGO                = 9;
-static constexpr uint32_t MAT_TOOLTIP             = 10;
+//===========================================
+//Level
+//===========================================
+static constexpr uint32_t MAT_LEVEL                  = 0;
+static constexpr uint32_t MAT_SKYLIGHT               = 1;
+//===========================================
+//Components
+//===========================================
+static constexpr uint32_t MAT_LOGO                   = 2;
+static constexpr uint32_t MAT_TEXT                   = 3;
+static constexpr uint32_t MAT_TOOLTIP                = 4;
+//===========================================
+//Visualizations
+//===========================================
+static constexpr uint32_t MAT_PARTICLES              = 5;
+//===========================================
+//Sliders
+//===========================================
+static constexpr uint32_t MAT_NOIS_LEVEL_SLIDER      = 6;
+static constexpr uint32_t MAT_NOISE_LEVEL_MOD_SLIDER = 7;
+static constexpr uint32_t MAT_NOIS_DENS_SLIDER       = 8;
+static constexpr uint32_t MAT_NOISE_DENS_MOD_SLIDER  = 9;
 
 struct MyUniforms {
     float    time;

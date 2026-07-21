@@ -3,26 +3,34 @@
 //===============================================
 
 //===============================================
-//Material IDs
-//===============================================
-const MAT_TEXT:                    u32 = 0u;
-const MAT_NOISE_LEVEL_SLIDER:      u32 = 1u;
-//const MAT_NOISE_LEVEL_MOD_SLIDER:  u32 = 2u;
-const MAT_PLANE:                   u32 = 3u;
-const MAT_PARTICLES:               u32 = 4u;
-const MAT_LEVEL:                   u32 = 5u;
-const MAT_SKYLIGHT:                u32 = 6u;
-const MAT_LPG_REZ_SLIDER:          u32 = 7u;
-const MAT_NOIS_DENS_SLIDER:        u32 = 8u;
-const MAT_LOGO:                    u32 = 9u;
-const MAT_TOOLTIP:                 u32 = 10u;
-
-//===============================================
 //Constants
 //===============================================
 const FOV_FACTOR:  f32 = 1.5;
 const SPINE_MIN_Y: f32 = -0.15;
 const SPINE_MAX_Y: f32 =  0.25;
+//===========================================
+//Level
+//===========================================
+const MAT_LEVEL:                   u32 = 0u;
+const MAT_SKYLIGHT:                u32 = 1u;
+//===========================================
+//Components
+//===========================================
+const MAT_LOGO:                    u32 = 2u;
+const MAT_TEXT:                    u32 = 3u;
+const MAT_TOOLTIP:                 u32 = 4u;
+//===========================================
+//Visualizations
+//===========================================
+const MAT_PARTICLES:               u32 = 5u;
+//===========================================
+//Sliders
+//===========================================
+const MAT_NOISE_LEVEL_SLIDER:      u32 = 6u;
+const MAT_NOISE_LEVEL_MOD_SLIDER:  u32 = 7u;
+const MAT_NOIS_DENS_SLIDER:        u32 = 8u;
+const MAT_NOISE_DENS_MOD_SLIDER:   u32 = 9u;
+
 
 //===============================================
 //Uniforms

@@ -35,8 +35,8 @@ const std::vector<SliderDef>& sliderDefinitions()
         //==================================================
         { ParameterID::noiseDensityMod,
             0.0f,
-            MAT_LEVEL,
-                { 1.985f, 0.5f, 0.244f },
+            MAT_NOISE_DENS_MOD_SLIDER,
+                { 1.985f, -0.045f, 0.244f },
             0.07f },
     };
     return defs;

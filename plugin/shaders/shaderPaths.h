@@ -12,7 +12,7 @@
             dir + "/shader_materials/common.wgsl",
             dir + "/shader_materials/lighting.wgsl",
             dir + "/shader_materials/mat_text.wgsl",
-            dir + "/shader_materials/mat_slider.wgsl",
+            dir + "/shader_materials/mat_noise_density_mod_slider.wgsl",
             dir + "/shader_materials/mat_noise_level_slider.wgsl",
             dir + "/shader_materials/mat_plane.wgsl",
             dir + "/shader_materials/mat_particle.wgsl",

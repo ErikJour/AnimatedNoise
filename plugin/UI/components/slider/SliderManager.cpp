@@ -126,6 +126,7 @@ void SliderManager::sendParamStringTooltip(const float value) const
         if (paramString == "noiseDensity")      {paramString = "Noise Density"; }
         if (paramString == "noiseLevel")        {paramString = "Noise Level"; }
         if (paramString == "noiseLevelMod")     {paramString = "Noise Level Mod"; }
+        if (paramString == "noiseDensityMod")   {paramString = "Noise Density Mod"; }
         const std::string paramValueString      = paramValue.toStdString() + "%";
 
         mScene.setToolTip(paramString, paramValueString);

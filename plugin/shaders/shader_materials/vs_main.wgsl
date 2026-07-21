@@ -15,15 +15,18 @@ fn vs_main(in: VertexInput) -> VertexOutput {
     var pos = in.position;
 
     switch u.materialId {
-        case MAT_TEXT:                    { out.clipPos  = vertexText               (pos);            }
-        case MAT_NOISE_LEVEL_SLIDER:      { out.clipPos  = vertexNoiseLevelSlider   (&pos, in.color); }
-        case MAT_PLANE:                   { out.clipPos  = vertexPlane              (&pos);           }
         case MAT_LEVEL:                   { out.clipPos  = vertexLevel              (&pos);           }
         case MAT_SKYLIGHT:                { out.clipPos  = vertexSkylight           (&pos);           }
-        case MAT_LPG_REZ_SLIDER:          { out.clipPos  = vertexLpgRezSlider       (&pos, in.color); }
-        case MAT_NOIS_DENS_SLIDER:        { out.clipPos  = vertexDensitySlider      (&pos, in.color); }
         case MAT_LOGO:                    { out.clipPos  = vertexLogo               (pos);            }
         case MAT_TOOLTIP                  { out.clipPos  = vertexTooltipText        (pos);            }
+        case MAT_TEXT:                    { out.clipPos  = vertexText               (pos);            }
+        //============================
+        //Sliders
+        //============================
+        case MAT_NOISE_LEVEL_SLIDER:      { out.clipPos  = vertexNoiseLevelSlider   (&pos, in.color); }
+        case MAT_NOISE_LEVEL_MOD_SLIDER:  { out.clipPos  = vertexLpgRezSlider       (&pos, in.color); }
+        case MAT_NOIS_DENS_SLIDER:        { out.clipPos  = vertexDensitySlider      (&pos, in.color); }
+        case MAT_NOISE_DENS_MOD_SLIDER:   { out.clipPos  = vertexDensityModSlider   (&pos, in.color); }
         default:                          { out.clipPos  = projectPerspective       (pos);            }
     }
 
