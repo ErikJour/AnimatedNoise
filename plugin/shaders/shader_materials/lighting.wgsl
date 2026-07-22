@@ -63,4 +63,13 @@ fn pointLight(worldPos: vec3f, normal: vec3f) -> vec3f {
     return ambient * 0.0 + diffuse * lampColor;
 }
 
+//Directional Light
+
+fn directionalLight(worldPos: vec3f, normal: vec3f, lightColor: vec3f, lightIntensity: f32, lightPosition: vec3f) -> vec3f {
+
+    let lightDirection = normalize(lightPosition);
+    return lightColor * lightIntensity;
+
+}
+
 

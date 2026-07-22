@@ -176,6 +176,7 @@ set(SHADER_FILES
         "shaders/shader_materials/mat_text.wgsl"
         "shaders/shader_materials/mat_tooltip.wgsl"
         "shaders/shader_materials/vs_main.wgsl"
+        "shaders/shader_materials/ambientLight.wgsl"
 )
 
 set(SHADER_SOURCE "")

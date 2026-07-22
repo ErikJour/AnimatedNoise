@@ -18,7 +18,7 @@ fn vs_main(in: VertexInput) -> VertexOutput {
         case MAT_LEVEL:                   { out.clipPos  = vertexLevel              (&pos);           }
         case MAT_SKYLIGHT:                { out.clipPos  = vertexSkylight           (&pos);           }
         case MAT_LOGO:                    { out.clipPos  = vertexLogo               (pos);            }
-        case MAT_TOOLTIP                  { out.clipPos  = vertexTooltipText        (pos);            }
+        case MAT_TOOLTIP:                 { out.clipPos  = vertexTooltipText        (pos);            }
         case MAT_TEXT:                    { out.clipPos  = vertexText               (pos);            }
         //============================
         //Sliders

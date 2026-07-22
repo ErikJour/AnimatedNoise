@@ -21,9 +21,24 @@ fn fragmentNoiseLevelSlider(in: VertexOutput) -> vec4f {
     let uv          = (in.worldPos.xz);
     let grain       = filmGrain(uv, 0.01);
     let grainAmount = 0.1;
-    let color       = baseColor * (1.0 + grain * grainAmount) ;
+    //light experiment=====================================
+    var light = vec3f(0.0);
+
+//    light += ambientLight(in.worldPos.xyz,
+//                            normal,
+//                            vec3f(1.0, 0.0, 0.0),
+//                            0.2);
+
+    light += directionalLight(in.worldPos.xyz,
+                              normal,
+                              vec3f(0.1, 0.1, 0.1),
+                               1.0,
+                              vec3f(0.0, 0.0, 3.0)
+                              );
+    //Done==================================================
+    let color       = baseColor * (1.0 + grain * grainAmount);
     let colorOut    = vec4(color, 1.0);
     let spine       = shadeSpineTube(in);
 
-    return vec4f(spine.rgb * (1.0 + grain * grainAmount), spine.a);
+    return vec4f(spine.rgb * light * (1.0 + grain * grainAmount), spine.a);
 }

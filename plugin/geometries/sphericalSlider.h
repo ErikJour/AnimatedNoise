@@ -42,7 +42,7 @@ class SphericalSlider
 
                 const float v = static_cast<float>(iy) / static_cast<float>(heightSegments);
 
-
+                const float invR = 1.0f / radius;
                 for (int ix = 0; ix <= widthSegments; ix++)
                 {
                     const float u = static_cast<float>(ix) / static_cast<float>(widthSegments);
@@ -54,7 +54,7 @@ class SphericalSlider
 
                     vertices.push_back({
                    vertex.x, vertex.y, vertex.z,
-                   0.0f, 1.0f, 0.0f,
+                        vertex.x * invR, vertex.y * invR, vertex.z * invR,
                    1.0f, 1.0f, 1.0f
                    });
                     grid.push_back(static_cast<uint32_t>(vertices.size() - 1));
