@@ -76,7 +76,7 @@ class Scene
         void onMouseMove(float xpos, float ypos);
         void onScroll(float deltaX, float deltaY);
         void setToolTip(const std::string &paramName, const std::string &paramValue);
-
+        void initializePlane();
 
         void setSliderList(const std::vector<AnimatedSlider>& list) { mSliderList = &list; }
 
@@ -194,9 +194,9 @@ class Scene
         static constexpr float              kSpineMaxY       =  0.25f;
         static constexpr float              kIndicatorHalfY  =  0.025f;
         //Plane
-        // WGPUBuffer                          mPlaneVertexBuffer   = nullptr;
-        // WGPUBuffer                          mPlaneIndexBuffer    = nullptr;
-        // uint32_t                            mPlaneIndexCount     = 0;
+        WGPUBuffer                          mPlaneVertexBuffer   = nullptr;
+        WGPUBuffer                          mPlaneIndexBuffer    = nullptr;
+        uint32_t                            mPlaneIndexCount     = 0;
         //Floor
         WGPUBuffer                          mFloorVertexBuffer  = nullptr;
         WGPUBuffer                          mFloorIndexBuffer  = nullptr;

@@ -58,6 +58,8 @@ void Scene::terminate()
     if (mPresetIndexBuffer)              { wgpuBufferRelease(mPresetIndexBuffer); mPresetIndexBuffer = nullptr; }
     if (mTooltipVertexBuffer)             { wgpuBufferRelease(mTooltipVertexBuffer); mTooltipVertexBuffer = nullptr; }
     if (mTooltipIndexBuffer)              { wgpuBufferRelease(mTooltipIndexBuffer); mTooltipIndexBuffer = nullptr; }
+    if (mPlaneVertexBuffer)             { wgpuBufferRelease(mPlaneVertexBuffer); mPlaneVertexBuffer = nullptr; }
+    if (mPlaneIndexBuffer)              { wgpuBufferRelease(mPlaneIndexBuffer); mPlaneIndexBuffer = nullptr; }
     for (auto& m : mSliderMeshes)
     {
         if (m.vertexBuffer) { wgpuBufferRelease(m.vertexBuffer); m.vertexBuffer = nullptr; }
@@ -177,6 +179,12 @@ void Scene::renderFrame(const float currentTime)
                 mTooltipIndexBuffer,
                             mTooltipIndexCount,
                             MAT_TOOLTIP,
+                                renderPass);
+        //Plane
+        setItemBuffers(mPlaneVertexBuffer,
+                mPlaneIndexBuffer,
+                            mPlaneIndexCount,
+                            MAT_LEVEL,
                                 renderPass);
 
         mLogo.render(renderPass);
@@ -407,11 +415,9 @@ void Scene::initializeScene()
     std::cout << "parsed: " << parsed << "  empty/compound: " << emptyOrCompound << "\n";
 
     initializeText(mFont, "Init");
-    // initializeTooltip(mFont, "Noise Density", "0.0");
 
     for (const auto& def : sliderDefinitions())
     {
-        // constexpr float kSliderWallRadius = 0.06f;
         SliderMesh mesh;
         mesh.materialId = def.materialId;
         InitializeSlider(mesh.indexCount, mesh.vertexBuffer, mesh.indexBuffer, def.radius);
@@ -419,6 +425,7 @@ void Scene::initializeScene()
     }
     initializeParticles();
     initializeFloor();
+    initializePlane();
 }
 
 
@@ -693,6 +700,27 @@ void Scene::uploadTooltipMesh(const std::vector<GlyphVertex>& vertices,
     bd.size  = padded.size() * sizeof(GlyphIndex);
     mTooltipIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
     wgpuQueueWriteBuffer(mQueue, mTooltipIndexBuffer, 0, padded.data(), bd.size);
+}
+
+void Scene::initializePlane()
+{
+    std::vector<PlaneVertex> vertices;
+    std::vector<PlaneIndex>  indices;
+
+    Plane::buildPlane(vertices, indices, 0.1f, 0.35f);
+
+    mPlaneIndexCount = static_cast<uint32_t>(indices.size());
+
+    WGPUBufferDescriptor bd{};
+    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
+    bd.size  = vertices.size() * sizeof(PlaneVertex);
+    mPlaneVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mPlaneVertexBuffer, 0, vertices.data(), bd.size);
+
+    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
+    bd.size  = (indices.size() * sizeof(FloorIndex) + 3) & ~3ULL;
+    mPlaneIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
+    wgpuQueueWriteBuffer(mQueue, mPlaneIndexBuffer, 0, indices.data(), bd.size);
 }
 
 //==========================================================================
