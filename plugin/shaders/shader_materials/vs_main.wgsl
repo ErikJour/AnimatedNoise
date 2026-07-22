@@ -27,6 +27,10 @@ fn vs_main(in: VertexInput) -> VertexOutput {
         case MAT_NOISE_LEVEL_MOD_SLIDER:  { out.clipPos  = vertexLpgRezSlider       (&pos, in.color); }
         case MAT_NOIS_DENS_SLIDER:        { out.clipPos  = vertexDensitySlider      (&pos, in.color); }
         case MAT_NOISE_DENS_MOD_SLIDER:   { out.clipPos  = vertexDensityModSlider   (&pos, in.color); }
+        //============================
+        //Utilities
+        //============================
+        case MAT_LIGHT_HELPER:            { out.clipPos  = vertexLightHelper        (&pos, in.color); }
         default:                          { out.clipPos  = projectPerspective       (pos);            }
     }
 

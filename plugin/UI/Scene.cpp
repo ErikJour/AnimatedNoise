@@ -180,11 +180,11 @@ void Scene::renderFrame(const float currentTime)
                             mTooltipIndexCount,
                             MAT_TOOLTIP,
                                 renderPass);
-        //Plane
+        //Light Helper
         setItemBuffers(mPlaneVertexBuffer,
                 mPlaneIndexBuffer,
                             mPlaneIndexCount,
-                            MAT_LEVEL,
+                            MAT_LIGHT_HELPER,
                                 renderPass);
 
         mLogo.render(renderPass);
@@ -236,7 +236,8 @@ void Scene::setUniforms(const WGPUQueue queue, const WGPUBuffer uniformBuffer, c
                                             MAT_NOISE_LEVEL_MOD_SLIDER,
                                             MAT_NOIS_DENS_SLIDER,
                                             MAT_NOISE_DENS_MOD_SLIDER,
-                                            MAT_TOOLTIP
+                                            MAT_TOOLTIP,
+                                            MAT_LIGHT_HELPER
                                             };
 
     auto sliderForMaterial              = [&](const uint32_t mat) -> const AnimatedSlider* {
@@ -706,8 +707,9 @@ void Scene::initializePlane()
 {
     std::vector<PlaneVertex> vertices;
     std::vector<PlaneIndex>  indices;
+    float d = 0.1f;
 
-    Plane::buildPlane(vertices, indices, 0.1f, 0.35f);
+    Plane::buildPlane(vertices, indices, d, d);
 
     mPlaneIndexCount = static_cast<uint32_t>(indices.size());
 

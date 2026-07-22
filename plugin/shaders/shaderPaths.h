@@ -24,7 +24,8 @@
             dir + "/shader_materials/mat_noise_density_slider.wgsl",
             dir + "/shader_materials/mat_logo.wgsl",
             dir + "/shader_materials/mat_tooltip.wgsl",
-            dir + "/shader_materials/ambientLight.wgsl"
+            dir + "/shader_materials/ambientLight.wgsl",
+            dir + "/shader_materials/mat_light_helper.wgsl"
 
 
         };

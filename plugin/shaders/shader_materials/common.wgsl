@@ -30,7 +30,10 @@ const MAT_NOISE_LEVEL_SLIDER:      u32 = 6u;
 const MAT_NOISE_LEVEL_MOD_SLIDER:  u32 = 7u;
 const MAT_NOIS_DENS_SLIDER:        u32 = 8u;
 const MAT_NOISE_DENS_MOD_SLIDER:   u32 = 9u;
-
+//============================
+//Utilities
+//============================
+const MAT_LIGHT_HELPER:            u32 = 10u;
 
 //===============================================
 //Uniforms
