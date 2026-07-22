@@ -266,8 +266,14 @@ void Scene::setUniforms(const WGPUQueue queue, const WGPUBuffer uniformBuffer, c
 
                 const auto textModel = GlyphGeometry::makeTextModel(
                     kTextScale, kTextScale, kTextScale, tx, ty, -kDist);
+
                 std::memcpy(mUniforms.modelMatrix, textModel.data(),
                             sizeof(mUniforms.modelMatrix));
+            }
+
+            if (id == MAT_LIGHT_HELPER)
+            {
+                makeModelMatrix(mUniforms.modelMatrix, 90.0f, 1.5f, 0.0f, 0.3f);
             }
 
             if (id == MAT_PARTICLES)
@@ -426,7 +432,7 @@ void Scene::initializeScene()
     }
     initializeParticles();
     initializeFloor();
-    initializePlane();
+    // initializePlane();
 }
 
 

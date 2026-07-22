@@ -141,6 +141,17 @@ class Scene
                 out[15] = A / B;
             }
 
+        static void makeModelMatrix(float* m, float angle, float tx, float ty, float tz)
+        {
+            const float c = std::cos(angle);
+            const float s = std::sin(angle);
+            // column-major: m[col * 4 + row]
+            m[0] =  c;  m[1] = 0;  m[2]  = -s; m[3]  = 0;   // col 0
+            m[4] =  0;  m[5] = 1;  m[6]  =  0; m[7]  = 0;   // col 1
+            m[8] =  s;  m[9] = 0;  m[10] =  c; m[11] = 0;   // col 2
+            m[12] = tx; m[13] = ty; m[14] = tz; m[15] = 1;  // col 3 (translation)
+        }
+
     private:
         void setItemBuffers(WGPUBuffer vertexBuffer, WGPUBuffer indexBuffer, uint32_t indexCount, uint32_t material, WGPURenderPassEncoder renderPass) const
         {

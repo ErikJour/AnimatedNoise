@@ -92,7 +92,9 @@ fn shadeSpineTube(in: VertexOutput) -> vec4f {
         let pulse           = sin(u.time * 4.0) * 0.15 + 0.85;
         let restColor       = vec3f(1.0, 0.38, 0.06);
         let pressedColor    = vec3f(1.0 * (1.0 - u.sliderValue), 0.82, 0.50);
-        let indicatorColor  = mix(restColor, pressedColor, u.pressed) * pulse
+        let sliderAmount    = f32(u.sliderValue + 0.3);
+        let clampedSlider   = clamp(0.3, 1.0, sliderAmount);
+        let indicatorColor  = mix(restColor * clampedSlider, pressedColor, u.pressed) * pulse
                            * (0.85 + 0.15 * rim * rim);
         let pressedAlpha    = mix(alpha, min(alpha * 1.25, 1.0), u.pressed);
 

@@ -66,10 +66,10 @@ fn pointLight(worldPos: vec3f, normal: vec3f) -> vec3f {
 //Directional Light
 
 fn directionalLight(worldPos: vec3f, normal: vec3f, lightColor: vec3f, lightIntensity: f32, lightPosition: vec3f) -> vec3f {
-
-    let lightDirection = normalize(lightPosition);
-    return lightColor * lightIntensity;
-
+    let lightDirection = normalize(lightPosition - worldPos);
+    var shading = dot(normal, lightDirection);
+    shading = max(0.0, shading);
+    return vec3(shading);
 }
 
 
