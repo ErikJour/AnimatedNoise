@@ -31,8 +31,8 @@ fn fragmentDensityModSlider(in: VertexOutput) -> vec4f {
         light += directionalLight(in.worldPos.xyz,
                                   modelNormal.xyz,
                                   vec3f(0.1, 0.1, 0.1),
-                                   1.0,
-                                  vec3f(1.5, 0.0, 0.3)
+                                   0.5,
+                                  vec3f(0.0, 1.0, 0.3)
                                   );
         //Done==================================================
         let color       = baseColor * (1.0 + grain * grainAmount);

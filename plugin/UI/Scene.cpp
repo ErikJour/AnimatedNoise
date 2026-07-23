@@ -273,7 +273,7 @@ void Scene::setUniforms(const WGPUQueue queue, const WGPUBuffer uniformBuffer, c
 
             if (id == MAT_LIGHT_HELPER)
             {
-                makeModelMatrix(mUniforms.modelMatrix, 90.0f, 1.5f, 0.0f, 0.3f);
+                makeModelMatrix(mUniforms.modelMatrix, 0.0f, 0.0f, 0.0f, 0.0f);
             }
 
             if (id == MAT_PARTICLES)
