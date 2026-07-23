@@ -24,16 +24,20 @@ fn fragmentNoiseLevelSlider(in: VertexOutput) -> vec4f {
     //light experiment=====================================
     var light = vec3f(0.0);
 
+    let viewDirection = normalize(u.cameraPosition - in.worldPos.xyz);
+
     light += ambientLight(in.worldPos.xyz,
                             normal,
                             vec3f(1.0, 0.0, 0.0),
                             0.2);
+
     let modelNormal = u.modelMatrix * vec4(normal, 0.0);
     light += directionalLight(in.worldPos.xyz,
                               modelNormal.xyz,
                               vec3f(0.1, 0.1, 0.1),
                                1.0,
-                              vec3f(0.0, 1.0, 0.3)
+                              vec3f(0.0, 1.0, 0.3),
+                              viewDirection
                               );
     //Done==================================================
     let color       = baseColor * (1.0 + grain * grainAmount);

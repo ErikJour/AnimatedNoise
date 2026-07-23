@@ -217,6 +217,10 @@ void Scene::setUniforms(const WGPUQueue queue, const WGPUBuffer uniformBuffer, c
     mUniforms.lightPos[2]               = 0.0f;
     mUniforms.aspectRatio               = static_cast<float>(mWidth) / static_cast<float>(mHeight);
 
+    mUniforms.cameraPosition[0]         = mCameraState.posX;
+    mUniforms.cameraPosition[1]         = CameraState::eyeY;
+    mUniforms.cameraPosition[2]         = mCameraState.posZ;
+
     updateViewMatrix();
 
     const AnimatedSlider* noiseLevel    = findSlider(ParameterID::noiseLevel);

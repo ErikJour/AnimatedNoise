@@ -54,7 +54,8 @@ struct Uniforms {
     pressed:        f32,
     materialId:     u32,
     resonate:       f32,
-    sliderPosition: vec3f
+    sliderPosition: vec3f,
+    cameraPosition: vec3f
 };
 
 @group(0) @binding(0) var<uniform> u: Uniforms;

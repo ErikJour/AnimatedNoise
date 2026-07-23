@@ -65,11 +65,18 @@ fn pointLight(worldPos: vec3f, normal: vec3f) -> vec3f {
 
 //Directional Light
 
-fn directionalLight(worldPos: vec3f, normal: vec3f, lightColor: vec3f, lightIntensity: f32, lightPosition: vec3f) -> vec3f {
+fn directionalLight(worldPos: vec3f, normal: vec3f, lightColor: vec3f,
+                    lightIntensity: f32, lightPosition: vec3f, viewDirection: vec3f) -> vec3f
+{
+    let cameraPosition = vec3f(u.cameraPosition);
     let lightDirection = normalize(lightPosition - worldPos);
+    let lightReflection = reflect(-lightDirection, normal);
     var shading = dot(normal, lightDirection);
     shading = max(0.0, shading);
-    return vec3(shading);
+    var specular = dot(lightReflection, viewDirection);
+    specular = pow(specular, 19.0f);
+    specular = max(0.0, specular);
+    return vec3(shading + specular * 0.5);
 }
 
 

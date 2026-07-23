@@ -46,7 +46,8 @@ struct MyUniforms {
     uint32_t materialId;
     float    resonate;
     float    sliderPosition[3];
-    float    pad;
+    float    cameraPosition[3];
+    float    pad[2];
 };
 
 static_assert(sizeof(MyUniforms) % 16              == 0);
