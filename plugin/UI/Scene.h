@@ -45,6 +45,7 @@ class Scene
         void terminate();
         void reloadShader();
         void setUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer, float time);
+        void setSliderUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer);
         std::pair<WGPUSurfaceTexture, WGPUTextureView> getNextSurfaceViewData() const;
         void renderMeshes(WGPURenderPassEncoder renderPass);
         void renderFrame(float currentTime);
@@ -78,7 +79,7 @@ class Scene
         void onMouseMove(float xpos, float ypos);
         void onScroll(float deltaX, float deltaY);
         void setToolTip(const std::string &paramName, const std::string &paramValue);
-        void initializePlane();
+        void initializeLightHelper();
 
         void setSliderList(const std::vector<AnimatedSlider>& list) { mSliderList = &list; }
 
@@ -210,9 +211,9 @@ class Scene
         static constexpr float              kSpineMaxY       =  0.25f;
         static constexpr float              kIndicatorHalfY  =  0.025f;
         //Plane
-        WGPUBuffer                          mPlaneVertexBuffer   = nullptr;
-        WGPUBuffer                          mPlaneIndexBuffer    = nullptr;
-        uint32_t                            mPlaneIndexCount     = 0;
+        WGPUBuffer                          mLightHelperVertexBuffer   = nullptr;
+        WGPUBuffer                          mLightHelperIndexBuffer    = nullptr;
+        uint32_t                            mLightHelperIndexCount     = 0;
         //Floor
         WGPUBuffer                          mFloorVertexBuffer  = nullptr;
         WGPUBuffer                          mFloorIndexBuffer  = nullptr;
