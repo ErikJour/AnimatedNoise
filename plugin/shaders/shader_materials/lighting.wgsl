@@ -9,22 +9,22 @@ fn centerLight(worldPos: vec3f) -> vec3f {
 
 fn ceilingLights(worldPos: vec3f) -> vec3f {
     let lightHeight: f32 = 1.75;
-    let lightOne   = vec2f(  1.900,  0.0000);
-    let lightTwo   = vec2f(  0.950,  1.6454);
+    let noiseLight = vec2f(  1.900,  0.0000);
+    let lightTwo   = vec2f(  0.950,  1.6454); //.79, 1.37
     let LightThree = vec2f( -0.950,  1.6454);
     let lightFour  = vec2f( -1.900,  0.0000);
     let lightFive  = vec2f( -0.950, -1.6454);
     let lightSix   = vec2f(  0.950, -1.6454);
 
-    var currentLight = lightOne;
+    var currentLight = noiseLight;
 
-    var bd = distance(worldPos.xz, lightOne);
-    let d1 = distance(worldPos.xz, lightOne);   if (d1 < bd) { bd = d1; currentLight = lightOne; }
-    let d2 = distance(worldPos.xz, lightTwo);   if (d2 < bd) { bd = d2; currentLight = lightTwo; }
-    let d3 = distance(worldPos.xz, LightThree); if (d3 < bd) { bd = d3; currentLight = LightThree; }
-    let d4 = distance(worldPos.xz, lightFour);  if (d4 < bd) { bd = d4; currentLight = lightFour; }
-    let d5 = distance(worldPos.xz, lightFive);  if (d5 < bd) { bd = d5; currentLight = lightFive; }
-    let d6 = distance(worldPos.xz, lightSix);   if (d6 < bd) { bd = d6; currentLight = lightSix; }
+    var bd = distance(worldPos.xz, noiseLight);
+    let d1 = distance(worldPos.xz, noiseLight);   if (d1 < bd) { bd = d1; currentLight = noiseLight; }
+    let d2 = distance(worldPos.xz, lightTwo);   if (d2 < bd)   { bd = d2; currentLight = lightTwo; }
+    let d3 = distance(worldPos.xz, LightThree); if (d3 < bd)   { bd = d3; currentLight = LightThree; }
+    let d4 = distance(worldPos.xz, lightFour);  if (d4 < bd)   { bd = d4; currentLight = lightFour; }
+    let d5 = distance(worldPos.xz, lightFive);  if (d5 < bd)   { bd = d5; currentLight = lightFive; }
+    let d6 = distance(worldPos.xz, lightSix);   if (d6 < bd)   { bd = d6; currentLight = lightSix; }
 
     return vec3f(currentLight.x, lightHeight, currentLight.y);
 }
@@ -74,9 +74,9 @@ fn directionalLight(worldPos: vec3f, normal: vec3f, lightColor: vec3f,
     var shading = dot(normal, lightDirection);
     shading = max(0.0, shading);
     var specular = dot(lightReflection, viewDirection);
-    specular = pow(specular, 19.0f);
+    specular = pow(specular, 13.0f);
     specular = max(0.0, specular);
-    return vec3(shading + specular * 0.5);
+    return vec3(shading + specular * 0.25);
 }
 
 

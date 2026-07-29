@@ -92,10 +92,10 @@ target_sources(AnimatedNoise
         UI/components/slider/sliderCatalog.cpp
 )
 
-if (APPLE)
-    target_sources(AnimatedNoise PRIVATE source/GpuSurface.mm)
-    target_link_libraries(AnimatedNoise PRIVATE "-framework QuartzCore" "-framework Metal")
-endif()
+#if (APPLE)
+#    target_sources(AnimatedNoise PRIVATE source/GpuSurface.mm)
+#    target_link_libraries(AnimatedNoise PRIVATE "-framework QuartzCore" "-framework Metal")
+#endif()
 
 #==================================
 #Include directories

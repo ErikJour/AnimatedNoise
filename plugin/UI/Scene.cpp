@@ -10,14 +10,12 @@ static constexpr uint32_t materialCount = 11;
 //================================================================================================
 Scene::Scene() : mFont(fontPath)  {}
 Scene::~Scene() = default;
-
 //================================================================================================
-void Scene::init(const WGPUDevice device, WGPUQueue queue) { mDevice = device; mQueue  = queue; }
-void Scene::setSurface(WGPUSurface surface) { mSurface = surface; }
-void Scene::setSurfaceSize(const uint32_t width, const uint32_t height) { mWidth = width; mHeight = height; }
-void Scene::setShaderModule(const WGPUShaderModule shaderModule) { mShaderModule = shaderModule; }
-void Scene::setPipelineDesc(WGPURenderPipelineDescriptor pipelineDesc) { mPipelineDesc = pipelineDesc; }
-
+void Scene::init(const WGPUDevice device, const WGPUQueue queue)               { mDevice = device; mQueue  = queue;  }
+void Scene::setSurface(const WGPUSurface surface)                              { mSurface = surface;                 }
+void Scene::setSurfaceSize(const uint32_t width, const uint32_t height)        { mWidth = width;   mHeight = height; }
+void Scene::setShaderModule(const WGPUShaderModule shaderModule)               { mShaderModule = shaderModule;       }
+void Scene::setPipelineDesc(const WGPURenderPipelineDescriptor& pipelineDesc)  { mPipelineDesc = pipelineDesc;       }
 //================================================================================================
 bool Scene::createShader()
 {
@@ -74,83 +72,63 @@ void Scene::terminate()
     if (mSurface)                       { wgpuSurfaceUnconfigure(mSurface); wgpuSurfaceRelease(mSurface); mSurface = nullptr; }
 }
 
-void Scene::renderFrame(const float currentTime)
-{
-    #ifdef DEBUG
-        auto writeTime = latestWriteTime(mShaderPaths);
-        if (writeTime != mLastShaderWriteTime) {
-            mLastShaderWriteTime = writeTime;
-            reloadShader();
-            return;
-        }
-    #endif
 
-        if (!mPipeline) return;
-        if (!mSurface) return;
-        //Setup surface to draw into
-        WGPUSurfaceTexture surfaceTexture = {};
-        wgpuSurfaceGetCurrentTexture(mSurface, &surfaceTexture);
-        //Safety check
-        if (surfaceTexture.status != WGPUSurfaceGetCurrentTextureStatus_Success) return;
-        //Formatting over our blank texture
-        WGPUTextureViewDescriptor viewDesc              = {};
-        viewDesc.format                                 = mSurfaceFormat;
-        viewDesc.dimension                              = WGPUTextureViewDimension_2D;
-        viewDesc.mipLevelCount                          = 1;
-        viewDesc.arrayLayerCount                        = 1;
-        viewDesc.aspect = WGPUTextureAspect_All;
-        //Update uniform states
-        setUniforms(mQueue, mUniformBuffer, currentTime);
-        //Update GPU memory with
-        const WGPUTextureView targetView                = wgpuTextureCreateView(surfaceTexture.texture, &viewDesc);
-        //Transfer ownership to view
-        wgpuTextureRelease(surfaceTexture.texture);
-        //Create an object on the CPU to record our drawing commands
-        WGPUCommandEncoderDescriptor encoderDesc        = {};
-        encoderDesc.label                               = WGPU_STR("Frame encoder");
-        WGPUCommandEncoder encoder                      = wgpuDeviceCreateCommandEncoder(mDevice, &encoderDesc);
-        //Clear the canvas and set color before draw
-        WGPURenderPassColorAttachment colorAttachment   = {};
-        colorAttachment.view                            = targetView;
-        colorAttachment.loadOp                          = WGPULoadOp_Clear;
-        colorAttachment.storeOp                         = WGPUStoreOp_Store;
-        colorAttachment.clearValue                      = WGPUColor{ mRed, mGreen, mBlue, 1.0 };
-        colorAttachment.depthSlice                      = WGPU_DEPTH_SLICE_UNDEFINED;
-        //Setup master render pass
-        WGPURenderPassDescriptor renderPassDesc         = {};
-        renderPassDesc.colorAttachmentCount             = 1;
-        renderPassDesc.colorAttachments                 = &colorAttachment;
-        // Configure the depth buffer so closer objects correctly hide objects behind them
-        WGPURenderPassDepthStencilAttachment depthStencilAttachment = {};
-        depthStencilAttachment.view                     = mDepthTextureView;
-        depthStencilAttachment.depthClearValue          = 1.0f;
-        depthStencilAttachment.depthLoadOp              = WGPULoadOp_Clear;
-        depthStencilAttachment.depthStoreOp             = WGPUStoreOp_Store;
-        depthStencilAttachment.depthReadOnly            = false;
-        depthStencilAttachment.stencilLoadOp            = WGPULoadOp_Undefined;
-        depthStencilAttachment.stencilStoreOp           = WGPUStoreOp_Undefined;
-        depthStencilAttachment.stencilReadOnly          = true;
-        renderPassDesc.depthStencilAttachment           = &depthStencilAttachment;
-        //Begin render pass - clear screen and prepare GPU for drawing
-        const WGPURenderPassEncoder renderPass          = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
-        //Load the shaders and other GPU data
-        wgpuRenderPassEncoderSetPipeline(renderPass, mPipeline);
-        //Meshes
-        setItemBuffers(mFloorVertexBuffer,
+std::pair<WGPUSurfaceTexture, WGPUTextureView> Scene::getNextSurfaceViewData() const
+{
+    //Setup surface to draw into
+    WGPUSurfaceTexture surfaceTexture = {};
+    wgpuSurfaceGetCurrentTexture(mSurface, &surfaceTexture);
+    //Safety check
+    if (surfaceTexture.status != WGPUSurfaceGetCurrentTextureStatus_Success)
+    {
+        return { surfaceTexture, nullptr };
+    }
+    //Formatting over our blank texture
+    WGPUTextureViewDescriptor viewDesc              = {};
+    viewDesc.format                                 = mSurfaceFormat;
+    viewDesc.dimension                              = WGPUTextureViewDimension_2D;
+    viewDesc.mipLevelCount                          = 1;
+    viewDesc.arrayLayerCount                        = 1;
+    viewDesc.aspect = WGPUTextureAspect_All;
+    //Update GPU memory with
+    const WGPUTextureView targetView                = wgpuTextureCreateView(surfaceTexture.texture, &viewDesc);
+
+    return {surfaceTexture, targetView};
+}
+
+void Scene::renderMeshes(const WGPURenderPassEncoder renderPass)
+{
+    setItemBuffers(mFloorVertexBuffer,
              mFloorIndexBuffer,
                         mFloorIndexCount,
                         MAT_LEVEL,
                         renderPass);
-        setItemBuffers(mSphereVertexBuffer,
+    setItemBuffers(mSphereVertexBuffer,
               mSphereIndexBuffer,
                          mSphereIndexCount,
                          MAT_LEVEL,
                               renderPass);
-        setItemBuffers(mSkylightVertexBuffer,
+    setItemBuffers(mSkylightVertexBuffer,
             mSkylightIndexBuffer,
                         mSkylightIndexCount,
                         MAT_LEVEL,
                         renderPass);
+    setItemBuffers(mPresetVertexBuffer,
+            mPresetIndexBuffer,
+                        mPresetIndexCount,
+                        MAT_TEXT,
+                            renderPass);
+    setItemBuffers(mTooltipVertexBuffer,
+            mTooltipIndexBuffer,
+                        mTooltipIndexCount,
+                        MAT_TOOLTIP,
+                            renderPass);
+    setItemBuffers(mPlaneVertexBuffer,
+            mPlaneIndexBuffer,
+                        mPlaneIndexCount,
+                        MAT_LIGHT_HELPER,
+                            renderPass);
+
         for (const auto& [vertexBuffer, indexBuffer, indexCount, materialId] : mSliderMeshes)
             setItemBuffers(vertexBuffer,
                             indexBuffer,
@@ -168,42 +146,107 @@ void Scene::renderFrame(const float currentTime)
             wgpuRenderPassEncoderDraw(renderPass, 6, mParticleDrawCount, 0, 0);
             wgpuRenderPassEncoderSetPipeline(renderPass, mPipeline);
         }
-        //Preset Names
-        setItemBuffers(mPresetVertexBuffer,
-                mPresetIndexBuffer,
-                            mPresetIndexCount,
-                            MAT_TEXT,
-                                renderPass);
-        //Tooltip
-        setItemBuffers(mTooltipVertexBuffer,
-                mTooltipIndexBuffer,
-                            mTooltipIndexCount,
-                            MAT_TOOLTIP,
-                                renderPass);
-        //Light Helper
-        setItemBuffers(mPlaneVertexBuffer,
-                mPlaneIndexBuffer,
-                            mPlaneIndexCount,
-                            MAT_LIGHT_HELPER,
-                                renderPass);
+
 
         mLogo.render(renderPass);
+}
+
+void Scene::renderFrame(const float currentTime)
+{
+    #ifdef DEBUG
+        auto writeTime = latestWriteTime(mShaderPaths);
+        if (writeTime != mLastShaderWriteTime) {
+            mLastShaderWriteTime = writeTime;
+            reloadShader();
+            return;
+        }
+    #endif
+
+        if (!mPipeline) return;
+        if (!mSurface)  return;
+        //======================================================================
+        //Update uniform states, share currentTime with uniforms here
+        //======================================================================
+        setUniforms(mQueue, mUniformBuffer, currentTime);
+        //======================================================================
+        //get surface texture and target view, transfer ownership to view
+        //======================================================================
+        auto [ surfaceTexture, targetView ]             = getNextSurfaceViewData();
+        wgpuTextureRelease(surfaceTexture.texture);
+        //======================================================================
+        //Create an object on the CPU side to record our drawing commands
+        //======================================================================
+        WGPUCommandEncoderDescriptor encoderDesc        = {};
+        encoderDesc.label                               = WGPU_STR("Frame encoder");
+        const WGPUCommandEncoder encoder                = wgpuDeviceCreateCommandEncoder(mDevice, &encoderDesc);
+        //======================================================================
+        //Clear the canvas and set color before draw
+        //======================================================================
+        WGPURenderPassColorAttachment colorAttachment   = {};
+        colorAttachment.view                            = targetView;
+        colorAttachment.loadOp                          = WGPULoadOp_Clear;
+        colorAttachment.storeOp                         = WGPUStoreOp_Store;
+        colorAttachment.clearValue                      = WGPUColor{ mRed, mGreen, mBlue, 1.0 };
+        colorAttachment.depthSlice                      = WGPU_DEPTH_SLICE_UNDEFINED;
+        //======================================================================
+        //Setup master render pass
+        //======================================================================
+        WGPURenderPassDescriptor renderPassDesc         = {};
+        renderPassDesc.colorAttachmentCount             = 1;
+        renderPassDesc.colorAttachments                 = &colorAttachment;
+        //======================================================================
+        // Configure the depth buffer so closer objects correctly hide objects behind them
+        //======================================================================
+        WGPURenderPassDepthStencilAttachment depthStencilAttachment = {};
+        depthStencilAttachment.view                     = mDepthTextureView;
+        depthStencilAttachment.depthClearValue          = 1.0f;
+        depthStencilAttachment.depthLoadOp              = WGPULoadOp_Clear;
+        depthStencilAttachment.depthStoreOp             = WGPUStoreOp_Store;
+        depthStencilAttachment.depthReadOnly            = false;
+        depthStencilAttachment.stencilLoadOp            = WGPULoadOp_Undefined;
+        depthStencilAttachment.stencilStoreOp           = WGPUStoreOp_Undefined;
+        depthStencilAttachment.stencilReadOnly          = true;
+        renderPassDesc.depthStencilAttachment           = &depthStencilAttachment;
+        //======================================================================
+        //Begin render pass - clear screen and prepare GPU for drawing
+        //======================================================================
+        const WGPURenderPassEncoder renderPass          = wgpuCommandEncoderBeginRenderPass(encoder, &renderPassDesc);
+        //======================================================================
+        //Load the shaders and other GPU data
+        //======================================================================
+        wgpuRenderPassEncoderSetPipeline(renderPass, mPipeline);
+        //======================================================================
+        //Add mesh data to render pass
+        //======================================================================
+        renderMeshes(renderPass);
+        //======================================================================
         //Finish the render, frame is fully recorded
+        //======================================================================
         wgpuRenderPassEncoderEnd(renderPass);
         wgpuRenderPassEncoderRelease(renderPass);
+        //======================================================================
         //Free memory on the CPU.
+        //======================================================================
         WGPUCommandBufferDescriptor cmdDesc = {};
         cmdDesc.label = WGPU_STR("Frame command buffer");
         const WGPUCommandBuffer command = wgpuCommandEncoderFinish(encoder, &cmdDesc);
         wgpuCommandEncoderRelease(encoder);
-        //Pass our data to the GPU
+        //======================================================================
+        //Pass our data to the GPU through command
+        //======================================================================
         wgpuQueueSubmit(mQueue, 1, &command);
-        //Clean up memory
+        //======================================================================
+        //Clean up memory (release buffer)
+        //======================================================================
         wgpuCommandBufferRelease(command);
         wgpuTextureViewRelease(targetView);
+        //======================================================================
         //Show the current frame now!
+        //======================================================================
         wgpuSurfacePresent(mSurface);
+        //======================================================================
         //Clean up
+        //======================================================================
         wgpuDeviceTick(mDevice);
 }
 
@@ -442,70 +485,77 @@ void Scene::initializeScene()
 
 bool Scene::createPipeline()
 {
-    if (mBindGroup)    { wgpuBindGroupRelease(mBindGroup);    mBindGroup     = nullptr; }
-    if (mUniformBuffer){ wgpuBufferRelease(mUniformBuffer);   mUniformBuffer = nullptr; }
-    if (mPipeline)     { wgpuRenderPipelineRelease(mPipeline); mPipeline     = nullptr; }
-
-    static constexpr uint32_t kAlignment = 256;
-    mUniformStride = (sizeof(MyUniforms) + kAlignment - 1) & ~(kAlignment - 1);
-
-    WGPUBindGroupLayoutEntry bglEntry  = {};
-    bglEntry.binding                   = 0;
-    bglEntry.visibility                = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
-    bglEntry.buffer.type               = WGPUBufferBindingType_Uniform;
-    bglEntry.buffer.hasDynamicOffset   = true;
-    bglEntry.buffer.minBindingSize     = sizeof(MyUniforms);
-
-    WGPUBindGroupLayoutDescriptor bglDesc = {};
-    bglDesc.entryCount                    = 1;
-    bglDesc.entries                       = &bglEntry;
-    WGPUBindGroupLayout bgl = wgpuDeviceCreateBindGroupLayout(mDevice, &bglDesc);
-
+    //=====================================================================================
+    //Here we configure communication from the CPU to the GPU
+    //=====================================================================================
+    //Release bind group, uniform buffer, and pipeline so that we can reset these
+    //=====================================================================================
+    if (mBindGroup)    { wgpuBindGroupRelease(mBindGroup);     mBindGroup     = nullptr; }
+    if (mUniformBuffer){ wgpuBufferRelease(mUniformBuffer);    mUniformBuffer = nullptr; }
+    if (mPipeline)     { wgpuRenderPipelineRelease(mPipeline); mPipeline      = nullptr; }
+    //=====================================================================================
+    //Rules for sending uniform data to the gpu
+    //=====================================================================================
+    static constexpr uint32_t kAlignment    = 256;
+    mUniformStride                          = (sizeof(MyUniforms) + kAlignment - 1) & ~(kAlignment - 1);
+    WGPUBindGroupLayoutEntry bglEntry       = {};
+    bglEntry.binding                        = 0;
+    bglEntry.visibility                     = WGPUShaderStage_Vertex | WGPUShaderStage_Fragment;
+    bglEntry.buffer.type                    = WGPUBufferBindingType_Uniform;
+    bglEntry.buffer.hasDynamicOffset        = true;
+    bglEntry.buffer.minBindingSize          = sizeof(MyUniforms);
+    WGPUBindGroupLayoutDescriptor bglDesc   = {};
+    bglDesc.entryCount                      = 1;
+    bglDesc.entries                         = &bglEntry;
+    const WGPUBindGroupLayout bgl           = wgpuDeviceCreateBindGroupLayout(mDevice, &bglDesc);
     WGPUPipelineLayoutDescriptor layoutDesc = {};
     layoutDesc.bindGroupLayoutCount         = 1;
     layoutDesc.bindGroupLayouts             = &bgl;
+
     if (mPipelineDesc.layout) {
         wgpuPipelineLayoutRelease(mPipelineDesc.layout);
         mPipelineDesc.layout = nullptr;
     }
-    mPipelineDesc.layout = wgpuDeviceCreatePipelineLayout(mDevice, &layoutDesc);
 
-    mColorTarget.format        = mSurfaceFormat;
-    mColorTarget.blend         = &mBlendState;
-    mColorTarget.writeMask     = WGPUColorWriteMask_All;
+    mPipelineDesc.layout                    = wgpuDeviceCreatePipelineLayout(mDevice, &layoutDesc);
+    //=====================================================================================
+    //Configure shaders
+    //=====================================================================================
+    mColorTarget.format         = mSurfaceFormat;         //Pixel format
+    mColorTarget.blend          = &mBlendState;           //Blend format
+    mColorTarget.writeMask      = WGPUColorWriteMask_All; //All color channels can be written to
     mPipelineDesc.vertex.module = mShaderModule;
-    mFragmentState.module      = mShaderModule;
-    mFragmentState.entryPoint  = WGPU_STR("fs_main");
-    mFragmentState.targetCount = 1;
-    mFragmentState.targets     = &mColorTarget;
-    mFragmentState.constants   = nullptr;
-    mPipelineDesc.fragment     = &mFragmentState;
+    mFragmentState.module       = mShaderModule;
+    mFragmentState.entryPoint   = WGPU_STR("fs_main");
+    mFragmentState.targetCount  = 1;
+    mFragmentState.targets      = &mColorTarget;
+    mFragmentState.constants    = nullptr;
+    mPipelineDesc.fragment      = &mFragmentState;
 
     mPipeline = wgpuDeviceCreateRenderPipeline(mDevice, &mPipelineDesc);
     if (!mPipeline) {
         std::cerr << "Failed to create render pipeline." << std::endl;
         return false;
     }
-
+    //=====================================================================================
+    //Allocate GPU buffer memory
+    //=====================================================================================
     WGPUBufferDescriptor bufferDesc = {};
     bufferDesc.size                 = materialCount * mUniformStride;  // one slot per material
     bufferDesc.usage                = WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst;
     mUniformBuffer                  = wgpuDeviceCreateBuffer(mDevice, &bufferDesc);
-
-    WGPUBindGroupEntry entry       = {};
-    entry.binding                  = 0;
-    entry.buffer                   = mUniformBuffer;
-    entry.offset                   = 0;
-    entry.size                     = sizeof(MyUniforms);
-
-    WGPUBindGroupDescriptor bgDesc = {};
-    bgDesc.layout                  = bgl;
-    bgDesc.entryCount              = 1;
-    bgDesc.entries                 = &entry;
-    mBindGroup                     = wgpuDeviceCreateBindGroup(mDevice, &bgDesc);
+    WGPUBindGroupEntry entry        = {};
+    entry.binding                   = 0;
+    entry.buffer                    = mUniformBuffer;
+    entry.offset                    = 0;
+    entry.size                      = sizeof(MyUniforms);
+    WGPUBindGroupDescriptor bgDesc  = {};
+    bgDesc.layout                   = bgl;
+    bgDesc.entryCount               = 1;
+    bgDesc.entries                  = &entry;
+    mBindGroup                      = wgpuDeviceCreateBindGroup(mDevice, &bgDesc);
 
     updateDepthTexture(mWidth, mHeight);
-
     wgpuBindGroupLayoutRelease(bgl);
     if (!createParticlePipeline()) return false;
     mLogo.init(mDevice, mQueue);
@@ -515,11 +565,19 @@ bool Scene::createPipeline()
 
 void Scene::updateDepthTexture(const uint32_t width, const uint32_t height)
 {
+    //=====================================================================================
+    //Assign width and height
+    //=====================================================================================
     mWidth = width;
     mHeight = height;
+    //=====================================================================================
+    //Release depth texture and depth texture view
+    //=====================================================================================
     if (mDepthTextureView) { wgpuTextureViewRelease(mDepthTextureView); mDepthTextureView = nullptr; }
     if (mDepthTexture)     { wgpuTextureDestroy(mDepthTexture); wgpuTextureRelease(mDepthTexture); mDepthTexture = nullptr; }
-
+    //=====================================================================================
+    //Setup texture descriptor and texture view descriptor
+    //=====================================================================================
     WGPUTextureDescriptor   depthDesc{};
     depthDesc.usage         = WGPUTextureUsage_RenderAttachment;
     depthDesc.dimension     = WGPUTextureDimension_2D;
@@ -527,17 +585,22 @@ void Scene::updateDepthTexture(const uint32_t width, const uint32_t height)
     depthDesc.format        = WGPUTextureFormat_Depth24Plus;
     depthDesc.mipLevelCount = 1;
     depthDesc.sampleCount   = 1;
-    mDepthTexture           = wgpuDeviceCreateTexture(mDevice, &depthDesc);
-
     WGPUTextureViewDescriptor dvDesc{};
-    dvDesc.format          = WGPUTextureFormat_Depth24Plus;
-    dvDesc.dimension       = WGPUTextureViewDimension_2D;
-    dvDesc.mipLevelCount   = 1;
-    dvDesc.arrayLayerCount = 1;
-    dvDesc.aspect          = WGPUTextureAspect_DepthOnly;
-    mDepthTextureView      = wgpuTextureCreateView(mDepthTexture, &dvDesc);
+    dvDesc.format           = WGPUTextureFormat_Depth24Plus;
+    dvDesc.dimension        = WGPUTextureViewDimension_2D;
+    dvDesc.mipLevelCount    = 1;
+    dvDesc.arrayLayerCount  = 1;
+    dvDesc.aspect           = WGPUTextureAspect_DepthOnly;
+    //=====================================================================================
+    //Assign depth texture / depth texture view to device create texture and texture create view
+    //=====================================================================================
+    mDepthTexture           = wgpuDeviceCreateTexture(mDevice, &depthDesc);
+    mDepthTextureView       = wgpuTextureCreateView(mDepthTexture, &dvDesc);
 }
 
+//=====================================================================================
+//Mesh initializations
+//=====================================================================================
 void Scene::initializeFloor()
 {
     std::vector<FloorVertex> vertices;
@@ -735,7 +798,7 @@ void Scene::initializePlane()
     wgpuQueueWriteBuffer(mQueue, mPlaneIndexBuffer, 0, indices.data(), bd.size);
 }
 
-//==========================================================================
+//==========================================================================================
 void Scene::updateViewMatrix()
 {
     const float yaw          = mCameraState.angleX;
@@ -759,6 +822,9 @@ void Scene::updateViewMatrix()
     buildInvPerspective(mInvProj, 1.047f, mUniforms.aspectRatio, near, far);
 }
 
+//=====================================================================================
+//Mouse and key input
+//=====================================================================================
 void Scene::onMouseMove(const float xpos, const float /*ypos*/)
 {
     if (mDrag.active)
@@ -804,6 +870,9 @@ void Scene::onScroll(const float deltaX, const float deltaY)
     updateViewMatrix();
 }
 
+//=====================================================================================
+//Getters and setters
+//=====================================================================================
 void Scene::setToolTip(const std::string &paramName, const std::string &paramValue)
 {
     mText = paramName;
@@ -811,8 +880,6 @@ void Scene::setToolTip(const std::string &paramName, const std::string &paramVal
     initializeTooltip(mFont, paramName, paramValue);
 
 }
-
-
 void Scene::setSurfaceFormat(const WGPUTextureFormat format) { mSurfaceFormat = format; }
 
 void Scene::setCameraState(const CameraState& s)             { mCameraState = s; updateViewMatrix(); }

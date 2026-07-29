@@ -204,6 +204,7 @@ void WebGpuWindow::getAdapter(const WGPUAdapter adapter, const WGPUAdapterInfo& 
 void WebGpuWindow::getLimits(const WGPUAdapter adapter, WGPUSupportedLimits &limits)
 {
     bool success = wgpuAdapterGetLimits(adapter, &limits) == WGPUStatus_Success;
+
     if (success) {
         std::cout << "Adapter limits:" << std::endl;
         std::cout << " - maxTextureDimension1D: " << limits.limits.maxTextureDimension1D << std::endl;
@@ -256,4 +257,27 @@ WGPURequiredLimits WebGpuWindow::GetRequiredLimits(const WGPUAdapter adapter)
     requiredLimits.limits.maxVertexBufferArrayStride    = 9 * sizeof(float);
     requiredLimits.limits.maxInterStageShaderComponents = 3;
     return requiredLimits;
+}
+
+void WebGpuWindow::applySurfaceConfig(const uint32_t width, const uint32_t height)
+{
+    if (mSurfaceFormat == WGPUTextureFormat_Undefined) {
+        WGPUSurfaceCapabilities caps = {};
+        wgpuSurfaceGetCapabilities(mSurface, mAdapter, &caps);
+        mSurfaceFormat               = caps.formats[0];
+        wgpuSurfaceCapabilitiesFreeMembers(caps);
+        wgpuAdapterRelease(mAdapter);
+        mAdapter = nullptr;
+    }
+
+    WGPUSurfaceConfiguration config = {};
+    config.device       = mDevice;
+    config.format       = mSurfaceFormat;
+    config.usage        = WGPUTextureUsage_RenderAttachment;
+    config.width        = width;
+    config.height       = height;
+    config.presentMode  = WGPUPresentMode_Fifo;
+    config.alphaMode    = WGPUCompositeAlphaMode_Auto;
+
+    wgpuSurfaceConfigure(mSurface, &config);
 }

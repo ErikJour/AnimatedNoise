@@ -40,11 +40,13 @@ class Scene
         void setSurface(WGPUSurface surface);
         void setSurfaceSize(uint32_t width, uint32_t height);
         void setShaderModule(WGPUShaderModule shaderModule);
-        void setPipelineDesc(WGPURenderPipelineDescriptor pipelineDesc);
+        void setPipelineDesc(const WGPURenderPipelineDescriptor& pipelineDesc);
         bool createShader();
         void terminate();
         void reloadShader();
         void setUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer, float time);
+        std::pair<WGPUSurfaceTexture, WGPUTextureView> getNextSurfaceViewData() const;
+        void renderMeshes(WGPURenderPassEncoder renderPass);
         void renderFrame(float currentTime);
         void ConfigureVertexLayout();
         bool createParticlePipeline();
@@ -164,33 +166,36 @@ class Scene
                 wgpuRenderPassEncoderDrawIndexed(renderPass, indexCount, 1, 0, 0, 0);
             }
         }
+
+        //=========================================================
+        //Variables
+        //=========================================================
         uint32_t mWidth{};
         uint32_t mHeight{};
-        WGPUDevice                          mDevice       = nullptr;
-        WGPUQueue                           mQueue        = nullptr;
-        WGPURenderPipeline                  mPipeline     = {};
-        WGPUSurface                         mSurface      = nullptr;
-        WGPUTextureFormat                   mSurfaceFormat = WGPUTextureFormat_Undefined;
+        WGPUDevice                          mDevice              = nullptr;
+        WGPUQueue                           mQueue               = nullptr;
+        WGPURenderPipeline                  mPipeline            = {};
+        WGPUSurface                         mSurface             = nullptr;
+        WGPUTextureFormat                   mSurfaceFormat       = WGPUTextureFormat_Undefined;
         std::vector<std::filesystem::path>  mShaderPaths;
         std::filesystem::file_time_type     mLastShaderWriteTime;
-        WGPUBuffer                          mUniformBuffer = nullptr;
-        WGPUTexture                         mDepthTexture     = nullptr;
-        WGPUTextureView                     mDepthTextureView = nullptr; //Revisit this
+        WGPUBuffer                          mUniformBuffer       = nullptr;
+        WGPUTexture                         mDepthTexture        = nullptr;
+        WGPUTextureView                     mDepthTextureView    = nullptr; //Revisit this
 
         uint32_t                            mUniformStride       = 0;
         WGPUBindGroup                       mBindGroup           = nullptr;
         std::array<WGPUVertexAttribute, 3>  mVertexAttribs       = {};
         std::vector<WGPUVertexBufferLayout> mVertexBufferLayouts = {};
 
-        WGPUShaderModule                    mShaderModule = {};
-        WGPURenderPipelineDescriptor        mPipelineDesc = {};
-        WGPUColorTargetState                mColorTarget = {};
-        WGPUFragmentState                   mFragmentState = {};
-        WGPUBlendState                      mBlendState = {};
-        MyUniforms                          mUniforms = {};
+        WGPUShaderModule                    mShaderModule        = {};
+        WGPURenderPipelineDescriptor        mPipelineDesc        = {};
+        WGPUColorTargetState                mColorTarget         = {};
+        WGPUFragmentState                   mFragmentState       = {};
+        WGPUBlendState                      mBlendState          = {};
+        MyUniforms                          mUniforms            = {};
 
-        float                               mSliderValues[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-        // float                               mDepthValue      = 0.0f;
+        float                               mSliderValues[4]     = { 0.0f, 0.0f, 0.0f, 0.0f };
 
         struct SliderMesh {
             WGPUBuffer vertexBuffer = nullptr;
