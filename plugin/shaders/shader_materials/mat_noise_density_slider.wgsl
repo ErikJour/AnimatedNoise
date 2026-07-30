@@ -15,7 +15,7 @@ fn vertexDensitySlider(pos: ptr<function, vec3f>, color: vec3f) -> vec4f {
 }
 
 fn fragmentDensitySlider(in: VertexOutput) -> vec4f {
-  let normal      = normalize(in.normal);
+     let normal      = normalize(in.normal);
      let baseColor   = vec3f(0.4, 0.5, 0.8);
      let uv          = (in.worldPos.xz);
      let grain       = filmGrain(uv, 0.01);

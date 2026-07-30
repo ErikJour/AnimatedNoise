@@ -207,15 +207,25 @@ void Scene::setSliderUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer)
 
 void Scene::ConfigureVertexLayout()
 {
+    //===========================================
+    //Position
+    //===========================================
     mVertexAttribs[0].shaderLocation        = 0;
     mVertexAttribs[0].format                = WGPUVertexFormat_Float32x3;
     mVertexAttribs[0].offset                = 0;
-    mVertexAttribs[1].shaderLocation        = 2;
+    //===========================================
+    //Normal
+    //===========================================
+    mVertexAttribs[1].shaderLocation        = 1;
     mVertexAttribs[1].format                = WGPUVertexFormat_Float32x3;
     mVertexAttribs[1].offset                = 3 * sizeof(float);
-    mVertexAttribs[2].shaderLocation        = 1;
+    //===========================================
+    //Color
+    //===========================================
+    mVertexAttribs[2].shaderLocation        = 2;
     mVertexAttribs[2].format                = WGPUVertexFormat_Float32x3;
     mVertexAttribs[2].offset                = 6 * sizeof(float);
+
     mVertexBufferLayouts.resize(1);
     mVertexBufferLayouts[0].attributeCount  = 3;
     mVertexBufferLayouts[0].attributes      = mVertexAttribs.data();
@@ -441,7 +451,7 @@ void Scene::renderMeshes(const WGPURenderPassEncoder renderPass)
     setItemBuffers(mSkylightVertexBuffer,
              mSkylightIndexBuffer,
              mSkylightIndexCount,
-             MAT_LEVEL,
+             MAT_SKYLIGHT,
              renderPass);
     //==============================================
     //Preset name text
@@ -580,8 +590,8 @@ void Scene::renderFrame(const float currentTime)
         //Free memory on the CPU.
         //======================================================================
         WGPUCommandBufferDescriptor cmdDesc = {};
-        cmdDesc.label = WGPU_STR("Frame command buffer");
-        const WGPUCommandBuffer command = wgpuCommandEncoderFinish(encoder, &cmdDesc);
+        cmdDesc.label                       = WGPU_STR("Frame command buffer");
+        const WGPUCommandBuffer command     = wgpuCommandEncoderFinish(encoder, &cmdDesc);
         wgpuCommandEncoderRelease(encoder);
         //======================================================================
         //Pass our data to the GPU through command
@@ -609,6 +619,7 @@ void Scene::initializeScene()
     //======================================================================
     initializeSphere();
     initializeFloor();
+    initializeSkylight();
     //======================================================================
     //Text
     //======================================================================

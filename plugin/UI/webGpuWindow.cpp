@@ -107,13 +107,16 @@ void WebGpuWindow::configurePipeline()
     mPipelineDesc.primitive.frontFace                = WGPUFrontFace_CCW;
     mPipelineDesc.primitive.cullMode                 = WGPUCullMode_None;
     mPipelineDesc.fragment                           = &mFragmentState;
+    mPipelineDesc.multisample.count                  = 1;
+    mPipelineDesc.multisample.mask                   = ~0u;
+    mPipelineDesc.multisample.alphaToCoverageEnabled = false;
+    mPipelineDesc.depthStencil                       = &mDepthStencilState;
     setDefault(mDepthStencilState);
     mDepthStencilState.format                         = WGPUTextureFormat_Depth24Plus;
     mDepthStencilState.depthCompare                   = WGPUCompareFunction_Less;
     mDepthStencilState.depthWriteEnabled              = WGPUOptionalBool_True;
     mDepthStencilState.stencilReadMask                = 0;
     mDepthStencilState.stencilWriteMask               = 0;
-    mPipelineDesc.depthStencil                       = &mDepthStencilState;
     mColorTarget.blend                               = &mBlendState;
     mColorTarget.writeMask                           = WGPUColorWriteMask_All;
     mBlendState.color.srcFactor                      = WGPUBlendFactor_SrcAlpha;
@@ -122,9 +125,7 @@ void WebGpuWindow::configurePipeline()
     mBlendState.alpha.srcFactor                      = WGPUBlendFactor_Zero;
     mBlendState.alpha.dstFactor                      = WGPUBlendFactor_One;
     mBlendState.alpha.operation                      = WGPUBlendOperation_Add;
-    mPipelineDesc.multisample.count                  = 1;
-    mPipelineDesc.multisample.mask                   = ~0u;
-    mPipelineDesc.multisample.alphaToCoverageEnabled = false;
+
     mScene.setPipelineDesc(mPipelineDesc);
 }
 
