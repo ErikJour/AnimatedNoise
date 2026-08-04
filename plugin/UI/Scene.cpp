@@ -90,7 +90,7 @@ std::pair<WGPUSurfaceTexture, WGPUTextureView> Scene::getNextSurfaceViewData() c
     viewDesc.dimension                              = WGPUTextureViewDimension_2D;
     viewDesc.mipLevelCount                          = 1;
     viewDesc.arrayLayerCount                        = 1;
-    viewDesc.aspect = WGPUTextureAspect_All;
+    viewDesc.aspect                                 = WGPUTextureAspect_All;
     //==============================================
     //Update GPU memory and return
     //==============================================
@@ -117,15 +117,15 @@ void Scene::setUniforms(const WGPUQueue queue, const WGPUBuffer uniformBuffer, c
 
 void Scene::setSliderUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer)
 {
-    const AnimatedSlider* noiseLevel    = findSlider(ParameterID::noiseLevel);
-    const AnimatedSlider* lpgResonance  = findSlider(ParameterID::lpgResonance);
+    const AnimatedSlider* noiseLevel      = findSlider(ParameterID::noiseLevel);
+    const AnimatedSlider* lpgResonance    = findSlider(ParameterID::lpgResonance);
 
-    const float resonanceVal            = lpgResonance ? lpgResonance->value : 0.0f;
+    const float resonanceVal              = lpgResonance ? lpgResonance->value : 0.0f;
     juce::ignoreUnused(resonanceVal);
-    const float gainVal                 = noiseLevel ? noiseLevel->value : 0.0f;
-    const bool  gainHeld                = noiseLevel ? noiseLevel->pressed : false;
+    const float gainVal                   = noiseLevel ? noiseLevel->value : 0.0f;
+    const bool  gainHeld                  = noiseLevel ? noiseLevel->pressed : false;
 
-    constexpr uint32_t ids[materialCount]           =   {
+    constexpr uint32_t ids[materialCount] =   {
                                             MAT_TEXT,
                                             MAT_NOIS_LEVEL_SLIDER,
                                             MAT_PARTICLES,
@@ -198,10 +198,9 @@ void Scene::setSliderUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer)
 
 
         if (const AnimatedSlider* dens = findSlider(ParameterID::noiseDensity))
-            mParticleDrawCount = static_cast<uint32_t>(dens->value * MAX_PARTICLES - 100) + 100;
+            mParticleDrawCount         = static_cast<uint32_t>(dens->value * MAX_PARTICLES - 100) + 100;
 
-        wgpuQueueWriteBuffer(queue, uniformBuffer,
-                             id * mUniformStride, &mUniforms, sizeof(MyUniforms));
+        wgpuQueueWriteBuffer(queue, uniformBuffer,id * mUniformStride, &mUniforms, sizeof(MyUniforms));
     }
 }
 
@@ -548,7 +547,7 @@ void Scene::renderFrame(const float currentTime)
         colorAttachment.view                            = targetView;
         colorAttachment.loadOp                          = WGPULoadOp_Clear;
         colorAttachment.storeOp                         = WGPUStoreOp_Store;
-        colorAttachment.clearValue                      = WGPUColor{ mRed, mGreen, mBlue, 1.0 };
+        colorAttachment.clearValue                      = WGPUColor{ 0.0, 0.0, 0.0, 1.0 };
         colorAttachment.depthSlice                      = WGPU_DEPTH_SLICE_UNDEFINED;
         //======================================================================
         //Setup master render pass
@@ -906,18 +905,92 @@ void Scene::onScroll(const float deltaX, const float deltaY)
     const float yaw     = mCameraState.angleX;
     const float speed   = mDrag.scrollSensitivity;
 
-    mCameraState.posX +=  sinf(yaw) * deltaY * speed;
-    mCameraState.posZ += -cosf(yaw) * deltaY * speed;
+    mCameraState.posX   +=  sinf(yaw) * deltaY * speed;
+    mCameraState.posZ   += -cosf(yaw) * deltaY * speed;
     mCameraState.angleX += deltaX * mDrag.turnSensitivity * speed;
     const float r = sqrtf(mCameraState.posX * mCameraState.posX +
                           mCameraState.posZ * mCameraState.posZ);
     if (r > CameraState::kWallRadius)
     {
-        const float inv = CameraState::kWallRadius / r;
+        const float inv    = CameraState::kWallRadius / r;
         mCameraState.posX *= inv;
         mCameraState.posZ *= inv;
     }
     updateViewMatrix();
+}
+
+//====================================================================================
+//Additions
+//====================================================================================
+void Scene::buildInvLookAt(float* out, float ex, float ey, float ez, float tx, float ty,
+                                                float tz,float upx, float upy, float upz)
+{
+    float fx = tx - ex, fy = ty - ey, fz = tz - ez;
+    const float fl = 1.0f / sqrtf(fx*fx + fy*fy + fz*fz);
+    fx *= fl; fy *= fl; fz *= fl;
+
+    float rx = fy*upz - fz*upy;
+    float ry = fz*upx - fx*upz;
+    float rz = fx*upy - fy*upx;
+    const float rl = 1.0f / sqrtf(rx*rx + ry*ry + rz*rz);
+    rx *= rl; ry *= rl; rz *= rl;
+
+    const float ux = ry*fz - rz*fy;
+    const float uy = rz*fx - rx*fz;
+    const float uz = rx*fy - ry*fx;
+
+    out[0]  = rx;   out[1]  = ry;   out[2]  = rz;   out[3]  = 0.0f;
+    out[4]  = ux;   out[5]  = uy;   out[6]  = uz;   out[7]  = 0.0f;
+    out[8]  = -fx;  out[9]  = -fy;  out[10] = -fz;  out[11] = 0.0f;
+    out[12] = ex;   out[13] = ey;   out[14] = ez;   out[15] = 1.0f;
+}
+
+void Scene::buildInvPerspective(float* out,
+                                    float fovY, float aspect,
+                                    float nearZ, float farZ)
+{
+    const float t  = tanf(fovY * 0.5f);
+    const float A  = farZ / (nearZ - farZ);
+    const float B  = (farZ * nearZ) / (nearZ - farZ);
+
+    for (int i = 0; i < 16; ++i) out[i] = 0.0f;
+
+    out[0]  = aspect * t;
+    out[5]  = t;
+    out[11] = 1.0f / B;
+    out[14] = -1.0f;
+    out[15] = A / B;
+}
+
+void Scene::makeModelMatrix(float* m, float angle, float tx, float ty, float tz)
+{
+    const float c = std::cos(angle);
+    const float s = std::sin(angle);
+    m[0] =  c;  m[1] = 0;  m[2]  = -s; m[3]  = 0;
+    m[4] =  0;  m[5] = 1;  m[6]  =  0; m[7]  = 0;
+    m[8] =  s;  m[9] = 0;  m[10] =  c; m[11] = 0;
+    m[12] = tx; m[13] = ty; m[14] = tz; m[15] = 1;
+}
+void Scene::setItemBuffers(WGPUBuffer vertexBuffer, WGPUBuffer indexBuffer, uint32_t indexCount,
+                                            uint32_t material, WGPURenderPassEncoder renderPass) const
+{
+    if (vertexBuffer && indexBuffer && indexCount > 0)
+    {
+        const uint32_t offset = material * mUniformStride;
+        wgpuRenderPassEncoderSetBindGroup(renderPass, 0, mBindGroup, 1, &offset);
+        wgpuRenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpuBufferGetSize(vertexBuffer));
+        wgpuRenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat_Uint16, 0, wgpuBufferGetSize(indexBuffer));
+        wgpuRenderPassEncoderDrawIndexed(renderPass, indexCount, 1, 0, 0, 0);
+    }
+}
+
+const AnimatedSlider* Scene::findSlider(const juce::ParameterID& id) const
+{
+    if (!mSliderList) return nullptr;
+    for (const auto& s : *mSliderList)
+        if (s.paramID.getParamID() == id.getParamID())
+            return &s;
+    return nullptr;
 }
 
 //=====================================================================================
@@ -928,17 +1001,5 @@ void Scene::setToolTip(const std::string &paramName, const std::string &paramVal
     mText = paramName;
     initializeTooltip(mFont, paramName, paramValue);
 }
-
 void Scene::setSurfaceFormat(const WGPUTextureFormat format) { mSurfaceFormat = format; }
-
 void Scene::setCameraState(const CameraState& s)             { mCameraState = s; updateViewMatrix(); }
-
-float Scene::getSliderValue(const int index) const           { return mSliderValues[index]; }
-
-float Scene::sliderTopFraction() const                       { return (1.0f - (kSpineMaxY + mSliderPos[1])) * 0.1f; }
-
-float Scene::sliderBottomFraction() const                    { return (1.0f - (kSpineMinY + mSliderPos[1])) * 0.1f; }
-
-float Scene::sliderXFraction() const                         { return (mSliderPos[0] + 1.0f) * 3.5f; }
-
-float Scene::indicatorHalfFraction()                         { return kIndicatorHalfY * 0.1f; }

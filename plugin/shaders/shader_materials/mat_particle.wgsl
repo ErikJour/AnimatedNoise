@@ -16,7 +16,7 @@ struct ParticleVertexOutput {
 }
 
 fn noiseCloudShape(worldPos: vec3f, t: f32, time: f32) -> vec3f {
-    let cloud = vec3f(
+        let cloud = vec3f(
         worldPos.x + sin(time + worldPos.x * 25.0) * 0.005,
         worldPos.y + 0.17,
         worldPos.z + sin(time + worldPos.x * 25.0) * 0.01

@@ -21,31 +21,27 @@ struct SphereVertex
         static void buildSphere(std::vector<SphereVertex>& vertices,
                                  std::vector<SphereIndex>& indices,
                                     const float radius = 2.25f,
-                                    int widthSegments = 64,
+                                    int widthSegments  = 64,
                                     int heightSegments = 32,
                                     const float phiStart = 0.0f,
                                     const float phiLength = PI * 2,
                                     const float thetaStart = 0.0f,
                                     const float thetaLength = PI)
         {
-            widthSegments = std::max( 3, static_cast<int>(std::floor( widthSegments ) ) );
+            widthSegments  = std::max( 3, static_cast<int>(std::floor( widthSegments ) ) );
             heightSegments = std::max( 2, static_cast<int>(std::floor( heightSegments ) ) );
+
             const float thetaEnd = std::min( thetaStart + thetaLength, PI );
 
             std::vector<uint32_t> grid;
             grid.reserve((static_cast<size_t>(heightSegments) + 1) * (static_cast<size_t>(widthSegments) + 1));
-
-            SphereVertex vertex = {};
-
-            std::vector<float> normals = {};
-            std::vector<float> uvs = {};
+            SphereVertex vertex        = {};
 
             for (int iy = 0; iy <= static_cast<int>(heightSegments); iy++)
             {
                 std::vector<int> verticesRow = {};
 
                 const float v = static_cast<float>(iy) / static_cast<float>(heightSegments);
-
 
                 for (int ix = 0; ix <= widthSegments; ix++)
                 {
