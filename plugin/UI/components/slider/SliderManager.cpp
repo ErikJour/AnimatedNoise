@@ -123,12 +123,14 @@ void SliderManager::sendParamStringTooltip(const float value) const
         const int intVal                        = static_cast<int>(value * 100);
         std::string paramString                 = s.paramID.getParamID().toStdString();
         const juce::String paramValue           = std::to_string(intVal);
-        if (paramString == "noiseDensity")      {paramString = "Noise Density";     }
-        if (paramString == "noiseLevel")        {paramString = "Noise Level";       }
-        if (paramString == "noiseLevelMod")     {paramString = "Noise Level Mod";   }
-        if (paramString == "noiseDensityMod")   {paramString = "Noise Density Mod"; }
-        if (paramString == "envAttack")         {paramString = "Amp Env Attack";    }
-        if (paramString == "envDecay")          {paramString = "Amp Env Decay";     }
+        if (paramString == "noiseDensity")      { paramString = "Noise Density";     }
+        if (paramString == "noiseLevel")        { paramString = "Noise Level";       }
+        if (paramString == "noiseLevelMod")     { paramString = "Noise Level Mod";   }
+        if (paramString == "noiseDensityMod")   { paramString = "Noise Density Mod"; }
+        if (paramString == "envAttack")         { paramString = "Amp Env Attack";    }
+        if (paramString == "envDecay")          { paramString = "Amp Env Decay";     }
+        if (paramString == "envSustain")        { paramString = "Amp Env Sustain";   }
+        if (paramString == "envRelease")        { paramString = "Amp Env Release";   }
         const std::string paramValueString      = paramValue.toStdString() + "%";
 
         mScene.setToolTip(paramString, paramValueString);

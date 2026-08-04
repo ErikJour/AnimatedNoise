@@ -29,6 +29,8 @@ fn vs_main(in: VertexInput) -> VertexOutput {
         case MAT_NOISE_DENS_MOD_SLIDER:   { out.clipPos  = vertexDensityModSlider   (&pos, in.color); }
         case MAT_ATTACK_SLIDER:           { out.clipPos  = vertexAttackSlider       (&pos, in.color); }
         case MAT_DECAY_SLIDER:            { out.clipPos  = vertexDecaySlider        (&pos, in.color); }
+        case MAT_SUSTAIN_SLIDER:          { out.clipPos  = vertexSustainSlider      (&pos, in.color); }
+        case MAT_RELEASE_SLIDER:          { out.clipPos  = vertexReleaseSlider      (&pos, in.color); }
         //============================
         //Utilities
         //============================

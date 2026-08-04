@@ -32,6 +32,8 @@ const MAT_NOISE_DENS_SLIDER:       u32 = 8u;
 const MAT_NOISE_DENS_MOD_SLIDER:   u32 = 9u;
 const MAT_ATTACK_SLIDER:           u32 = 11u;
 const MAT_DECAY_SLIDER:            u32 = 12u;
+const MAT_SUSTAIN_SLIDER:          u32 = 13u;
+const MAT_RELEASE_SLIDER:          u32 = 14u;
 //============================
 //Utilities
 //============================

@@ -27,6 +27,8 @@ static constexpr uint32_t MAT_NOIS_DENS_SLIDER       = 8;
 static constexpr uint32_t MAT_NOISE_DENS_MOD_SLIDER  = 9;
 static constexpr uint32_t MAT_ATTACK_SLIDER          = 11;
 static constexpr uint32_t MAT_DECAY_SLIDER           = 12;
+static constexpr uint32_t MAT_SUSTAIN_SLIDER         = 13;
+static constexpr uint32_t MAT_RELEASE_SLIDER         = 14;
 //============================
 //Utilities
 //============================
