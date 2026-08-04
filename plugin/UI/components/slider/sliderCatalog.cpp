@@ -46,6 +46,14 @@ const std::vector<SliderDef>& sliderDefinitions()
             MAT_ATTACK_SLIDER,
                 { .78f, 0.15f, 1.891f },
             0.07f },
+        //==================================================
+        //Env Decay: Radius = 2.0, angle = 60 , top row
+        //==================================================
+        { ParameterID::envDecay,
+            0.0f,
+            MAT_DECAY_SLIDER,
+                { 1.f, 0.15f, 1.732f },
+            0.07f },
     };
     return defs;
 }

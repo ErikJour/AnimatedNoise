@@ -26,7 +26,8 @@
             dir + "/shader_materials/mat_tooltip.wgsl",
             dir + "/shader_materials/ambientLight.wgsl",
             dir + "/shader_materials/mat_light_helper.wgsl",
-            dir + "/shader_materials/mat_attack_slider.wgsl"
+            dir + "/shader_materials/mat_attack_slider.wgsl",
+            dir + "/shader_materials/mat_decay_slider.wgsl"
 
 
         };
