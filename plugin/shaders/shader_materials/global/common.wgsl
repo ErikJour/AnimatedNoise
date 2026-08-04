@@ -30,14 +30,14 @@ const MAT_NOISE_LEVEL_SLIDER:      u32 = 6u;
 const MAT_NOISE_LEVEL_MOD_SLIDER:  u32 = 7u;
 const MAT_NOISE_DENS_SLIDER:       u32 = 8u;
 const MAT_NOISE_DENS_MOD_SLIDER:   u32 = 9u;
-const MAT_ATTACK_SLIDER:           u32 = 11u;
-const MAT_DECAY_SLIDER:            u32 = 12u;
-const MAT_SUSTAIN_SLIDER:          u32 = 13u;
-const MAT_RELEASE_SLIDER:          u32 = 14u;
+const MAT_ATTACK_SLIDER:           u32 = 10u;
+const MAT_DECAY_SLIDER:            u32 = 11u;
+const MAT_SUSTAIN_SLIDER:          u32 = 12u;
+const MAT_RELEASE_SLIDER:          u32 = 13u;
 //============================
 //Utilities
 //============================
-const MAT_LIGHT_HELPER:            u32 = 10u;
+const MAT_LIGHT_HELPER:            u32 = 14u;
 
 //===============================================
 //Uniforms

@@ -54,9 +54,9 @@ const std::vector<SliderDef>& sliderDefinitions()
             MAT_DECAY_SLIDER,
                 { 1.f, 0.15f, 1.732f },
             0.07f },
-        //==================================================
+        //==========================================================
         //Env Sustain: Radius = 2.0, angle = 67 (60 for other column)
-        //==================================================
+        //==========================================================
         { ParameterID::envSustain,
             0.0f,
             MAT_SUSTAIN_SLIDER,

@@ -281,7 +281,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout AnimatedNoiseProcessor::crea
     paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
         ParameterID::envAttack,
         "Env Attack",
-        juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f, 0.015f),
+        juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f, 1.0f),
         0.2f,
         juce::AudioParameterFloatAttributes().withLabel("%")));
 
