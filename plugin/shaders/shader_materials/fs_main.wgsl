@@ -14,8 +14,9 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
         //============================
         case MAT_NOISE_LEVEL_SLIDER:      { return fragmentNoiseLevelSlider(in);}
         case MAT_NOISE_LEVEL_MOD_SLIDER:  { return fragmentLpgRezSlider(in);    }
-        case MAT_NOIS_DENS_SLIDER:        { return fragmentDensitySlider(in);   }
+        case MAT_NOISE_DENS_SLIDER:       { return fragmentDensitySlider(in);   }
         case MAT_NOISE_DENS_MOD_SLIDER:   { return fragmentDensityModSlider(in);}
+        case MAT_ATTACK_SLIDER:           { return fragmentAttackSlider(in);    }
         //============================
         //Utilities
         //============================

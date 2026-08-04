@@ -178,6 +178,7 @@ set(SHADER_FILES
         "shaders/shader_materials/vs_main.wgsl"
         "shaders/shader_materials/ambientLight.wgsl"
         "shaders/shader_materials/mat_light_helper.wgsl"
+        "shaders/shader_materials/mat_attack_slider.wgsl"
 )
 
 set(SHADER_SOURCE "")

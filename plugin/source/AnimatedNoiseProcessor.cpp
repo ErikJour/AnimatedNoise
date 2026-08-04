@@ -281,8 +281,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout AnimatedNoiseProcessor::crea
     paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
         ParameterID::envAttack,
         "Env Attack",
-        juce::NormalisableRange<float>(0.0f, 100.0f, 1.0f, 1.5f),
-        20.0f,
+        juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f, 0.015f),
+        0.2f,
         juce::AudioParameterFloatAttributes().withLabel("%")));
 
     paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
@@ -344,7 +344,7 @@ void AnimatedNoiseProcessor::update()
     //=======================================
     //Amp Envelope
     //=======================================
-    noiseSynth.envAttack = std::exp(-inverseSampleRate * std::exp(4.5f - 0.075f * envelopeAttackParam->get()));
+    noiseSynth.envAttack = std::exp(-inverseSampleRate * std::exp(4.5f - 0.075f * (envelopeAttackParam->get()* 100.0f)));
     noiseSynth.envDecay = std::exp(-inverseSampleRate * std::exp(5.5f - 0.075f * envelopeDecayParam->get()));
     const float ampEnvSustain = envelopeSustainParam->get() / 100.0f;
     noiseSynth.setSustain(ampEnvSustain);

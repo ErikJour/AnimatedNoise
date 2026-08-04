@@ -28,8 +28,9 @@ const MAT_PARTICLES:               u32 = 5u;
 //===========================================
 const MAT_NOISE_LEVEL_SLIDER:      u32 = 6u;
 const MAT_NOISE_LEVEL_MOD_SLIDER:  u32 = 7u;
-const MAT_NOIS_DENS_SLIDER:        u32 = 8u;
+const MAT_NOISE_DENS_SLIDER:       u32 = 8u;
 const MAT_NOISE_DENS_MOD_SLIDER:   u32 = 9u;
+const MAT_ATTACK_SLIDER:           u32 = 11u;
 //============================
 //Utilities
 //============================

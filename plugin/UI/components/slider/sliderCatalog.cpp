@@ -15,7 +15,7 @@ const std::vector<SliderDef>& sliderDefinitions()
             { 2.0f, 0.15f, 0.0f },
             0.07f },
         //==================================================
-        //Noise Level Mod: Radius = 2.0, angle = 0.0, height:
+        //Noise Level Mod: Radius = 2.0, angle = 0.0
         //==================================================
         { ParameterID::noiseLevelMod,
             0.0f,
@@ -31,12 +31,20 @@ const std::vector<SliderDef>& sliderDefinitions()
                 { 1.985f, 0.15f, 0.244f },
             0.07f },
         //==================================================
-        //Noise Density Mod: Radius = 2.0, angle = 7.0, Height:
+        //Noise Density Mod: Radius = 2.0, angle = 7.0
         //==================================================
         { ParameterID::noiseDensityMod,
             0.0f,
             MAT_NOISE_DENS_MOD_SLIDER,
                 { 1.985f, -0.045f, 0.244f },
+            0.07f },
+        //==================================================
+        //Env Attack: Radius = 2.0, angle = 67 (60 for other column)
+        //==================================================
+        { ParameterID::envAttack,
+            0.0f,
+            MAT_ATTACK_SLIDER,
+                { .78f, 0.15f, 1.891f },
             0.07f },
     };
     return defs;
@@ -44,4 +52,4 @@ const std::vector<SliderDef>& sliderDefinitions()
 
 //Calculate x and z based on angle:
 //x = radius * cos(angle)
-//z = radiu s* sin(angle)
+//z = radius * sin(angle)

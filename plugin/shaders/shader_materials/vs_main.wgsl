@@ -25,8 +25,9 @@ fn vs_main(in: VertexInput) -> VertexOutput {
         //============================
         case MAT_NOISE_LEVEL_SLIDER:      { out.clipPos  = vertexNoiseLevelSlider   (&pos, in.color); }
         case MAT_NOISE_LEVEL_MOD_SLIDER:  { out.clipPos  = vertexLpgRezSlider       (&pos, in.color); }
-        case MAT_NOIS_DENS_SLIDER:        { out.clipPos  = vertexDensitySlider      (&pos, in.color); }
+        case MAT_NOISE_DENS_SLIDER:       { out.clipPos  = vertexDensitySlider      (&pos, in.color); }
         case MAT_NOISE_DENS_MOD_SLIDER:   { out.clipPos  = vertexDensityModSlider   (&pos, in.color); }
+        case MAT_ATTACK_SLIDER:           { out.clipPos  = vertexAttackSlider       (&pos, in.color); }
         //============================
         //Utilities
         //============================

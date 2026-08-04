@@ -6,7 +6,7 @@
 #include <cmath>
 #include <components/slider/sliderCatalog.h>
 
-static constexpr uint32_t materialCount = 11;
+static constexpr uint32_t materialCount = 12;
 //================================================================================================
 Scene::Scene() : mFont(fontPath)  {}
 Scene::~Scene() = default;
@@ -135,7 +135,8 @@ void Scene::setSliderUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer)
                                             MAT_NOIS_DENS_SLIDER,
                                             MAT_NOISE_DENS_MOD_SLIDER,
                                             MAT_TOOLTIP,
-                                            MAT_LIGHT_HELPER
+                                            MAT_LIGHT_HELPER,
+                                            MAT_ATTACK_SLIDER
                                             };
 
     auto sliderForMaterial              = [&](const uint32_t mat) -> const AnimatedSlider* {
@@ -190,6 +191,9 @@ void Scene::setSliderUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer)
                         break;
                     }
             }
+            //========================================================
+            //All other sliders get value and pressed uniforms here
+            //========================================================
             else
             {
                 mUniforms.sliderValue = 0.0f;
