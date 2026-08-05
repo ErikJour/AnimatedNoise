@@ -14,25 +14,47 @@ AnimatedNoiseProcessor::AnimatedNoiseProcessor()
 {
     apvts.state.addListener(this);
     //==========================================
-    //Noise Parameters
+    //1) Noise Parameters
     //===========================================
     castParameter(apvts, ParameterID::noiseLevel, noiseLevelParam);
     castParameter(apvts, ParameterID::noiseDensity, noiseDensityParam);
     castParameter(apvts, ParameterID::noiseLevelMod, noiseLevelModParam);
     castParameter(apvts, ParameterID::noiseDensityMod, noiseDensityModParam);
     //==========================================
-    //Filter Parameters
+    //2) Lpg Parameters
     //===========================================
     castParameter(apvts, ParameterID::lpgResonance, lpgResonanceParam);
     castParameter(apvts, ParameterID::lpgVactrolRelease, lpgVactrolReleaseParam);
+    /*lpgRezMod*/
+    /*lpgVactrolReleaseMod*/
     //==========================================
-    //Envelope Parameters
+    //3) Envelope Parameters
     //===========================================
     castParameter(apvts, ParameterID::envAttack, envelopeAttackParam);
     castParameter(apvts, ParameterID::envDecay, envelopeDecayParam);
     castParameter(apvts, ParameterID::envSustain, envelopeSustainParam);
     castParameter(apvts, ParameterID::envRelease, envelopeReleaseParam);
-
+    //==========================================
+    //4) Mod Parameters
+    //===========================================
+    /*modAttack*/
+    /*modDecay*/
+    /*modLoop*/
+    /*modDrift*/
+    //==========================================
+    //5) Filter Parameters
+    //===========================================
+    /*type*/
+    /*cutoff*/
+    /*resonance*/
+    /*cutoffMod*/
+    //==========================================
+    //Dist Parameters
+    //===========================================
+    /*amp*/
+    /*drive*/
+    /*ampMod*/
+    /*driveMod*/
 }
 
 AnimatedNoiseProcessor::~AnimatedNoiseProcessor()
