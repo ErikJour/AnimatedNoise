@@ -39,6 +39,8 @@
             dir + "/shader_materials/sliders/mat_decay_slider.wgsl",
             dir + "/shader_materials/sliders/mat_sustain_slider.wgsl",
             dir + "/shader_materials/sliders/mat_release_slider.wgsl",
+            dir + "/shader_materials/sliders/mat_filter_one.wgsl",
+            dir + "/shader_materials/sliders/mat_filter_two.wgsl",
             //=================================================
             //Lights
             //=================================================

@@ -31,6 +31,8 @@ fn vs_main(in: VertexInput) -> VertexOutput {
         case MAT_DECAY_SLIDER:            { out.clipPos  = vertexDecaySlider        (&pos, in.color); }
         case MAT_SUSTAIN_SLIDER:          { out.clipPos  = vertexSustainSlider      (&pos, in.color); }
         case MAT_RELEASE_SLIDER:          { out.clipPos  = vertexReleaseSlider      (&pos, in.color); }
+        case MAT_FILTER_ONE_SLIDER:       { out.clipPos  = vertexFilterOneSlider    (&pos, in.color); }
+        case MAT_FILTER_TWO_SLIDER:       { out.clipPos  = vertexFilterTwoSlider    (&pos, in.color); }
         //============================
         //Utilities
         //============================

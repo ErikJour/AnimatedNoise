@@ -34,10 +34,12 @@ const MAT_ATTACK_SLIDER:           u32 = 10u;
 const MAT_DECAY_SLIDER:            u32 = 11u;
 const MAT_SUSTAIN_SLIDER:          u32 = 12u;
 const MAT_RELEASE_SLIDER:          u32 = 13u;
+const MAT_FILTER_ONE_SLIDER:       u32 = 14u;
+const MAT_FILTER_TWO_SLIDER:       u32 = 15u;
 //============================
 //Utilities
 //============================
-const MAT_LIGHT_HELPER:            u32 = 14u;
+const MAT_LIGHT_HELPER:            u32 = 16u;
 
 //===============================================
 //Uniforms

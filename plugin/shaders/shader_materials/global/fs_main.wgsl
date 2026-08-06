@@ -19,7 +19,9 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
         case MAT_ATTACK_SLIDER:           { return fragmentAttackSlider(in);    }
         case MAT_DECAY_SLIDER:            { return fragmentDecaySlider(in);     }
         case MAT_SUSTAIN_SLIDER:          { return fragmentSustainSlider(in);   }
-        case MAT_RELEASE_SLIDER:           { return fragmentReleaseSlider(in);   }
+        case MAT_RELEASE_SLIDER:          { return fragmentReleaseSlider(in);   }
+        case MAT_FILTER_ONE_SLIDER:       { return fragmentFilterOneSlider(in);  }
+        case MAT_FILTER_TWO_SLIDER:       { return fragmentFilterTwoSlider(in);  }
         //============================
         //Utilities
         //============================

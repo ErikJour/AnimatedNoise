@@ -167,6 +167,8 @@ set(SHADER_FILES
         "shaders/shader_materials/sliders/mat_noise_density_slider.wgsl"
         "shaders/shader_materials/sliders/mat_noise_level_mod_slider.wgsl"
         "shaders/shader_materials/sliders/mat_noise_level_slider.wgsl"
+        "shaders/shader_materials/sliders/mat_filter_one.wgsl"
+        "shaders/shader_materials/sliders/mat_filter_two.wgsl"
         "shaders/shader_materials/components/mat_particle.wgsl"
         "shaders/shader_materials/level/mat_skylight.wgsl"
         "shaders/shader_materials/components/mat_text.wgsl"

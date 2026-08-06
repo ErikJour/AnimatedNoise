@@ -6,7 +6,7 @@
 #include <cmath>
 #include <components/slider/sliderCatalog.h>
 
-static constexpr uint32_t materialCount = 15;
+static constexpr uint32_t materialCount = 17;
 //================================================================================================
 Scene::Scene() : mFont(fontPath)  {}
 Scene::~Scene() = default;
@@ -139,7 +139,9 @@ void Scene::setSliderUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer)
                                             MAT_ATTACK_SLIDER,
                                             MAT_DECAY_SLIDER,
                                             MAT_SUSTAIN_SLIDER,
-                                            MAT_RELEASE_SLIDER
+                                            MAT_RELEASE_SLIDER,
+                                            MAT_FILTER_ONE_SLIDER,
+                                            MAT_FILTER_TWO_SLIDER
                                             };
 
     auto sliderForMaterial              = [&](const uint32_t mat) -> const AnimatedSlider* {

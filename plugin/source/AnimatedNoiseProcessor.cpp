@@ -335,15 +335,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout AnimatedNoiseProcessor::crea
     paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
         ParameterID::coeffA,
         "Filter Coeff A",
-        juce::NormalisableRange<float>(-0.9f, 1.0f, 0.01f, 1.0f),
-        0.0f,
+        juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f, 1.0f),
+        0.5f,
         juce::AudioParameterFloatAttributes().withLabel("%")));
 
     paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
         ParameterID::coeffB,
         "Filter Coeff B",
-        juce::NormalisableRange<float>(-0.9f, 1.0f, 0.01f, 1.0f),
-        0.0f,
+        juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f, 1.0f),
+        0.5f,
         juce::AudioParameterFloatAttributes().withLabel("%")));
 
     return paramLayout;
@@ -400,9 +400,11 @@ void AnimatedNoiseProcessor::update()
     //Filter Coefficients
     //=======================================
     const float coeffA = filterCoeffA->get();
-    noiseSynth.setFilterCoeffA(coeffA);
+    const float mappedValueA = juce::jmap (coeffA, -1.0f, 1.0f);
+    noiseSynth.setFilterCoeffA(mappedValueA);
     const float coeffB = filterCoeffB->get();
-    noiseSynth.setFilterCoeffB(coeffB);
+    const float mappedValueB = juce::jmap (coeffB, -1.0f, 1.0f);
+    noiseSynth.setFilterCoeffB(mappedValueB);
 }
 
 //==============================================================================

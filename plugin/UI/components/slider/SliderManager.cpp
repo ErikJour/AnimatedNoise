@@ -131,6 +131,8 @@ void SliderManager::sendParamStringTooltip(const float value) const
         if (paramString == "envDecay")          { paramString = "Amp Env Decay";     }
         if (paramString == "envSustain")        { paramString = "Amp Env Sustain";   }
         if (paramString == "envRelease")        { paramString = "Amp Env Release";   }
+        if (paramString == "coeffA")            { paramString = "Filter Coeff A";    }
+        if (paramString == "coeffB")            { paramString = "Filter Coeff B";    }
         const std::string paramValueString      = paramValue.toStdString() + "%";
 
         mScene.setToolTip(paramString, paramValueString);

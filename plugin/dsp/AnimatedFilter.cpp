@@ -24,6 +24,7 @@ void AnimatedFilter::processBuffer(float* buffer, int numSamples)
     for (int i = 0; i < numSamples; i++)
     {
         const float input  = buffer[i];
+
         const float output = onePoleIIR(input, mDelay, mCoeffA, mCoeffB);
         mDelay             = output;
         buffer[i]          = output;
