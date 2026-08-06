@@ -77,7 +77,7 @@ private:
     juce::AudioParameterFloat* noiseLevelModParam{};
     juce::AudioParameterFloat* noiseDensityModParam{};
     //==========================================
-    //Filter Parameters
+    //LPG Parameters
     //===========================================
     juce::AudioParameterFloat* lpgResonanceParam{};
     juce::AudioParameterFloat* lpgVactrolReleaseParam{};
@@ -88,7 +88,11 @@ private:
     juce::AudioParameterFloat* envelopeDecayParam{};
     juce::AudioParameterFloat* envelopeSustainParam{};
     juce::AudioParameterFloat* envelopeReleaseParam{};
-
+    //==========================================
+    //Filter Parameters
+    //===========================================
+    juce::AudioParameterFloat* filterCoeffA{};
+    juce::AudioParameterFloat* filterCoeffB{};
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AnimatedNoiseProcessor)
 };

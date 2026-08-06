@@ -2,15 +2,28 @@
 // Created by Erik Jourgensen on 8/6/26.
 //
 
-#ifndef ANIMATEDNOISE_ANIMATEDFILTER_H
-#define ANIMATEDNOISE_ANIMATEDFILTER_H
+#pragma once
 
 
-
-class AnimatedFilter {
+class AnimatedFilter
+{
+public:
+    AnimatedFilter();
+    ~AnimatedFilter();
+    //======================
+    //Public member functions
+    //======================
+    void reset();
+    static float onePoleIIR(float input, float delay, float coeffA, float coeffB);
+    void processBuffer(float* buffer, int numSamples);
+    //======================
+    //Public variables
+    //======================
+    float mCoeffA = 0.0f;
+    float mCoeffB = 0.0f;
+private:
+    float mDelay  = 0.0f;
 
 };
 
 
-
-#endif //ANIMATEDNOISE_ANIMATEDFILTER_H

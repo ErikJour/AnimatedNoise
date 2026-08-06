@@ -21,19 +21,17 @@ public:
     void noteOn(int note, int velocity);
     void noteOff(int note);
     //======================================================================================
-    void setNoiseLevel(const float level)
-    {
-        voice.mNoiseGenerator.setLevel(level);
-    }
+    void setNoiseLevel(const float level)          { voice.mNoiseGenerator.setLevel(level); }
 
     void setNoiseDensity(const float density)      { voice.mNoiseGenerator.setDensity(density); }
 
-    void setLpgResonance(const float newResonance)
-    {
-        voice.mLPG.setResonance(newResonance);
-    }
+    void setLpgResonance(const float newResonance) { voice.mLPG.setResonance(newResonance); }
 
-    void setSustain (const float sustain) {  voice.mEnvelope.setSustain(sustain);  }
+    void setSustain (const float sustain)          { voice.mEnvelope.setSustain(sustain); }
+
+    void setFilterCoeffA(const float newCoeffA)    { voice.mOnePoleIIR.mCoeffA = newCoeffA; }
+
+    void setFilterCoeffB (const float newCoeffB)   { voice.mOnePoleIIR.mCoeffB = newCoeffB; }
 
     void setRelease(const float release)
     {

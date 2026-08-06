@@ -30,6 +30,11 @@ namespace ParameterID
     PARAMETER_ID(envDecay)
     PARAMETER_ID(envSustain)
     PARAMETER_ID(envRelease)
+    //======================
+    //Filter Parameters
+    //======================
+    PARAMETER_ID(coeffA)
+    PARAMETER_ID(coeffB)
 
 #undef PARAMETER_ID
 

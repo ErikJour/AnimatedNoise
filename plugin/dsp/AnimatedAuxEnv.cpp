@@ -20,23 +20,23 @@ AnimatedAuxEnv::AnimatedAuxEnv() : level(0.0f),
 
     void AnimatedAuxEnv::reset()
     {
-        level = 0.0f;
-        target = 0.0f;
+        level      = 0.0f;
+        target     = 0.0f;
         multiplier = 0.0f;
-        stage = Stage::Idle;
+        stage      = Stage::Idle;
     }
 
     void AnimatedAuxEnv::attack()
     {
-        stage = Stage::Attack;
-        target = 2.0f;
+        stage      = Stage::Attack;
+        target     = 2.0f;
         multiplier = applyDrift(attackMultiplier);
     }
 
     void AnimatedAuxEnv::release()
     {
-        stage = Stage::Release;
-        target = 0.0f;
+        stage      = Stage::Release;
+        target     = 0.0f;
         multiplier = applyDrift(releaseMultiplier);
     }
 
@@ -65,15 +65,15 @@ AnimatedAuxEnv::AnimatedAuxEnv() : level(0.0f),
 
     void AnimatedAuxEnv::quickRelease(const double sampleRate)
     {
-        target = 0.0f;
+        target                    = 0.0f;
         constexpr float quickTime = 0.005f;
-        multiplier = std::expf(-1.0f / ((static_cast<float>(sampleRate) * quickTime)));
+        multiplier                = std::expf(-1.0f / ((static_cast<float>(sampleRate) * quickTime)));
     }
 
     void AnimatedAuxEnv::adoptReleaseNow(const float m)
     {
         constexpr float maxMult = 0.9995f;
-        releaseMultiplier = m;
+        releaseMultiplier       = m;
         if (target == 0.0f)
             multiplier = std::min(applyDrift(releaseMultiplier), maxMult);
     }
@@ -101,7 +101,7 @@ AnimatedAuxEnv::AnimatedAuxEnv() : level(0.0f),
     void AnimatedAuxEnv::setDrift(const float newDrift) { drift = newDrift; }
 
 
-    [[nodiscard]] inline bool AnimatedAuxEnv::isActive() const { return level > SILENT; }
+    [[nodiscard]] inline bool AnimatedAuxEnv::isActive() const   { return level > SILENT; }
 
     [[nodiscard]] inline bool AnimatedAuxEnv::isInAttack() const { return stage == Stage::Attack; }
     //======================================
