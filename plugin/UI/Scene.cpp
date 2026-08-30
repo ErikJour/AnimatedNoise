@@ -56,8 +56,8 @@ void Scene::terminate()
     if (mPresetIndexBuffer)             { wgpuBufferRelease(mPresetIndexBuffer);       mPresetIndexBuffer    = nullptr; }
     if (mTooltipVertexBuffer)           { wgpuBufferRelease(mTooltipVertexBuffer);     mTooltipVertexBuffer  = nullptr; }
     if (mTooltipIndexBuffer)            { wgpuBufferRelease(mTooltipIndexBuffer);      mTooltipIndexBuffer   = nullptr; }
-    if (mLightHelperVertexBuffer)             { wgpuBufferRelease(mLightHelperVertexBuffer);       mLightHelperVertexBuffer    = nullptr; }
-    if (mLightHelperIndexBuffer)              { wgpuBufferRelease(mLightHelperIndexBuffer);        mLightHelperIndexBuffer     = nullptr; }
+    if (mLightHelperVertexBuffer)       { wgpuBufferRelease(mLightHelperVertexBuffer); mLightHelperVertexBuffer    = nullptr; }
+    if (mLightHelperIndexBuffer)        { wgpuBufferRelease(mLightHelperIndexBuffer);  mLightHelperIndexBuffer     = nullptr; }
     for (auto& m : mSliderMeshes)
     {
         if (m.vertexBuffer)             { wgpuBufferRelease(m.vertexBuffer);           m.vertexBuffer        = nullptr; }
