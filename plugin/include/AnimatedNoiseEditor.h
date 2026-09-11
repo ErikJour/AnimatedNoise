@@ -32,11 +32,6 @@ private:
     //==============================================================================
     AnimatedNoiseProcessor& processorRef;
     WebGpuWindow            mWebGpuWindow;
-    bool                    mDragging       = false;
-    float                   mDragOffset     = 0.0f;
-    int                     mActiveSlider   = 0;
-
-    bool                    mTimerReady     = false;
     bool                    mResizePending  = false;
     uint32_t                mPendingW       = 0;
     uint32_t                mPendingH       = 0;
@@ -52,8 +47,6 @@ private:
     juce::NSViewComponent   mMetalView;
 #endif
     double                  mStartTimeMs    = 0.0;
-    double                  mLastFrameMs    = 0.0;
-    double                  mElapsed        = 0.0;
     bool                    mStartTimeSet   = false;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AnimatedNoiseProcessorEditor)

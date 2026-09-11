@@ -177,6 +177,7 @@ class Scene
 
 
         std::string mText;
+        std::string mTooltipValue;
         FontParser mFont;
 
         AnimatedLogo mLogo;

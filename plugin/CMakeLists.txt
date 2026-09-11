@@ -172,15 +172,20 @@ set(SHADER_FILES
         "shaders/shader_materials/sliders/mat_filter_two.wgsl"
         "shaders/shader_materials/components/mat_particle.wgsl"
         "shaders/shader_materials/level/mat_skylight.wgsl"
-        "shaders/shader_materials/components/mat_text.wgsl"
+        "shaders/shader_materials/level/mat_plane.wgsl"
         "shaders/shader_materials/components/mat_tooltip.wgsl"
         "shaders/shader_materials/global/vs_main.wgsl"
         "shaders/shader_materials/lights/ambientLight.wgsl"
         "shaders/shader_materials/lights/mat_light_helper.wgsl"
         "shaders/shader_materials/sliders/mat_attack_slider.wgsl"
         "shaders/shader_materials/sliders/mat_decay_slider.wgsl"
+        "shaders/shader_materials/sliders/mat_sustain_slider.wgsl"
+        "shaders/shader_materials/sliders/mat_release_slider.wgsl"
         "shaders/shader_materials/components/mat_adsr.wgsl"
 )
+
+# Re-run configure when any shader changes, so Release never embeds stale WGSL
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${SHADER_FILES})
 
 set(SHADER_SOURCE "")
 foreach(SHADER_FILE ${SHADER_FILES})

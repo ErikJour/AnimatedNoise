@@ -3,6 +3,7 @@
 //
 
 #include "Scene.h"
+#include "shader.wgsl.h"
 #include <cmath>
 #include <components/slider/sliderCatalog.h>
 
@@ -1046,7 +1047,13 @@ void Scene::updateAmpEnvelopeParameters()
 //=====================================================================================
 void Scene::setToolTip(const std::string &paramName, const std::string &paramValue)
 {
-    mText = paramName;
+    //Every drag event lands here, but the text only changes in 1% steps.
+    //Rebuilding the glyph mesh is the expensive part, so skip it when unchanged.
+    if (paramName == mText && paramValue == mTooltipValue)
+        return;
+
+    mText         = paramName;
+    mTooltipValue = paramValue;
     initializeTooltip(mFont, paramName, paramValue);
 }
 void Scene::setSurfaceFormat(const WGPUTextureFormat format) { mSurfaceFormat = format; }
