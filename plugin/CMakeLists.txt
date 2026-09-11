@@ -91,6 +91,7 @@ target_sources(AnimatedNoise
         dsp/AnimatedFilter.cpp
         UI/components/logo/AnimatedLogo.cpp
         UI/components/slider/sliderCatalog.cpp
+        UI/Modules/AmpEnvelopeModule.cpp
 )
 
 #==================================

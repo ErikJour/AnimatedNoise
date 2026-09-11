@@ -26,6 +26,8 @@
 #include "glyphGeometry.h"
 #include "components/text/FontParser.h"
 #include <sphericalSlider.h>
+#include "Modules/AmpEnvelopeModule.h"
+
 
 static constexpr uint32_t MAX_PARTICLES = 2000;
 constexpr auto fontPath = "/Users/erikjourgensen/Desktop/July 2026/Repositories/AnimatedNoise/plugin/UI/fonts/WorkSans-Regular.ttf";
@@ -87,6 +89,10 @@ class Scene
         WGPUFragmentState getFragmentState()  const { return mFragmentState; }
         WGPUBlendState getBlendState()        const { return mBlendState; }
         CameraState getCameraState()          const { return mCameraState; }
+
+        //Envelope
+        void updateAmpEnvelopeParameters();
+
 
     private:
         //=========================================================
@@ -166,6 +172,9 @@ class Scene
         WGPUBuffer                          mTooltipVertexBuffer       = nullptr;
         WGPUBuffer                          mTooltipIndexBuffer        = nullptr;
         uint32_t                            mTooltipIndexCount         = 0;
+        //Objects
+        AmpEnvelopeModule  mAmpEnvelope;
+
 
         std::string mText;
         FontParser mFont;

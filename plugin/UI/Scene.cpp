@@ -110,6 +110,8 @@ void Scene::setUniforms(const WGPUQueue queue, const WGPUBuffer uniformBuffer, c
     mUniforms.cameraPosition[1]         = CameraState::eyeY;
     mUniforms.cameraPosition[2]         = mCameraState.posZ;
     mUniforms.aspectRatio               = static_cast<float>(mWidth) / static_cast<float>(mHeight);
+    mAmpEnvelope.writeUniforms(mUniforms);
+
 
     updateViewMatrix();
     setSliderUniforms(queue, uniformBuffer);
@@ -513,6 +515,8 @@ void Scene::renderMeshes(const WGPURenderPassEncoder renderPass)
     //Logo
     //==============================================
     mLogo.render(renderPass);
+    // mAmpEnvelope.render(renderer);
+
 }
 
 void Scene::renderFrame(const float currentTime)
@@ -649,6 +653,8 @@ void Scene::initializeScene()
     //======================================================================
     initializeParticles();
     // initializePlane();
+    mAmpEnvelope.build();
+
 }
 
 //=====================================================================================
@@ -999,6 +1005,25 @@ const AnimatedSlider* Scene::findSlider(const juce::ParameterID& id) const
         if (s.paramID.getParamID() == id.getParamID())
             return &s;
     return nullptr;
+}
+
+void Scene::updateAmpEnvelopeParameters()
+{
+    AmpEnvelopeModule::Parameters env;
+
+    if (const AnimatedSlider* attack = findSlider(ParameterID::envAttack))
+        env.attack = attack->value;
+
+    if (const AnimatedSlider* decay = findSlider(ParameterID::envDecay))
+        env.decay = decay->value;
+
+    if (const AnimatedSlider* sustain = findSlider(ParameterID::envSustain))
+        env.sustain = sustain->value;
+
+    if (const AnimatedSlider* release = findSlider(ParameterID::envRelease))
+        env.release = release->value;
+
+    mAmpEnvelope.setParameters(env);
 }
 
 //=====================================================================================
