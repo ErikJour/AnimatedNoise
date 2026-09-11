@@ -6,7 +6,7 @@
 #include <cmath>
 #include <components/slider/sliderCatalog.h>
 
-static constexpr uint32_t materialCount = 17;
+static constexpr uint32_t materialCount = 18;
 //================================================================================================
 Scene::Scene() : mFont(fontPath)  {}
 Scene::~Scene() = default;
@@ -44,6 +44,7 @@ bool Scene::createShader()
 void Scene::terminate()
 {
     mLogo.terminate();
+    mAmpEnvelope.release();
     if (mDepthTextureView)              { wgpuTextureViewRelease(mDepthTextureView);   mDepthTextureView     = nullptr; }
     if (mDepthTexture)                  { wgpuTextureRelease(mDepthTexture);           mDepthTexture         = nullptr; }
     if (mSkylightVertexBuffer)          { wgpuBufferRelease(mSkylightVertexBuffer);    mSkylightVertexBuffer = nullptr; }
@@ -100,6 +101,8 @@ std::pair<WGPUSurfaceTexture, WGPUTextureView> Scene::getNextSurfaceViewData() c
 
 void Scene::setUniforms(const WGPUQueue queue, const WGPUBuffer uniformBuffer, const float time)
 {
+    updateAmpEnvelopeParameters();
+
     mUniforms.time                      = time;
     mUniforms.frequency                 = 10.0f;
     mUniforms.amplitude                 = 0.5f;
@@ -110,6 +113,15 @@ void Scene::setUniforms(const WGPUQueue queue, const WGPUBuffer uniformBuffer, c
     mUniforms.cameraPosition[1]         = CameraState::eyeY;
     mUniforms.cameraPosition[2]         = mCameraState.posZ;
     mUniforms.aspectRatio               = static_cast<float>(mWidth) / static_cast<float>(mHeight);
+
+    //Wall time drives the frame; the modulation clock only advances while the
+    //envelope is open, which is what makes the shapes settle when a note ends.
+    // const float delta = mPrevTime >= 0.0f ? time - mPrevTime : 0.0f;
+    // mModTime += delta * mEnvValue;
+    // mPrevTime = time;
+
+    //Lighting and the 70s film grade come from the tunnel; the rest is each
+    //module describing itself to its own material.
     mAmpEnvelope.writeUniforms(mUniforms);
 
 
@@ -142,7 +154,8 @@ void Scene::setSliderUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer)
                                             MAT_SUSTAIN_SLIDER,
                                             MAT_RELEASE_SLIDER,
                                             MAT_FILTER_ONE_SLIDER,
-                                            MAT_FILTER_TWO_SLIDER
+                                            MAT_FILTER_TWO_SLIDER,
+                                            MAT_ADSR
                                             };
 
     auto sliderForMaterial              = [&](const uint32_t mat) -> const AnimatedSlider* {
@@ -438,6 +451,8 @@ bool Scene::createParticlePipeline()
 
 void Scene::renderMeshes(const WGPURenderPassEncoder renderPass)
 {
+    const MeshRenderer renderer(renderPass, mBindGroup, mUniformStride);
+    mAmpEnvelope.render(renderer);
     //==============================================
     //Floor
     //==============================================
@@ -515,7 +530,7 @@ void Scene::renderMeshes(const WGPURenderPassEncoder renderPass)
     //Logo
     //==============================================
     mLogo.render(renderPass);
-    // mAmpEnvelope.render(renderer);
+
 
 }
 
@@ -625,6 +640,7 @@ void Scene::renderFrame(const float currentTime)
 
 void Scene::initializeScene()
 {
+    mAmpEnvelope.attach(mDevice, mQueue);
     //======================================================================
     //Level
     //======================================================================
@@ -1007,24 +1023,23 @@ const AnimatedSlider* Scene::findSlider(const juce::ParameterID& id) const
     return nullptr;
 }
 
+
 void Scene::updateAmpEnvelopeParameters()
 {
     AmpEnvelopeModule::Parameters env;
 
-    if (const AnimatedSlider* attack = findSlider(ParameterID::envAttack))
-        env.attack = attack->value;
-
-    if (const AnimatedSlider* decay = findSlider(ParameterID::envDecay))
-        env.decay = decay->value;
-
-    if (const AnimatedSlider* sustain = findSlider(ParameterID::envSustain))
-        env.sustain = sustain->value;
-
-    if (const AnimatedSlider* release = findSlider(ParameterID::envRelease))
-        env.release = release->value;
+    if (const AnimatedSlider* attack  = findSlider(ParameterID::envAttack))  env.attack  = attack->value  * 100.0f;
+    if (const AnimatedSlider* decay   = findSlider(ParameterID::envDecay))   env.decay   = decay->value   * 100.0f;
+    if (const AnimatedSlider* sustain = findSlider(ParameterID::envSustain)) env.sustain = sustain->value * 100.0f;
+    if (const AnimatedSlider* release = findSlider(ParameterID::envRelease)) env.release = release->value * 100.0f;
 
     mAmpEnvelope.setParameters(env);
 }
+
+// std::array<SceneModule*, Scene::kModuleCount> Scene::allModules()
+// {
+//     return { &mAmpEnvelope };
+// }
 
 //=====================================================================================
 //Getters and setters

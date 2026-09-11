@@ -47,6 +47,6 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 
     out.color    = in.color;
     out.worldPos = pos;
-    out.normal   = in.normal;
+    out.normal   = nrm;
     return out;
 }

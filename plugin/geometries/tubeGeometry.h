@@ -9,6 +9,8 @@
 #pragma once
 #include <vector>
 #include <cmath>
+
+#include "circularFloor.h"
 #include "geometryMath.h"
 #include "curves.h"
 #include "sharedHelper.h"
@@ -55,7 +57,7 @@ public:
             for (int j = 0; j <= radialSegments; ++j)
             {
                 const float v = static_cast<float>(j)
-                              / static_cast<float>(radialSegments) * 2.0f * GEO_PI;
+                              / static_cast<float>(radialSegments) * 2.0f * PI;
 
                 const float sinV =  std::sin(v);
                 const float cosV = -std::cos(v);
@@ -121,9 +123,9 @@ public:
             {
                 const float u = static_cast<float>(ix) / static_cast<float>(widthSegments);
 
-                const float px = -radius * std::cos(u * 2.0f * GEO_PI) * std::sin(v * GEO_PI);
-                const float py =  radius * std::cos(v * GEO_PI);
-                const float pz =  radius * std::sin(u * 2.0f * GEO_PI) * std::sin(v * GEO_PI);
+                const float px = -radius * std::cos(u * 2.0f * PI) * std::sin(v * PI);
+                const float py =  radius * std::cos(v * PI);
+                const float pz =  radius * std::sin(u * 2.0f * PI) * std::sin(v * PI);
 
                 const vec3 n = vec3{ px, py, pz }.normalized();
 

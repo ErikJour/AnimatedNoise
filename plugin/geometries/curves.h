@@ -163,7 +163,7 @@ public:
         }
 
         // Initial normal: perpendicular to the smallest tangent component.
-        vec3 normal{ 0.0f, 0.0f, 0.0f };
+        // vec3 normal{ 0.0f, 0.0f, 0.0f };
 
         const float tx = std::abs(f.tangents[0].x);
         const float ty = std::abs(f.tangents[0].y);

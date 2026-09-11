@@ -15,8 +15,8 @@
 //===============================================
 
 const ADSR_TENSION: f32 = 0.4;
-const ADSR_ORIGIN:  vec3f = vec3f(0.0, 0.0, -85.0);   // AE_LOCATIONS.AMP_ENV_Z
-const ADSR_SCALE:   f32 = 0.5;                        // adsr.scale.setScalar(0.5)
+ const ADSR_ORIGIN:  vec3f = vec3f(0.89, 0.315, 1.81);
+  const ADSR_SCALE:   f32 = 0.1;    // about 0.35 wide, 0.15 tall
 
 //===============================================
 //Control points — ghost points at each end give the
@@ -167,11 +167,30 @@ fn fragmentAdsr(in: VertexOutput) -> vec4f {
 
     let diff1 = max(dot(nrm, lightDir1), 0.0);
     let diff2 = max(dot(nrm, lightDir2), 0.0) * 0.3;
-    let ambient = 0.25;
+    //light experiment=====================================
+    var light = vec3f(0.0);
+//
+    let viewDirection = normalize(u.cameraPosition - in.worldPos.xyz);
+//
+    light += ambientLight(in.worldPos.xyz,
+                                nrm,
+                                vec3f(1.0, 0.0, 0.0),
+                                0.2);
+//
+    let modelNormal = u.modelMatrix * vec4(nrm, 0.0);
+    light += directionalLight(in.worldPos.xyz,
+                                  modelNormal.xyz,
+                                  vec3f(0.1, 0.1, 0.1),
+                                   0.5,
+                                  vec3f(0.0, 1.0, 0.3),
+                                  viewDirection
+                                  );
+    //Done==================================================
 
-    let lighting = ambient + diff1 * 0.01 + diff2;
 
-    let color = uColor * lighting + uEmissive;
+
+    let lighting = diff1 * 0.01 + diff2;
+    let color = uColor * light + uEmissive;
 
     return vec4f(color, 1.0);
 }
