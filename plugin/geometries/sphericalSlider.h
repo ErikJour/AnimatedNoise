@@ -24,25 +24,22 @@ class SphericalSlider
                                     const float thetaLength = PI)
         {
             juce::ignoreUnused(angle);
-            widthSegments = std::max( 3, static_cast<int>(std::floor( widthSegments ) ) );
-            heightSegments = std::max( 2, static_cast<int>(std::floor( heightSegments ) ) );
+            widthSegments        = std::max( 3, static_cast<int>(std::floor( widthSegments ) ) );
+            heightSegments       = std::max( 2, static_cast<int>(std::floor( heightSegments ) ) );
             const float thetaEnd = std::min( thetaStart + thetaLength, PI );
 
             std::vector<uint32_t> grid;
             grid.reserve((static_cast<size_t>(heightSegments) + 1) * (static_cast<size_t>(widthSegments) + 1));
 
-            SphereVertex vertex = {};
-
+            SphereVertex vertex        = {};
             std::vector<float> normals = {};
-            std::vector<float> uvs = {};
+            std::vector<float> uvs     = {};
 
-            for (int iy = 0; iy <= static_cast<int>(heightSegments); iy++)
+            for (int iy = 0; iy <= heightSegments; iy++)
             {
-                std::vector<int> verticesRow = {};
+                const float v                = static_cast<float>(iy) / static_cast<float>(heightSegments);
+                const float invR             = 1.0f / radius;
 
-                const float v = static_cast<float>(iy) / static_cast<float>(heightSegments);
-
-                const float invR = 1.0f / radius;
                 for (int ix = 0; ix <= widthSegments; ix++)
                 {
                     const float u = static_cast<float>(ix) / static_cast<float>(widthSegments);
@@ -52,7 +49,7 @@ class SphericalSlider
                     vertex.y = radius * std::cos( thetaStart + v * thetaLength );
                     vertex.z = radius * std::sin( phiStart + u * phiLength ) * std::sin( thetaStart + v * thetaLength );
 
-                    vertices.push_back({
+                   vertices.push_back({
                    vertex.x, vertex.y, vertex.z,
                         vertex.x * invR, vertex.y * invR, vertex.z * invR,
                    1.0f, 1.0f, 1.0f
@@ -65,8 +62,8 @@ class SphericalSlider
             {
                 for (int ix = 0; ix < widthSegments; ix++)
                 {
-                    const int rowWidth = widthSegments + 1;
-                    const auto a = grid[ static_cast<uint32_t>(iy) * static_cast<uint32_t>(rowWidth) + static_cast<uint32_t>((ix + 1)) ];
+                    const int rowWidth  = widthSegments + 1;
+                    const auto a = grid[ static_cast<uint32_t>(iy) * static_cast<uint32_t>(rowWidth) + static_cast<uint32_t>(ix + 1) ];
                     const auto b = grid[ static_cast<uint32_t>(iy) * static_cast<uint32_t>(rowWidth) + static_cast<uint32_t>(ix) ];
                     const auto c = grid[ static_cast<uint32_t>((iy + 1) * rowWidth + ix) ];
                     const auto d = grid[ static_cast<uint32_t>((iy + 1) * rowWidth + (ix + 1)) ];

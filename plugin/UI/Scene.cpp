@@ -119,7 +119,6 @@ void Scene::setSliderUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer)
 {
     const AnimatedSlider* noiseLevel      = findSlider(ParameterID::noiseLevel);
     const AnimatedSlider* lpgResonance    = findSlider(ParameterID::lpgResonance);
-
     const float resonanceVal              = lpgResonance ? lpgResonance->value : 0.0f;
     juce::ignoreUnused(resonanceVal);
     const float gainVal                   = noiseLevel ? noiseLevel->value : 0.0f;
@@ -163,10 +162,10 @@ void Scene::setSliderUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer)
                 constexpr float kDist       = 0.1f;
                 constexpr float kFovY       = 1.047f;
                 constexpr float kMargin     = 0.004f;
-                const float halfH           = kDist * std::tan(kFovY * 0.5f);
-                const float halfW           = halfH * mUniforms.aspectRatio;
-                const float tx              = -halfW + kMargin;
-                const float ty              = -halfH + kMargin;
+                const     float halfH       = kDist * std::tan(kFovY * 0.5f);
+                const     float halfW       = halfH * mUniforms.aspectRatio;
+                const     float tx          = -halfW + kMargin;
+                const     float ty          = -halfH + kMargin;
 
                 const auto textModel = GlyphGeometry::makeTextModel(
                     kTextScale, kTextScale, kTextScale, tx, ty, -kDist);
