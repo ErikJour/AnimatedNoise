@@ -40,6 +40,10 @@ const MAT_FILTER_TWO_SLIDER:       u32 = 15u;
 //Utilities
 //============================
 const MAT_LIGHT_HELPER:            u32 = 16u;
+//============================
+//Objects
+//============================
+const MAT_ADSR:                    u32 = 17u;
 
 //===============================================
 //Uniforms
@@ -61,7 +65,9 @@ struct Uniforms {
     materialId:     u32,
     resonate:       f32,
     sliderPosition: vec3f,
-    cameraPosition: vec3f
+    cameraPosition: vec3f,
+    adsrShape:        vec4f,
+    adsrDims:         vec4f,
 };
 
 //===============================================

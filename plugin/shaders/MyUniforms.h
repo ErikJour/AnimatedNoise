@@ -35,6 +35,10 @@ static constexpr uint32_t MAT_FILTER_TWO_SLIDER      = 15;
 //Utilities
 //============================
 static constexpr uint32_t MAT_LIGHT_HELPER           = 16;
+//============================
+//Objects
+//============================
+static constexpr uint32_t MAT_ADSR                   = 17;
 struct MyUniforms {
     float    time;
     float    frequency;
@@ -54,6 +58,10 @@ struct MyUniforms {
     float    sliderPosition[3];
     float    cameraPosition[3];
     float    pad[2];
+    //attack, decay, sustain, release (normalised)
+    float    adsrShape[4];
+    //width, height, tubeRadius, sustainLevel
+    float    adsrDims[4];
 };
 
 static_assert(sizeof(MyUniforms) % 16              == 0);
@@ -63,6 +71,8 @@ static_assert(offsetof(MyUniforms, modelMatrix)    == 112);
 static_assert(offsetof(MyUniforms, materialId)     == 312);
 static_assert(offsetof(MyUniforms, modelMatrix)    % 16 == 0);
 static_assert(offsetof(MyUniforms, viewProjMatrix) % 16 == 0);
+static_assert(offsetof(MyUniforms, adsrShape) % 16 == 0);
+
 
 static constexpr float kIdentity[16] = {
     1.0f, 0.0f, 0.0f, 0.0f,

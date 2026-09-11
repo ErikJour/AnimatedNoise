@@ -178,6 +178,7 @@ set(SHADER_FILES
         "shaders/shader_materials/lights/mat_light_helper.wgsl"
         "shaders/shader_materials/sliders/mat_attack_slider.wgsl"
         "shaders/shader_materials/sliders/mat_decay_slider.wgsl"
+        "shaders/shader_materials/components/mat_adsr.wgsl"
 )
 
 set(SHADER_SOURCE "")

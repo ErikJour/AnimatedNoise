@@ -13,6 +13,7 @@ fn projectFlat(pos: vec3f) -> vec4f {
 fn vs_main(in: VertexInput) -> VertexOutput {
     var out: VertexOutput;
     var pos = in.position;
+    var nrm = in.normal;
 
     switch u.materialId {
         case MAT_LEVEL:                   { out.clipPos  = vertexLevel              (&pos);           }
@@ -37,6 +38,10 @@ fn vs_main(in: VertexInput) -> VertexOutput {
         //Utilities
         //============================
         case MAT_LIGHT_HELPER:            { out.clipPos  = vertexLightHelper        (&pos, in.color); }
+        //============================
+        //Objects
+        //============================
+        case MAT_ADSR:                    { out.clipPos  = vertexAdsr               (&pos, in.color, &nrm); }
         default:                          { out.clipPos  = projectPerspective       (pos);            }
     }
 

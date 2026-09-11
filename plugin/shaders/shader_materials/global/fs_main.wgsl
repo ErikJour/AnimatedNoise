@@ -26,6 +26,10 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
         //Utilities
         //============================
         case MAT_LIGHT_HELPER:            { return fragmentLightHelper(in);}
+        //============================
+        //Objects
+        //============================
+        case MAT_ADSR:                    { return fragmentAdsr(in);}
         default:                          { return vec4f(1.0, 0.0, 1.0, 1.0);}
     }
 }

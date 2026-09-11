@@ -46,8 +46,11 @@
             //=================================================
             dir + "/shader_materials/lights/ambientLight.wgsl",
             dir + "/shader_materials/lights/mat_light_helper.wgsl",
-            dir + "/shader_materials/lights/lighting.wgsl"
-
+            dir + "/shader_materials/lights/lighting.wgsl",
+            //=================================================
+            //Objects
+            //=================================================
+            dir + "/shader_materials/components/mat_adsr.wgsl"
 
         };
         return shaderPaths;
