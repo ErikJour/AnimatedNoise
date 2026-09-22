@@ -9,7 +9,6 @@
 #include  "AnimatedLPG.h"
 #include "AnimatedVactrol.h"
 #include "Envelope.h"
-#include "AnimatedFilter.h"
 
 class NoiseVoice {
 
@@ -35,7 +34,5 @@ class NoiseVoice {
     float rfSmoothedCoeff = 0.0050f;
     float rfDecayMult = 1.05f;
     AnimatedVactrol mVactrol;
-
-    AnimatedFilter mOnePoleIIR;
 
 };

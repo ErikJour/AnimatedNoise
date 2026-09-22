@@ -329,22 +329,6 @@ juce::AudioProcessorValueTreeState::ParameterLayout AnimatedNoiseProcessor::crea
         juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f),
         0.5f,
         juce::AudioParameterFloatAttributes().withLabel("%")));
-    //==========================================================
-    //Filter Coefficients
-    //==========================================================
-    paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
-        ParameterID::coeffA,
-        "Filter Coeff A",
-        juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f, 1.0f),
-        0.5f,
-        juce::AudioParameterFloatAttributes().withLabel("%")));
-
-    paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
-        ParameterID::coeffB,
-        "Filter Coeff B",
-        juce::NormalisableRange<float>(0.0f, 1.0f, 0.01f, 1.0f),
-        0.5f,
-        juce::AudioParameterFloatAttributes().withLabel("%")));
 
     return paramLayout;
 }

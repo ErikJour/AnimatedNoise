@@ -22,7 +22,6 @@ void NoiseVoice::render(float* buffer, const int sampleCount)
     mNoiseGenerator.process(buffer, sampleCount);
     mLPG.processBufferModulated(buffer, sampleCount, [this]{ return mVactrol.tick(); });
     mEnvelope.process(buffer, sampleCount);
-    mOnePoleIIR.processBuffer(buffer, sampleCount);
     // mGain.process(buffer, sampleCount);
 }
 

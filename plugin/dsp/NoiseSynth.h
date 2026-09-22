@@ -29,10 +29,6 @@ public:
 
     void setSustain (const float sustain)          { voice.mEnvelope.setSustain(sustain); }
 
-    void setFilterCoeffA(const float newCoeffA)    { voice.mOnePoleIIR.mCoeffA = newCoeffA; }
-
-    void setFilterCoeffB (const float newCoeffB)   { voice.mOnePoleIIR.mCoeffB = newCoeffB; }
-
     void setRelease(const float release)
     {
         envRelease = release;

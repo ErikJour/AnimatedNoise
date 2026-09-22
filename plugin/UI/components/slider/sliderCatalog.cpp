@@ -72,22 +72,6 @@ const std::vector<SliderDef>& sliderDefinitions()
             MAT_RELEASE_SLIDER,
                 { 1.f, bottomRow, 1.732f },
             0.07f },
-        //==========================================================
-        //Filter Coeff A: Radius = 2.0, angle = 127 (60 for other column)
-        //==========================================================
-        { ParameterID::coeffA,
-            0.0f,
-            MAT_FILTER_ONE_SLIDER,
-                { -1.203f, topRow, 1.597f },
-            0.07f },
-        //==================================================
-        //Filter Coeff B: Radius = 2.0, angle = 120 , bottom row
-        //==================================================
-        { ParameterID::coeffB,
-            0.0f,
-            MAT_FILTER_TWO_SLIDER,
-                { -1.f, topRow, 1.732f },
-            0.07f },
     };
     return defs;
 }
