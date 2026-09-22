@@ -30,7 +30,7 @@
 
 
 static constexpr uint32_t MAX_PARTICLES = 2000;
-constexpr auto fontPath = "/Users/erikjourgensen/Desktop/July 2026/Repositories/AnimatedNoise/plugin/UI/fonts/WorkSans-Regular.ttf";
+constexpr auto fontPath = "/Users/erikjourgensen/Desktop/Sept 2026/Repositories/AnimatedNoise/plugin/UI/fonts/WorkSans-Regular.ttf";
 #define WGPU_STR(s) WGPUStringView{s, sizeof(s) - 1}
 
 class Scene

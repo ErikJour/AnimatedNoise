@@ -1,22 +1,17 @@
-//===============================================
-//ADSR ramp — port of TDS-01's
-//  WebUI/AmpEnvelope/adsrVertexShader.glsl   (the whole shape)
-//  WebUI/AmpEnvelope/adsrFragmentShader.glsl (shading)
-//
-//The incoming geometry is a bare UV grid with zero positions; every vertex
-//position is computed here from a 4-segment catmull-rom through the ADSR
-//control points, with a fixed Z binormal so the tube cannot twist.
-//
-//UV arrives in in.color.xy. in.color.z flags an end cap (0 = ramp, 1 = cap),
-//which skips the displacement.
-//
-//u.adsrShape = (attack, decay, sustain, release)  — normalised, summing to 1
-//u.adsrDims  = (width, height, tubeRadius, sustainLevel)
-//===============================================
-
 const ADSR_TENSION: f32 = 0.4;
- const ADSR_ORIGIN:  vec3f = vec3f(0.89, 0.315, 1.81);
-  const ADSR_SCALE:   f32 = 0.1;    // about 0.35 wide, 0.15 tall
+const ADSR_ORIGIN:  vec3f = vec3f(0.89, 0.315, 1.81);
+const ADSR_SCALE:   f32 = 0.1;
+const ROTATION = 0.6;
+
+ fn rotateY(angle: f32) -> mat3x3f {
+     let c = cos(angle);
+     let s = sin(angle);
+     return mat3x3f(
+         vec3f(  c, 0.0,  -s),
+         vec3f(0.0, 1.0, 0.0),
+         vec3f(  s, 0.0,   c)
+     );
+ }
 
 //===============================================
 //Control points — ghost points at each end give the
@@ -80,7 +75,9 @@ fn vertexAdsr(pos: ptr<function, vec3f>, uvIn: vec3f,
               nrm: ptr<function, vec3f>) -> vec4f {
     // End caps come in as real geometry; only place them.
     if (uvIn.z > 0.5) {
-        let capWorld = *pos * ADSR_SCALE + ADSR_ORIGIN;
+        let rot = rotateY(ROTATION);
+        let capWorld = (rot * *pos) * ADSR_SCALE + ADSR_ORIGIN;
+        *nrm = rot * *nrm;
         *pos = capWorld;
         return projectPerspective(capWorld);
     }
@@ -125,8 +122,6 @@ fn vertexAdsr(pos: ptr<function, vec3f>, uvIn: vec3f,
         tangent = tangent / tangentLen;
     }
 
-    // Fixed reference frame — the curve is planar (Z = 0), so this prevents
-    // any twist along the tube.
     let binormal = vec3f(0.0, 0.0, 1.0);
     var normal   = normalize(cross(binormal, tangent));
 
@@ -135,7 +130,8 @@ fn vertexAdsr(pos: ptr<function, vec3f>, uvIn: vec3f,
     }
 
     let offset   = (cos(angle) * normal + sin(angle) * binormal) * u.adsrDims.z;
-    let localPos = curvePos + offset;
+    var localPos = curvePos + offset;
+    localPos = rotateY(ROTATION) * localPos;
 
     // vNormal in the JS vertex shader
     *nrm = normalize(cos(angle) * normal + sin(angle) * binormal);
@@ -151,11 +147,6 @@ fn vertexAdsr(pos: ptr<function, vec3f>, uvIn: vec3f,
 //Fragment — adsrFragmentShader.glsl
 //===============================================
 fn fragmentAdsr(in: VertexOutput) -> vec4f {
-    // createAdsr() is handed oscillatorOneColor 0xff8800 with a terracotta
-    // emissive at emissiveIntensity 0.5 — the same material config as
-    // oscModuleMaterial, so the ramp and oscillator one are meant to be the
-    // same colour. The 0.5 has to be applied: at full strength the terracotta
-    // outweighs the albedo and the ramp reads pink rather than orange.
     let uColor    = vec3f(1.000, 0.533, 0.000);
     let uEmissive = vec3f(0.776, 0.463, 0.314) * 0.5;
 
@@ -169,14 +160,11 @@ fn fragmentAdsr(in: VertexOutput) -> vec4f {
     let diff2 = max(dot(nrm, lightDir2), 0.0) * 0.3;
     //light experiment=====================================
     var light = vec3f(0.0);
-//
     let viewDirection = normalize(u.cameraPosition - in.worldPos.xyz);
-//
     light += ambientLight(in.worldPos.xyz,
                                 nrm,
                                 vec3f(1.0, 0.0, 0.0),
                                 0.2);
-//
     let modelNormal = u.modelMatrix * vec4(nrm, 0.0);
     light += directionalLight(in.worldPos.xyz,
                                   modelNormal.xyz,
@@ -185,10 +173,6 @@ fn fragmentAdsr(in: VertexOutput) -> vec4f {
                                   vec3f(0.0, 1.0, 0.3),
                                   viewDirection
                                   );
-    //Done==================================================
-
-
-
     let lighting = diff1 * 0.01 + diff2;
     let color = uColor * light + uEmissive;
 
