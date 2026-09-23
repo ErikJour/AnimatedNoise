@@ -764,7 +764,7 @@ void Scene::initializeParticles()
 
     ParticleSystem::buildQuad(quadVerts);
 
-    constexpr float particleSpread = 0.4f;
+    constexpr float particleSpread = 0.25f;
     constexpr float particleSize = 0.015f;
     ParticleSystem::initParticles(particles, MAX_PARTICLES, particleSpread, particleSize);
 

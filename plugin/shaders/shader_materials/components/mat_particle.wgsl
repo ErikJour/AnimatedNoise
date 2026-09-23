@@ -18,7 +18,7 @@ struct ParticleVertexOutput {
 fn noiseCloudShape(worldPos: vec3f, t: f32, time: f32) -> vec3f {
         let cloud = vec3f(
         worldPos.x + 2.75 /*+ sin(time + worldPos.x * 25.0) * 0.005*/,
-        worldPos.y + 1.1,
+        worldPos.y + 0.9,
         worldPos.z + 0.175 /*sin(time + worldPos.x * 25.0) * 0.01*/
     );
 
@@ -77,8 +77,9 @@ fn vs_particle_world(in: ParticleVertexInput) -> ParticleVertexOutput {
     let shaped = noiseCloudShape(worldPos, t, u.time * kWorldCloudSpeed);
     let centre = kWorldCloudCentre + shaped * kWorldCloudScale;
 
-    let camRight = u.modelMatrix[0].xyz;
-    let camUp    = u.modelMatrix[1].xyz;
+    let toCam    = normalize(u.cameraPosition - centre);
+    let camRight = normalize(cross(vec3f(0.0, 1.0, 0.0), toCam));
+    let camUp    = cross(toCam, camRight);
     var world    = centre
                  + camRight * (in.cornerOffset.x * size)
                  + camUp    * (in.cornerOffset.y * size);
@@ -99,7 +100,7 @@ fn fs_particle(in: ParticleVertexOutput) -> @location(0) vec4f {
     let distanceToCenter    = length(in.uv - 0.5);
     let glow                = clamp(0.05 / distanceToCenter - 0.1, 0.0, 1.0);
     let depthFade           = smoothstep(1.0, 1.1, in.viewDepth);
-    let alpha               = glow * mix(0.75, 0.55, depthFade) * in.color.a;
+    let alpha               = glow * mix(0.75, 0.55, 1.0) * in.color.a;
 
     return vec4f(in.color.r * u.resonate, in.color.g, in.color.b * u.sliderValue, alpha * 0.33);
 
