@@ -61,6 +61,7 @@ void NoiseSynth::startVoice(const int note, const int velocity)
     voice.note = note;
     constexpr float midiScaling = 127.0f;
     voice.mNoiseGenerator.setAmplitude(static_cast<float>(velocity) / midiScaling);
+    voice.mCombFilter.setAmplitude(static_cast<float>(velocity) / midiScaling);
     voice.mVactrol.strike(static_cast<float>(velocity) / midiScaling);
     Envelope& env = voice.mEnvelope;
     env.attackMultiplier  = envAttack;
@@ -72,6 +73,8 @@ void NoiseSynth::startVoice(const int note, const int velocity)
 void NoiseSynth::noteOn(const int note, const int velocity)
 {
     startVoice(note, velocity);
+    const float frequency = 440.f * std::pow(2.f, (static_cast<float>(note) - 69) / 12.0f);
+    voice.mCombFilter.excite(frequency);
 }
 
 void NoiseSynth::noteOff(const int note)
@@ -83,7 +86,11 @@ void NoiseSynth::noteOff(const int note)
     }
 }
 
-void NoiseSynth::setLpgVactrolRelease(const float newRelease) { voice.mVactrol.setReleaseTime(newRelease); }
+void NoiseSynth::setLpgVactrolRelease(const float newRelease) {
+
+    voice.mVactrol.setReleaseTime(newRelease);
+
+}
 
 
 

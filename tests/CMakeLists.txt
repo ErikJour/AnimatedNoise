@@ -1,5 +1,9 @@
 add_executable(AnimatedNoiseTests
     uniform_tests.cpp
+        ../plugin/dsp/AnimatedDistortion.cpp
+        ../plugin/dsp/AnimatedDistortion.h
+        ../plugin/dsp/AnimatedRandom.cpp
+        ../plugin/dsp/AnimatedRandom.h
 )
 
 set_target_properties(AnimatedNoiseTests PROPERTIES

@@ -42,16 +42,7 @@ AnimatedNoiseProcessor::AnimatedNoiseProcessor()
     /*modLoop*/
     /*modDrift*/
     //==========================================
-    //5) Filter Parameters
-    //===========================================
-    castParameter(apvts, ParameterID::coeffA, filterCoeffA);
-    castParameter(apvts, ParameterID::coeffB, filterCoeffB);
-    /*type*/
-    /*cutoff*/
-    /*resonance*/
-    /*cutoffMod*/
-    //==========================================
-    //Rand Parameters
+    //5 Rand Parameters
     //===========================================
     /*rate*/
     /*smoothing*/
@@ -380,15 +371,6 @@ void AnimatedNoiseProcessor::update()
         noiseSynth.setRelease(release);
         prevR = release;
     }
-    //=======================================
-    //Filter Coefficients
-    //=======================================
-    const float coeffA = filterCoeffA->get();
-    const float mappedValueA = juce::jmap (coeffA, -1.0f, 1.0f);
-    noiseSynth.setFilterCoeffA(mappedValueA);
-    const float coeffB = filterCoeffB->get();
-    const float mappedValueB = juce::jmap (coeffB, -1.0f, 1.0f);
-    noiseSynth.setFilterCoeffB(mappedValueB);
 }
 
 //==============================================================================

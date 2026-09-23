@@ -9,6 +9,7 @@
 #include  "AnimatedLPG.h"
 #include "AnimatedVactrol.h"
 #include "Envelope.h"
+#include "CombFilter.h"
 
 class NoiseVoice {
 
@@ -21,18 +22,21 @@ class NoiseVoice {
     void render(float* buffer, int sampleCount);
     void release();
 
-    NoiseGenerator mNoiseGenerator;
-    int note = 0;
+    NoiseGenerator  mNoiseGenerator;
+    Envelope        mEnvelope;
+    AnimatedVactrol mVactrol;
+    CombFilter      mCombFilter;
+    AnimatedLPG     mLPG;
+
+    int note      = 0;
     int noiseType = 0;
     juce::AudioBuffer<float> mAudioBuffer;
     double mSampleRate;
-    Envelope mEnvelope;
 
-    AnimatedLPG mLPG;
-    float rfSmoothed = 1e4f;
-    float rfTarget = 5e4f;
-    float rfSmoothedCoeff = 0.0050f;
-    float rfDecayMult = 1.05f;
-    AnimatedVactrol mVactrol;
+    // float rfSmoothed       = 1e4f;
+    // float rfTarget         = 5e4f;
+    // float rfSmoothedCoeff  = 0.0050f;
+    // float rfDecayMult      = 1.05f;
+
 
 };

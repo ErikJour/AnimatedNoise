@@ -87,7 +87,9 @@ target_sources(AnimatedNoise
         dsp/NoiseSynth.cpp
         dsp/NoiseGenerator.cpp
         dsp/NoiseVoice.cpp
-        dsp/AnimatedAuxEnv.cpp
+        dsp/AnimatedDistortion.cpp
+        dsp/AnimatedRandom.cpp
+        dsp/CombFilter.cpp
         UI/components/logo/AnimatedLogo.cpp
         UI/components/slider/sliderCatalog.cpp
         UI/Modules/AmpEnvelopeModule.cpp

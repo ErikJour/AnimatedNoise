@@ -1,0 +1,34 @@
+The 266e Source of Uncertainty provides a general source of musical unpredictability.
+Operation is divided into four sections, each of which perform a unique function.
+
+Three type of noise are available, with corresponding dedicated outputs.
+White noise is electrically flat, but acoustically balanced toward the high end of the spectrum ( 3 db/octave).
+Integrated white noise has a low spectral bias (-3 db/octave).
+Musically flat noise has a flat spectrum (constant energy per octave) and is a
+particularly useful source for subsequent processing.
+
+Fluctuating Random Voltages are continuously variable, with voltage control of bandwidth over the range
+of .05Hz to 50Hz, making possible changes that vary from barely perceptible movement to rapid fluctuation.
+
+Quantized Random Voltages change upon receiving pulses. The number of states is voltage-controllable
+from two to 24, and their distribution can be varied both spatially and temporally.
+
+Stored Random Voltages have three parameters under voltage control.
+Degree varies the amount of randomness;
+Chaos alters the distribution from just a little uncertain to total chaos;
+Skew biases the randomness toward one extreme or the other.
+
+All settings of the 266e can be stored and recalled under control of the 225e or 206e Preset Manager.
+
+Modulation destinations:
+
+-Comb Level
+-Comb Damping
+-LPG Resonance
+-LPG Decay
+-Noise Level
+-Noise Density
+-Distortion Color
+-Distortion Intensity
+
+$20
