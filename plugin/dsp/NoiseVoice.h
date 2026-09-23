@@ -11,10 +11,7 @@
 #include "Envelope.h"
 #include "CombFilter.h"
 
-class NoiseVoice {
-
-    public:
-
+struct NoiseVoice {
     NoiseVoice();
     ~NoiseVoice() = default;
 
@@ -32,11 +29,5 @@ class NoiseVoice {
     int noiseType = 0;
     juce::AudioBuffer<float> mAudioBuffer;
     double mSampleRate;
-
-    // float rfSmoothed       = 1e4f;
-    // float rfTarget         = 5e4f;
-    // float rfSmoothedCoeff  = 0.0050f;
-    // float rfDecayMult      = 1.05f;
-
 
 };
