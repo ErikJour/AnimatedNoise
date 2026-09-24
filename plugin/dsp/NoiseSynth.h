@@ -37,6 +37,8 @@ public:
 
     void setLpgVactrolRelease(float newRelease);
 
+    void setCombLevel(const float level)          { voice.mCombFilter.setLevel(level); }
+
     float envAttack  {};
     float envDecay   {};
     float envSustain {};

@@ -35,19 +35,19 @@ AnimatedNoiseProcessor::AnimatedNoiseProcessor()
     castParameter(apvts, ParameterID::envSustain, envelopeSustainParam);
     castParameter(apvts, ParameterID::envRelease, envelopeReleaseParam);
     //==========================================
-    //4) Mod Parameters
+    //4) Comb Parameters
     //===========================================
-    /*modAttack*/
-    /*modDecay*/
-    /*modLoop*/
-    /*modDrift*/
-    //==========================================
+    castParameter(apvts, ParameterID::combLevel, combLevelParam);
+    //==============================
     //5 Rand Parameters
     //===========================================
     /*rate*/
     /*smoothing*/
     /*ampMod*/
     /*driveMod*/
+    //==============================
+    //6) Dist Parameters
+    //===========================================
 }
 
 AnimatedNoiseProcessor::~AnimatedNoiseProcessor()
@@ -291,6 +291,14 @@ juce::AudioProcessorValueTreeState::ParameterLayout AnimatedNoiseProcessor::crea
         juce::NormalisableRange<float>{ 0.05f, 1.0f, 0.01f, 1.0f },
         0.5f));
     //==========================================================
+    //Comb
+    //==========================================================
+    paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
+       ParameterID::combLevel,
+       "Comb Level",
+       juce::NormalisableRange<float>{ 0.0f, 1.0f, 0.01f, 1.0f },
+       0.5f));
+    //==========================================================
     //Amp Envelope
     //==========================================================
     paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
@@ -371,6 +379,12 @@ void AnimatedNoiseProcessor::update()
         noiseSynth.setRelease(release);
         prevR = release;
     }
+
+    //=======================================
+    //Comb Params
+    //=======================================
+    const float combLevel = combLevelParam->get();
+    noiseSynth.setCombLevel(combLevel);
 }
 
 //==============================================================================

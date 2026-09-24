@@ -26,8 +26,8 @@ public:
     float processSample(float input);
 
 private:
-    double                     mSampleRate      = { 0.0f };
     float                      ringBufferMemory[MAX_BUFFER_LENGTH] = {};
+    double                     mSampleRate      = { 0.0f };
     juce::SmoothedValue<float> levelSmoothed    = { 0.0f };
     float                      mDecay           = { 0.996f };
     float                      mPrevSample      = { 0.0f };

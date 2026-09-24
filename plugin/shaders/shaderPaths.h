@@ -41,6 +41,7 @@
             dir + "/shader_materials/sliders/mat_release_slider.wgsl",
             dir + "/shader_materials/sliders/mat_filter_one.wgsl",
             dir + "/shader_materials/sliders/mat_filter_two.wgsl",
+            dir + "/shader_materials/sliders/mat_comb_level.wgsl",
             //=================================================
             //Lights
             //=================================================

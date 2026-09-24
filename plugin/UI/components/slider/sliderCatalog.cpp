@@ -88,6 +88,14 @@ const std::vector<SliderDef>& sliderDefinitions()
             MAT_FILTER_TWO_SLIDER,
                 { -1.f, topRow, 1.732f },
             0.07f },
+        //==================================================
+        //Comb Level: Radius = 2.0, angle = 187 , bottom row
+        //==================================================
+        { ParameterID::combLevel,
+            0.0f,
+            MAT_COMB_LEVEL_SLIDER,
+                { -1.985f, topRow, -0.244f },
+            0.07f },
     };
     return defs;
 }

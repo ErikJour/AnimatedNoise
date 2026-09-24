@@ -30,6 +30,10 @@ namespace ParameterID
     PARAMETER_ID(envDecay)
     PARAMETER_ID(envSustain)
     PARAMETER_ID(envRelease)
+    //======================
+    //Comb Parameters
+    //======================
+    PARAMETER_ID(combLevel)
 
 #undef PARAMETER_ID
 

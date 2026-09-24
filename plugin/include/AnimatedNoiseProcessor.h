@@ -88,6 +88,10 @@ private:
     juce::AudioParameterFloat* envelopeDecayParam{};
     juce::AudioParameterFloat* envelopeSustainParam{};
     juce::AudioParameterFloat* envelopeReleaseParam{};
+    //==========================================
+    //Comb Parameters
+    //===========================================
+    juce::AudioParameterFloat* combLevelParam{};
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AnimatedNoiseProcessor)
 };
