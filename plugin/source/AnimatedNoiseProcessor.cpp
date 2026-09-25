@@ -38,6 +38,7 @@ AnimatedNoiseProcessor::AnimatedNoiseProcessor()
     //4) Comb Parameters
     //===========================================
     castParameter(apvts, ParameterID::combLevel, combLevelParam);
+    castParameter(apvts, ParameterID::combDamping, combDampingParam);
     //==============================
     //5 Rand Parameters
     //===========================================
@@ -298,6 +299,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout AnimatedNoiseProcessor::crea
        "Comb Level",
        juce::NormalisableRange<float>{ 0.0f, 1.0f, 0.01f, 1.0f },
        0.5f));
+    paramLayout.add(std::make_unique<juce::AudioParameterFloat>(
+       ParameterID::combDamping,
+       "Comb Damping",
+       juce::NormalisableRange<float>{ 0.0f, 1.0f, 0.01f, 1.0f },
+       0.5f));
     //==========================================================
     //Amp Envelope
     //==========================================================
@@ -385,6 +391,9 @@ void AnimatedNoiseProcessor::update()
     //=======================================
     const float combLevel = combLevelParam->get();
     noiseSynth.setCombLevel(combLevel);
+    //Comes in as -1 to 1.
+    const float combDamping = (combDampingParam->get() * 0.5f);
+    noiseSynth.setCombDamping(combDamping);
 }
 
 //==============================================================================

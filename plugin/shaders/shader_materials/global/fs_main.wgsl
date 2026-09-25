@@ -23,6 +23,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
         case MAT_FILTER_ONE_SLIDER:       { return fragmentFilterOneSlider(in);  }
         case MAT_FILTER_TWO_SLIDER:       { return fragmentFilterTwoSlider(in);  }
         case MAT_COMB_LEVEL_SLIDER:       { return fragmentCombLevelSlider(in);  }
+        case MAT_COMB_DAMPING_SLIDER:     { return fragmentCombDampingSlider(in);  }
         //============================
         //Utilities
         //============================

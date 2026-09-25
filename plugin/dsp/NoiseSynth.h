@@ -39,6 +39,11 @@ public:
 
     void setCombLevel(const float level)          { voice.mCombFilter.setLevel(level); }
 
+    void setCombDamping(const float damping) {
+        std::cout << "setCombDamping: " << damping << std::endl;
+        voice.mCombFilter.setDamping(damping);
+    }
+
     float envAttack  {};
     float envDecay   {};
     float envSustain {};

@@ -96,6 +96,14 @@ const std::vector<SliderDef>& sliderDefinitions()
             MAT_COMB_LEVEL_SLIDER,
                 { -1.985f, topRow, -0.244f },
             0.07f },
+        //==================================================
+        //Comb Damping: Radius = 2.0, angle = 180 , bottom row
+        //==================================================
+        { ParameterID::combDamping,
+            0.0f,
+            MAT_COMB_DAMPING_SLIDER,
+                { -2.f, topRow, 0.f },
+            0.07f },
     };
     return defs;
 }

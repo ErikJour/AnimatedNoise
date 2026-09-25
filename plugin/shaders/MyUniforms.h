@@ -32,14 +32,15 @@ static constexpr uint32_t MAT_RELEASE_SLIDER         = 13;
 static constexpr uint32_t MAT_FILTER_ONE_SLIDER      = 14;
 static constexpr uint32_t MAT_FILTER_TWO_SLIDER      = 15;
 static constexpr uint32_t MAT_COMB_LEVEL_SLIDER      = 16;
+static constexpr uint32_t MAT_COMB_DAMPING_SLIDER    = 17;
 //============================
 //Utilities
 //============================
-static constexpr uint32_t MAT_LIGHT_HELPER           = 17;
+static constexpr uint32_t MAT_LIGHT_HELPER           = 18;
 //============================
 //Objects
 //============================
-static constexpr uint32_t MAT_ADSR                   = 18;
+static constexpr uint32_t MAT_ADSR                   = 19;
 struct MyUniforms {
     float    time;
     float    frequency;

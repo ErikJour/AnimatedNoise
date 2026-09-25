@@ -7,7 +7,7 @@
 #include <cmath>
 #include <components/slider/sliderCatalog.h>
 
-static constexpr uint32_t materialCount = 19;
+static constexpr uint32_t materialCount = 20;
 //================================================================================================
 Scene::Scene() : mFont(fontPath)  {}
 Scene::~Scene() = default;
@@ -157,6 +157,7 @@ void Scene::setSliderUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer)
                                             MAT_FILTER_ONE_SLIDER,
                                             MAT_FILTER_TWO_SLIDER,
                                             MAT_COMB_LEVEL_SLIDER,
+                                            MAT_COMB_DAMPING_SLIDER,
                                             MAT_ADSR
                                             };
 

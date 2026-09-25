@@ -134,6 +134,7 @@ void SliderManager::sendParamStringTooltip(const float value) const
         if (paramString == "lpgResonance")      { paramString = "LPG Resonance";     }
         if (paramString == "lpgVactrolRelease") { paramString = "LPG Release";       }
         if (paramString == "combLevel")         { paramString = "Comb Level";        }
+        if (paramString == "combDamping")       { paramString = "Comb Damping";        }
         const std::string paramValueString      = paramValue.toStdString() + "%";
 
         mScene.setToolTip(paramString, paramValueString);

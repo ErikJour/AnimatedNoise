@@ -8,8 +8,9 @@
 CombFilter::CombFilter()
 {
     mSampleRate = 44100;
-    mDecay = 0.99f;
+    mDecay      = 0.99f;
     levelSmoothed.reset(mSampleRate, 0.02f);
+    mDampingSmoothed.reset(mSampleRate, 0.02f);
 
 }
 
@@ -33,10 +34,11 @@ void CombFilter::excite(const float frequency)
 float CombFilter::processSample(const float input)
 {
     const float combLevel = updateLevel();
-    const float delayed  = ringBufferMemory[ringBufferIndex];
-    const float filtered = 0.7f * delayed + 0.3f * mPrevSample;
+    const float damping   = updateDamping();
+    const float delayed   = ringBufferMemory[ringBufferIndex];
+    // const float filtered = 0.7f * delayed + 0.3f * mPrevSample;
 
-    // filtered = (delayed * (1.0 - damping)) + (mPrevSample * damping); // add mDamping with range 0 to 0.99
+    const float filtered = (delayed * (1.0f - damping)) + (mPrevSample * damping); // add mDamping with range 0 to 0.99
 
     ringBufferMemory[ringBufferIndex] = (filtered + input) * mDecay;
 
@@ -46,6 +48,7 @@ float CombFilter::processSample(const float input)
         ringBufferIndex = 0;
 
     mPrevSample = delayed;
+
     return filtered * combLevel * mAmplitude;
 }
 
@@ -63,6 +66,16 @@ void CombFilter::setLevel(const float newCombLevel)
 float CombFilter::updateLevel()
 {
     return levelSmoothed.getNextValue();
+}
+
+void CombFilter::setDamping(const float newDampingLevel)
+{
+    mDampingSmoothed.setTargetValue(newDampingLevel);
+}
+
+float CombFilter::updateDamping()
+{
+    return mDampingSmoothed.getNextValue();
 }
 
 

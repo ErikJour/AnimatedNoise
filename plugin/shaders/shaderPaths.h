@@ -42,6 +42,7 @@
             dir + "/shader_materials/sliders/mat_filter_one.wgsl",
             dir + "/shader_materials/sliders/mat_filter_two.wgsl",
             dir + "/shader_materials/sliders/mat_comb_level.wgsl",
+            dir + "/shader_materials/sliders/mat_comb_damping.wgsl",
             //=================================================
             //Lights
             //=================================================

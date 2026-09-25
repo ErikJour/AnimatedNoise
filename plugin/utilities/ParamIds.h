@@ -34,6 +34,7 @@ namespace ParameterID
     //Comb Parameters
     //======================
     PARAMETER_ID(combLevel)
+    PARAMETER_ID(combDamping)
 
 #undef PARAMETER_ID
 

@@ -37,14 +37,15 @@ const MAT_RELEASE_SLIDER:          u32 = 13u;
 const MAT_FILTER_ONE_SLIDER:       u32 = 14u;
 const MAT_FILTER_TWO_SLIDER:       u32 = 15u;
 const MAT_COMB_LEVEL_SLIDER:       u32 = 16u;
+const MAT_COMB_DAMPING_SLIDER:     u32 = 17u;
 //============================
 //Utilities
 //============================
-const MAT_LIGHT_HELPER:            u32 = 17u;
+const MAT_LIGHT_HELPER:            u32 = 18u;
 //============================
 //Objects
 //============================
-const MAT_ADSR:                    u32 = 18u;
+const MAT_ADSR:                    u32 = 19u;
 
 //===============================================
 //Uniforms

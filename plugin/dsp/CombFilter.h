@@ -24,11 +24,14 @@ public:
     void setAmplitude(const float newAmplitude) { mAmplitude = newAmplitude; }
     float updateLevel();
     float processSample(float input);
+    void setDamping(float newDampingLevel);
+    float updateDamping();
 
 private:
     float                      ringBufferMemory[MAX_BUFFER_LENGTH] = {};
     double                     mSampleRate      = { 0.0f };
     juce::SmoothedValue<float> levelSmoothed    = { 0.0f };
+    juce::SmoothedValue<float> mDampingSmoothed = { 0.0f };
     float                      mDecay           = { 0.996f };
     float                      mPrevSample      = { 0.0f };
     float                      mAmplitude       = { 0.0f };
