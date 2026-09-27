@@ -22,13 +22,11 @@ public:
     void noteOff(int note);
     //======================================================================================
     void setNoiseLevel(const float level)          { voice.mNoiseGenerator.setLevel(level); }
-
     void setNoiseDensity(const float density)      { voice.mNoiseGenerator.setDensity(density); }
-
     void setLpgResonance(const float newResonance) { voice.mLPG.setResonance(newResonance); }
-
+    void setCombLevel(const float level)           { voice.mCombFilter.setLevel(level); }
+    void setCombDamping(const float damping)       { voice.mCombFilter.setDamping(damping); }
     void setSustain (const float sustain)          { voice.mEnvelope.setSustain(sustain); }
-
     void setRelease(const float release)
     {
         envRelease = release;
@@ -36,21 +34,13 @@ public:
     }
 
     void setLpgVactrolRelease(float newRelease);
-
-    void setCombLevel(const float level)          { voice.mCombFilter.setLevel(level); }
-
-    void setCombDamping(const float damping) {
-        std::cout << "setCombDamping: " << damping << std::endl;
-        voice.mCombFilter.setDamping(damping);
-    }
-
     float envAttack  {};
     float envDecay   {};
     float envSustain {};
     float envRelease {};
 
 private:
-    double mSampleRate;
+    double     mSampleRate;
     NoiseVoice voice;
 
 

@@ -12,11 +12,14 @@ static constexpr uint32_t materialCount = 20;
 Scene::Scene() : mFont(fontPath)  {}
 Scene::~Scene() = default;
 //================================================================================================
+//Scene Setup
+//================================================================================================
 void Scene::init(const WGPUDevice device, const WGPUQueue queue)               { mDevice = device; mQueue  = queue;  }
 void Scene::setSurface(const WGPUSurface surface)                              { mSurface = surface;                 }
 void Scene::setSurfaceSize(const uint32_t width, const uint32_t height)        { mWidth = width;   mHeight = height; }
-void Scene::setShaderModule(const WGPUShaderModule shaderModule)               { mShaderModule = shaderModule;       }
+void Scene::setSurfaceFormat(const WGPUTextureFormat format)                   { mSurfaceFormat = format; }
 void Scene::setPipelineDesc(const WGPURenderPipelineDescriptor& pipelineDesc)  { mPipelineDesc = pipelineDesc;       }
+void Scene::setCameraState(const CameraState& s)                               { mCameraState = s; updateViewMatrix(); }
 //================================================================================================
 bool Scene::createShader()
 {
@@ -42,14 +45,28 @@ bool Scene::createShader()
     return true;
 }
 
+#ifdef DEBUG
+void Scene::reloadShader()
+{
+    const WGPUShaderModule newModule = ResourceManager::loadShaderModules(mShaderPaths, mDevice);
+    if (!newModule) {
+        std::cerr << "Shader compile failed — keeping old pipeline." << std::endl;
+        return;
+    }
+    wgpuShaderModuleRelease(mShaderModule);
+    mShaderModule               = newModule;
+    mPipelineDesc.vertex.module = mShaderModule;
+    createPipeline();
+    std::cout << "Shader reloaded." << std::endl;
+}
+#endif
+
 void Scene::terminate()
 {
     mLogo.terminate();
     mAmpEnvelope.release();
     if (mDepthTextureView)              { wgpuTextureViewRelease(mDepthTextureView);   mDepthTextureView     = nullptr; }
     if (mDepthTexture)                  { wgpuTextureRelease(mDepthTexture);           mDepthTexture         = nullptr; }
-    if (mSkylightVertexBuffer)          { wgpuBufferRelease(mSkylightVertexBuffer);    mSkylightVertexBuffer = nullptr; }
-    if (mSkylightIndexBuffer)           { wgpuBufferRelease(mSkylightIndexBuffer);     mSkylightIndexBuffer  = nullptr; }
     if (mSphereVertexBuffer)            { wgpuBufferRelease(mSphereVertexBuffer);      mSphereVertexBuffer   = nullptr; }
     if (mSphereIndexBuffer)             { wgpuBufferRelease(mSphereIndexBuffer);       mSphereIndexBuffer    = nullptr; }
     if (mFloorVertexBuffer)             { wgpuBufferRelease(mFloorVertexBuffer);       mFloorVertexBuffer    = nullptr; }
@@ -114,18 +131,7 @@ void Scene::setUniforms(const WGPUQueue queue, const WGPUBuffer uniformBuffer, c
     mUniforms.cameraPosition[1]         = CameraState::eyeY;
     mUniforms.cameraPosition[2]         = mCameraState.posZ;
     mUniforms.aspectRatio               = static_cast<float>(mWidth) / static_cast<float>(mHeight);
-
-    //Wall time drives the frame; the modulation clock only advances while the
-    //envelope is open, which is what makes the shapes settle when a note ends.
-    // const float delta = mPrevTime >= 0.0f ? time - mPrevTime : 0.0f;
-    // mModTime += delta * mEnvValue;
-    // mPrevTime = time;
-
-    //Lighting and the 70s film grade come from the tunnel; the rest is each
-    //module describing itself to its own material.
     mAmpEnvelope.writeUniforms(mUniforms);
-
-
     updateViewMatrix();
     setSliderUniforms(queue, uniformBuffer);
 }
@@ -137,7 +143,7 @@ void Scene::setSliderUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer)
     const float resonanceVal              = lpgResonance ? lpgResonance->value : 0.0f;
     juce::ignoreUnused(resonanceVal);
     const float gainVal                   = noiseLevel ? noiseLevel->value : 0.0f;
-    const bool  gainHeld                  = noiseLevel ? noiseLevel->pressed : false;
+    const bool  gainHeld                  = noiseLevel != nullptr && noiseLevel->pressed;
 
     constexpr uint32_t ids[materialCount] =   {
                                             MAT_TEXT,
@@ -161,7 +167,7 @@ void Scene::setSliderUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer)
                                             MAT_ADSR
                                             };
 
-    auto sliderForMaterial              = [&](const uint32_t mat) -> const AnimatedSlider* {
+    auto sliderForMaterial= [&](const uint32_t mat) -> const AnimatedSlider* {
                                             if (mSliderList)
                                                 for (const auto& s : *mSliderList)
                                                     if (s.materialId == mat) return &s;
@@ -194,7 +200,7 @@ void Scene::setSliderUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer)
 
             if (id == MAT_LIGHT_HELPER)
             {
-                makeModelMatrix(mUniforms.modelMatrix, 0.0f, 0.0f, 0.0f, 0.0f);
+                CrossPlatformHelpers::makeModelMatrix(mUniforms.modelMatrix, 0.0f, 0.0f, 0.0f, 0.0f);
             }
 
             if (id == MAT_PARTICLES)
@@ -260,31 +266,15 @@ void Scene::ConfigureVertexLayout()
     mPipelineDesc.vertex.buffers            = mVertexBufferLayouts.data();
 }
 
-#ifdef DEBUG
-void Scene::reloadShader()
-{
-    const WGPUShaderModule newModule = ResourceManager::loadShaderModules(mShaderPaths, mDevice);
-    if (!newModule) {
-        std::cerr << "Shader compile failed — keeping old pipeline." << std::endl;
-        return;
-    }
-    wgpuShaderModuleRelease(mShaderModule);
-    mShaderModule               = newModule;
-    mPipelineDesc.vertex.module = mShaderModule;
-    createPipeline();
-    std::cout << "Shader reloaded." << std::endl;
-}
-#endif
 
 bool Scene::createPipeline()
 {
     //=====================================================================================
     //Here we configure communication from the CPU to the GPU
-    //=====================================================================================
     //Release bind group, uniform buffer, and pipeline so that we can reset these
     //=====================================================================================
-    if (mBindGroup)    { wgpuBindGroupRelease(mBindGroup);     mBindGroup     = nullptr; }
-    if (mUniformBuffer){ wgpuBufferRelease(mUniformBuffer);    mUniformBuffer = nullptr; }
+    if (mBindGroup)    { wgpuBindGroupRelease(mBindGroup);        mBindGroup     = nullptr; }
+    if (mUniformBuffer){ wgpuBufferRelease(mUniformBuffer);          mUniformBuffer = nullptr; }
     if (mPipeline)     { wgpuRenderPipelineRelease(mPipeline); mPipeline      = nullptr; }
     //=====================================================================================
     //Rules for sending uniform data to the gpu
@@ -361,7 +351,7 @@ void Scene::updateDepthTexture(const uint32_t width, const uint32_t height)
     //=====================================================================================
     //Assign width and height
     //=====================================================================================
-    mWidth = width;
+    mWidth  = width;
     mHeight = height;
     //=====================================================================================
     //Release depth texture and depth texture view
@@ -473,14 +463,6 @@ void Scene::renderMeshes(const WGPURenderPassEncoder renderPass)
               MAT_LEVEL,
               renderPass);
     //==============================================
-    //Skylight
-    //==============================================
-    setItemBuffers(mSkylightVertexBuffer,
-             mSkylightIndexBuffer,
-             mSkylightIndexCount,
-             MAT_SKYLIGHT,
-             renderPass);
-    //==============================================
     //Preset name text
     //==============================================
     setItemBuffers(mPresetVertexBuffer,
@@ -533,8 +515,6 @@ void Scene::renderMeshes(const WGPURenderPassEncoder renderPass)
     //Logo
     //==============================================
     mLogo.render(renderPass);
-
-
 }
 
 void Scene::renderFrame(const float currentTime)
@@ -721,27 +701,6 @@ void Scene::initializeSphere()
     wgpuQueueWriteBuffer(mQueue, mSphereIndexBuffer, 0, indices.data(), bd.size);
 }
 
-void Scene::initializeSkylight()
-{
-    std::vector<SkylightVertex> vertices;
-    std::vector<SkylightIndex>  indices;
-
-    Skylight::buildSkylight(vertices, indices, 0.15f, 0.75, 64);
-
-    mSkylightIndexCount = static_cast<uint32_t>(indices.size());
-
-    WGPUBufferDescriptor bd{};
-    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex;
-    bd.size  = vertices.size() * sizeof(SkylightVertex);
-    mSkylightVertexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-    wgpuQueueWriteBuffer(mQueue, mSkylightVertexBuffer, 0, vertices.data(), bd.size);
-
-    bd.usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Index;
-    bd.size  = (indices.size() * sizeof(SkylightIndex) + 3) & ~3ULL;
-    mSkylightIndexBuffer = wgpuDeviceCreateBuffer(mDevice, &bd);
-    wgpuQueueWriteBuffer(mQueue, mSkylightIndexBuffer, 0, indices.data(), bd.size);
-}
-
 void Scene::InitializeSlider(uint32_t& indexCount, WGPUBuffer& vertexBuffer, WGPUBuffer& indexBuffer, const float radius) const
 {
     std::vector<SphereVertex> verts;
@@ -766,8 +725,8 @@ void Scene::initializeParticles()
 
     ParticleSystem::buildQuad(quadVerts);
 
-    constexpr float particleSpread = 0.25f;
-    constexpr float particleSize = 0.015f;
+    constexpr float particleSpread = 0.15f;
+    constexpr float particleSize = 0.2f;
     ParticleSystem::initParticles(particles, MAX_PARTICLES, particleSpread, particleSize);
 
     WGPUBufferDescriptor bd{};
@@ -899,8 +858,8 @@ void Scene::updateViewMatrix()
     mulMat4(mUniforms.viewProjMatrix, mProj, mView);
     std::memcpy(mUniforms.projMatrix, mProj, sizeof(mProj));
 
-    buildInvLookAt(mInvView, cameraX, cameraY, cameraZ, tx, cameraY, tz);
-    buildInvPerspective(mInvProj, 1.047f, mUniforms.aspectRatio, near, far);
+    CrossPlatformHelpers::buildInvLookAt(mInvView, cameraX, cameraY, cameraZ, tx, cameraY, tz);
+    CrossPlatformHelpers::buildInvPerspective(mInvProj, 1.047f, mUniforms.aspectRatio, near, far);
 }
 
 //=====================================================================================
@@ -951,58 +910,6 @@ void Scene::onScroll(const float deltaX, const float deltaY)
     updateViewMatrix();
 }
 
-//====================================================================================
-//Additions
-//====================================================================================
-void Scene::buildInvLookAt(float* out, float ex, float ey, float ez, float tx, float ty,
-                                                float tz,float upx, float upy, float upz)
-{
-    float fx = tx - ex, fy = ty - ey, fz = tz - ez;
-    const float fl = 1.0f / sqrtf(fx*fx + fy*fy + fz*fz);
-    fx *= fl; fy *= fl; fz *= fl;
-
-    float rx = fy*upz - fz*upy;
-    float ry = fz*upx - fx*upz;
-    float rz = fx*upy - fy*upx;
-    const float rl = 1.0f / sqrtf(rx*rx + ry*ry + rz*rz);
-    rx *= rl; ry *= rl; rz *= rl;
-
-    const float ux = ry*fz - rz*fy;
-    const float uy = rz*fx - rx*fz;
-    const float uz = rx*fy - ry*fx;
-
-    out[0]  = rx;   out[1]  = ry;   out[2]  = rz;   out[3]  = 0.0f;
-    out[4]  = ux;   out[5]  = uy;   out[6]  = uz;   out[7]  = 0.0f;
-    out[8]  = -fx;  out[9]  = -fy;  out[10] = -fz;  out[11] = 0.0f;
-    out[12] = ex;   out[13] = ey;   out[14] = ez;   out[15] = 1.0f;
-}
-
-void Scene::buildInvPerspective(float* out,
-                                    float fovY, float aspect,
-                                    float nearZ, float farZ)
-{
-    const float t  = tanf(fovY * 0.5f);
-    const float A  = farZ / (nearZ - farZ);
-    const float B  = (farZ * nearZ) / (nearZ - farZ);
-
-    for (int i = 0; i < 16; ++i) out[i] = 0.0f;
-
-    out[0]  = aspect * t;
-    out[5]  = t;
-    out[11] = 1.0f / B;
-    out[14] = -1.0f;
-    out[15] = A / B;
-}
-
-void Scene::makeModelMatrix(float* m, float angle, float tx, float ty, float tz)
-{
-    const float c = std::cos(angle);
-    const float s = std::sin(angle);
-    m[0] =  c;  m[1] = 0;  m[2]  = -s; m[3]  = 0;
-    m[4] =  0;  m[5] = 1;  m[6]  =  0; m[7]  = 0;
-    m[8] =  s;  m[9] = 0;  m[10] =  c; m[11] = 0;
-    m[12] = tx; m[13] = ty; m[14] = tz; m[15] = 1;
-}
 void Scene::setItemBuffers(WGPUBuffer vertexBuffer, WGPUBuffer indexBuffer, uint32_t indexCount,
                                             uint32_t material, WGPURenderPassEncoder renderPass) const
 {
@@ -1018,13 +925,13 @@ void Scene::setItemBuffers(WGPUBuffer vertexBuffer, WGPUBuffer indexBuffer, uint
 
 const AnimatedSlider* Scene::findSlider(const juce::ParameterID& id) const
 {
-    if (!mSliderList) return nullptr;
-    for (const auto& s : *mSliderList)
-        if (s.paramID.getParamID() == id.getParamID())
-            return &s;
+    if (mSliderList) {
+        for (const auto& s : *mSliderList)
+            if (s.paramID.getParamID() == id.getParamID())
+                return &s;
+    }
     return nullptr;
 }
-
 
 void Scene::updateAmpEnvelopeParameters()
 {
@@ -1038,18 +945,11 @@ void Scene::updateAmpEnvelopeParameters()
     mAmpEnvelope.setParameters(env);
 }
 
-// std::array<SceneModule*, Scene::kModuleCount> Scene::allModules()
-// {
-//     return { &mAmpEnvelope };
-// }
-
 //=====================================================================================
 //Getters and setters
 //=====================================================================================
 void Scene::setToolTip(const std::string &paramName, const std::string &paramValue)
 {
-    //Every drag event lands here, but the text only changes in 1% steps.
-    //Rebuilding the glyph mesh is the expensive part, so skip it when unchanged.
     if (paramName == mText && paramValue == mTooltipValue)
         return;
 
@@ -1057,5 +957,4 @@ void Scene::setToolTip(const std::string &paramName, const std::string &paramVal
     mTooltipValue = paramValue;
     initializeTooltip(mFont, paramName, paramValue);
 }
-void Scene::setSurfaceFormat(const WGPUTextureFormat format) { mSurfaceFormat = format; }
-void Scene::setCameraState(const CameraState& s)             { mCameraState = s; updateViewMatrix(); }
+

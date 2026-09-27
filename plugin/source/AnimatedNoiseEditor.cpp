@@ -7,12 +7,12 @@ AnimatedNoiseProcessorEditor::AnimatedNoiseProcessorEditor (AnimatedNoiseProcess
                                 mSliderManager(mWebGpuWindow.getScene(), processorRef.apvts)
 {
     juce::ignoreUnused(processorRef);
-
+    //==================================
+    //Basic window setup
+    //==================================
     constexpr int initWidth  = 800;
     constexpr int initHeight = 450;
-
     setSize(initWidth, initHeight);
-
     mWebGpuWindow.initialize();
 }
 
@@ -32,7 +32,7 @@ void AnimatedNoiseProcessorEditor::parentHierarchyChanged()
         return;
 
     const auto*  primaryDisplay = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay();
-    const double scale = primaryDisplay ? primaryDisplay->scale : 1.0;
+    const double scale                         = primaryDisplay ? primaryDisplay->scale : 1.0;
     //==============================================================================================
     //Width and height
     //==============================================================================================
@@ -47,7 +47,9 @@ void AnimatedNoiseProcessorEditor::parentHierarchyChanged()
     mMetalView.setView(mWebGpuWindow.getNativeView());
     mMetalView.setBounds(getLocalBounds());
 #endif
-
+    //=======================================================
+    //Erik -> Add if/endif Windows here
+    //=======================================================
     mStartTimeMs  = juce::Time::getMillisecondCounterHiRes();
     mStartTimeSet = true;
     mConfiguredW  = width;
@@ -101,7 +103,7 @@ void AnimatedNoiseProcessorEditor::resized()
     mMetalView.setBounds(getLocalBounds());
 #endif
     const auto* primaryDisplay = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay();
-    const float scale          = primaryDisplay ? static_cast<float>(primaryDisplay->scale) : 1.0f;
+    const float scale                         = primaryDisplay ? static_cast<float>(primaryDisplay->scale) : 1.0f;
     //Resizing
     mPendingW = static_cast<uint32_t>(std::round(static_cast<float>(getWidth())  * scale));
     mPendingH = static_cast<uint32_t>(std::round(static_cast<float>(getHeight()) * scale));

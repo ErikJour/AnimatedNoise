@@ -25,13 +25,12 @@ public:
 private:
 
 juce::Random random;
-double mSampleRate;
-float noiseLevel;
-float mAmplitude;
-float mCombLevel{};
-
-float mCurrentNoiseValue{};
-int mHoldCounter{};
+double       mSampleRate;
+float        noiseLevel;
+float        mAmplitude;
+float        mCombLevel{};
+float        mCurrentNoiseValue{};
+int          mHoldCounter{};
 juce::SmoothedValue<float> levelSmoothed;
 juce::SmoothedValue<float> densitySmoothed;
 juce::SmoothedValue<float> combSmoothed;

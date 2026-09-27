@@ -15,76 +15,32 @@ struct ParticleVertexOutput {
     @location(3)       viewDepth : f32,
 }
 
-fn noiseCloudShape(worldPos: vec3f, t: f32, time: f32) -> vec3f {
-        let cloud = vec3f(
-        worldPos.x + 2.75 /*+ sin(time + worldPos.x * 25.0) * 0.005*/,
-        worldPos.y + 0.9,
-        worldPos.z + 0.175 /*sin(time + worldPos.x * 25.0) * 0.01*/
-    );
+const kNoiseLocation = vec3f(1.9, 0.4, 0.1);   // <-- the spot in world space you want
+const kCloudRadius = 0.125;                      // world-space size of the cloud
+const kCloudDot    = 0.05;                     // world-space particle size
+const kTubeRadius   = 1.5;   // multiplier on p (p already spans ±0.15)
 
-    let GA          = 2.3999632;
-    let yF          = 1.0 - 2.0 * t;
-    let rF          = sqrt(max(0.0, 1.0 - yF * yF));
-    let theta       = GA * t * 500.0 * 0.01;
-    let shell       = vec3f(cos(theta) * rF, yF, sin(theta) * rF) * 0.2;
-    let crystal     = (0.5 + 0.5) * 0.7;
-    let noiseBall   = mix(cloud * 0.5, shell * 0.1, crystal * 0.7);
-    return (noiseBall);
+
+fn cloudLocal(p: vec3f, t: f32) -> vec3f {
+    let GA    = 2.3999632;
+    let yF    = 1.0 - 2.0 * t;
+    let rF    = sqrt(max(0.0, 1.0 - yF * yF));
+    let theta = GA * t * 5.0;
+    let shell = vec3f(cos(theta) * rF, yF, sin(theta) * rF);
+    return mix(p * kTubeRadius, shell, 0.89);
 }
-
-@vertex
-fn vs_particle(in: ParticleVertexInput) -> ParticleVertexOutput {
-    var out: ParticleVertexOutput;
-
-    let worldPos = in.pos_size.xyz;
-    let size     = in.pos_size.w * 0.5;
-    let t        = in.life_vel.x;
-
-    let shaped = noiseCloudShape(worldPos, t, u.time);
-    let scaled = 0.065;
-
-    let depthZ = 0.15;
-    let halfH  = depthZ * tan(1.0 * 0.5);
-    let halfW  = halfH * u.aspectRatio;
-    let margin = 0.07;
-    let cloudAnchor = vec3f(halfW - margin + 0.05, -(halfH - margin + 0.06), -depthZ);
-
-    let viewPos     = shaped * scaled + cloudAnchor;
-    let cornerView  = viewPos + vec3f(in.cornerOffset * size, 0.0);
-
-    out.position  = u.projMatrix * vec4f(cornerView, 1.0);
-    out.viewDepth = -viewPos.z;
-    out.color     = in.color;
-    out.uv        = in.uv;
-    out.life      = in.life_vel.x;
-    return out;
-}
-
-const kWorldCloudCentre = vec3f(0.0, 0.1875, 0.0);
-const kWorldCloudScale  = 3.1415 * 0.85;
-const kWorldCloudDot    = 2.4;
-const kWorldCloudFloorY = -0.145;
-const kWorldCloudSpeed  = 0.25;
 
 @vertex
 fn vs_particle_world(in: ParticleVertexInput) -> ParticleVertexOutput {
     var out: ParticleVertexOutput;
+    let t = in.life_vel.x;
 
-    let worldPos = in.pos_size.xyz;
-    let size     = in.pos_size.w * kWorldCloudDot;
-    let t        = in.life_vel.x;
+    let centre = kNoiseLocation + cloudLocal(in.pos_size.xyz, t) * kCloudRadius;
 
-    let shaped = noiseCloudShape(worldPos, t, u.time * kWorldCloudSpeed);
-    let centre = kWorldCloudCentre + shaped * kWorldCloudScale;
-
-    let toCam    = normalize(u.cameraPosition - centre);
-    let camRight = normalize(cross(vec3f(0.0, 1.0, 0.0), toCam));
-    let camUp    = cross(toCam, camRight);
-    var world    = centre
-                 + camRight * (in.cornerOffset.x * size)
-                 + camUp    * (in.cornerOffset.y * size);
-
-    world.y = max(world.y, kWorldCloudFloorY) - 0.35;
+    let camRight = normalize(vec3f(u.viewProjMatrix[0][0], u.viewProjMatrix[1][0], u.viewProjMatrix[2][0]));
+    let camUp    = normalize(vec3f(u.viewProjMatrix[0][1], u.viewProjMatrix[1][1], u.viewProjMatrix[2][1]));
+    let size     = in.pos_size.w * kCloudDot;
+    let world    = centre + (camRight * in.cornerOffset.x + camUp * in.cornerOffset.y) * size;
 
     let clip      = projectPerspective(world);
     out.position  = clip;
@@ -103,5 +59,4 @@ fn fs_particle(in: ParticleVertexOutput) -> @location(0) vec4f {
     let alpha               = glow * mix(0.75, 0.55, 1.0) * in.color.a;
 
     return vec4f(in.color.r * u.resonate, in.color.g, in.color.b * u.sliderValue, alpha * 0.33);
-
 }

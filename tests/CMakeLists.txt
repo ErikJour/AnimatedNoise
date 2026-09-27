@@ -4,6 +4,7 @@ add_executable(AnimatedNoiseTests
         ../plugin/dsp/AnimatedDistortion.h
         ../plugin/dsp/AnimatedRandom.cpp
         ../plugin/dsp/AnimatedRandom.h
+        ../plugin/UI/CrossPlatformHelpers.h
 )
 
 set_target_properties(AnimatedNoiseTests PROPERTIES

@@ -69,7 +69,7 @@ if (APPLE)
 endif()
 
 if (APPLE)
-    target_sources(AnimatedNoise PRIVATE source/GpuSurface.mm)
+    target_sources(AnimatedNoise PRIVATE UI/macOSLayer/MacGpuSurface.mm)
     target_link_libraries(AnimatedNoise PRIVATE "-framework QuartzCore" "-framework Metal")
 endif()
 

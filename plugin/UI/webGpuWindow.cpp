@@ -2,7 +2,7 @@
 // Created by Erik Jourgensen on 4/29/26.
 //
 #include "webGpuWindow.h"
-#include "GpuSurface.h"
+#include "macOSLayer/MacGpuSurface.h"
 
 WebGpuWindow::WebGpuWindow()    = default;
 WebGpuWindow::~WebGpuWindow()   = default;
@@ -147,8 +147,8 @@ bool WebGpuWindow::initSurface(const double contentsScale, const uint32_t width,
 {
     std::cout << "initSurface called: " << width << "x" << height << std::endl;
     const MetalSurface metal = createMetalSurface(mInstance, contentsScale);
-    mSurface    = metal.surface;
-    mNativeView = metal.view;
+    mSurface                 = metal.surface;
+    mNativeView              = metal.view;
     if (!mSurface) { std::cerr << "Surface creation failed" << std::endl; return false; }
 
     applySurfaceConfig(width, height);
@@ -159,7 +159,6 @@ bool WebGpuWindow::initSurface(const double contentsScale, const uint32_t width,
     std::cout << "createPipeline: " << result << std::endl;
     return result;
 }
-
 
 void WebGpuWindow::onResize (const uint32_t width, const uint32_t height)
 {

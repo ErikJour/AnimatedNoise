@@ -27,7 +27,7 @@ public:
     static void setFeatures(WGPUAdapter adapter);
     void getAdapter(WGPUAdapter adapter, const WGPUAdapterInfo& properties);
     static void getLimits(WGPUAdapter adapter, WGPUSupportedLimits &limits);
-
+    //=============================================================================
     Scene& getScene()                         { return mScene; }
     [[nodiscard]] bool hasSurface()     const { return mSurface != nullptr; }
     [[nodiscard]] void* getNativeView() const { return mNativeView; }

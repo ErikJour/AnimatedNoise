@@ -27,6 +27,7 @@
 #include "components/text/FontParser.h"
 #include <sphericalSlider.h>
 #include "Modules/AmpEnvelopeModule.h"
+#include "CrossPlatformHelpers.h"
 
 
 static constexpr uint32_t MAX_PARTICLES = 2000;
@@ -41,14 +42,13 @@ class Scene
         void init(WGPUDevice device, WGPUQueue queue);
         void setSurface(WGPUSurface surface);
         void setSurfaceSize(uint32_t width, uint32_t height);
-        void setShaderModule(WGPUShaderModule shaderModule);
         void setPipelineDesc(const WGPURenderPipelineDescriptor& pipelineDesc);
         bool createShader();
-        void terminate();
         void reloadShader();
+        void terminate();
         void setUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer, float time);
         void setSliderUniforms(WGPUQueue queue, WGPUBuffer uniformBuffer);
-        std::pair<WGPUSurfaceTexture, WGPUTextureView> getNextSurfaceViewData() const;
+        [[nodiscard]] std::pair<WGPUSurfaceTexture, WGPUTextureView> getNextSurfaceViewData() const;
         void renderMeshes(WGPURenderPassEncoder renderPass);
         void renderFrame(float currentTime);
         void ConfigureVertexLayout();
@@ -58,7 +58,6 @@ class Scene
         void initializeFloor();
         void initializeSphere();
         void InitializeSlider(uint32_t& indexCount, WGPUBuffer& vertexBuffer, WGPUBuffer& indexBuffer, float radius) const;
-        void initializeSkylight();
         void initializeParticles();
         void initializeText(FontParser& font, std::string text);
         void initializeTooltip(FontParser& font, const std::string& paramName, const std::string& paramValue);
@@ -74,25 +73,20 @@ class Scene
         void setToolTip(const std::string &paramName, const std::string &paramValue);
         void initializeLightHelper();
         void setSliderList(const std::vector<AnimatedSlider>& list) { mSliderList = &list; }
-        const float* invView() const { return mInvView; }
-        const float* invProj() const { return mInvProj; }
-        static void buildInvLookAt(float* out,float ex, float ey, float ez, float tx, float ty, float tz,
-                                                   float upx = 0.0f, float upy = 1.0f, float upz = 0.0f);
-        static void buildInvPerspective(float* out, float fovY, float aspect, float nearZ, float farZ);
-        static void makeModelMatrix(float* m, float angle, float tx, float ty, float tz);
+        [[nodiscard]] const float* invView() const { return mInvView; }
+        [[nodiscard]] const float* invProj() const { return mInvProj; }
         void setItemBuffers(WGPUBuffer vertexBuffer, WGPUBuffer indexBuffer, uint32_t indexCount,
                                             uint32_t material, WGPURenderPassEncoder renderPass) const;
-        const AnimatedSlider* findSlider(const juce::ParameterID& id) const;
+        [[nodiscard]] const AnimatedSlider* findSlider(const juce::ParameterID& id) const;
         //=================================================================================================
-        WGPUTextureView getDepthTextureView() const { return mDepthTextureView; }
-        WGPUColorTargetState getColorTarget() const { return mColorTarget; }
-        WGPUFragmentState getFragmentState()  const { return mFragmentState; }
-        WGPUBlendState getBlendState()        const { return mBlendState; }
-        CameraState getCameraState()          const { return mCameraState; }
+        [[nodiscard]] WGPUTextureView getDepthTextureView() const { return mDepthTextureView; }
+        [[nodiscard]] WGPUColorTargetState getColorTarget() const { return mColorTarget; }
+        [[nodiscard]] WGPUFragmentState getFragmentState()  const { return mFragmentState; }
+        [[nodiscard]] WGPUBlendState getBlendState()        const { return mBlendState; }
+        [[nodiscard]] CameraState getCameraState()          const { return mCameraState; }
 
         //Envelope
         void updateAmpEnvelopeParameters();
-
 
     private:
         //=========================================================
@@ -131,9 +125,6 @@ class Scene
         };
 
         std::vector<SliderMesh>             mSliderMeshes;
-        static constexpr float              kSpineMinY                 = -0.15f;
-        static constexpr float              kSpineMaxY                 =  0.25f;
-        static constexpr float              kIndicatorHalfY            =  0.025f;
         //Plane
         WGPUBuffer                          mLightHelperVertexBuffer   = nullptr;
         WGPUBuffer                          mLightHelperIndexBuffer    = nullptr;
@@ -146,10 +137,6 @@ class Scene
         WGPUBuffer                          mSphereVertexBuffer        = nullptr;
         WGPUBuffer                          mSphereIndexBuffer         = nullptr;
         uint32_t                            mSphereIndexCount          = 0;
-        //Skylight
-        WGPUBuffer                          mSkylightVertexBuffer      = nullptr;
-        WGPUBuffer                          mSkylightIndexBuffer       = nullptr;
-        uint32_t                            mSkylightIndexCount        = 0;
         //Particle System
         WGPUBuffer                          mParticleQuadBuffer        = nullptr;
         WGPUBuffer                          mParticleDataBuffer        = nullptr;
@@ -174,7 +161,6 @@ class Scene
         uint32_t                            mTooltipIndexCount         = 0;
         //Objects
         AmpEnvelopeModule  mAmpEnvelope;
-
 
         std::string mText;
         std::string mTooltipValue;
